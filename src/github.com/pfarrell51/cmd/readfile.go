@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	file, err := os.Open("../foo.gpx")
+	file, err := os.Open("../../../../foo.gpx")
 	if err != nil {
 		log.Fatal(err)
 	}
