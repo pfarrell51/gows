@@ -59,6 +59,7 @@ func main() {
 	}
 }
 
+// get the initial XML tag from the current line, returns tag and offset to end of tag
 func getTag(line string) (tag string, pos int) {
 	var i, j int
 	i = strings.Index(line, "<") + 1
@@ -84,6 +85,9 @@ func getTag(line string) (tag string, pos int) {
 	}
 	return line[i:j], i + j
 }
+
+// getXmlVal returns the value between a pair of matching XML tags, such as <foo>bar</foo>
+// returns bar
 func getXmlVal(line string) string {
 	if len(line) == 0 {
 		return ""
@@ -104,6 +108,9 @@ func getXmlVal(line string) string {
 	k++
 	return line[j:k]
 }
+
+// gets the value between double quotes, sush as <foo bar="mumble">
+// returns mumble
 func getQuoted(line string) (val string, pos int) {
 	i := strings.Index(line, "\"")
 	if i < 0 {
