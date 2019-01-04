@@ -59,33 +59,6 @@ func main() {
 	}
 }
 
-// parse xml tag and return parts
-func getXmlParts(line string) string {
-	if len(line) == 0 {
-		return ""
-	}
-	return line[1:len(line)]
-}
-func getXmlVal(line string) string {
-	if len(line) == 0 {
-		return ""
-	}
-	i := strings.Index(line, "<")
-	if i < 0 {
-		return ""
-	}
-	j := strings.Index(line, ">")
-	if j < 0 {
-		return ""
-	}
-	k := strings.Index(line[1:], "<")
-	if k < 0 {
-		return ""
-	}
-	j++
-	k++
-	return line[j:k]
-}
 func getTag(line string) (tag string, pos int) {
 	var i, j int
 	i = strings.Index(line, "<") + 1
@@ -110,6 +83,26 @@ func getTag(line string) (tag string, pos int) {
 		}
 	}
 	return line[i:j], i + j
+}
+func getXmlVal(line string) string {
+	if len(line) == 0 {
+		return ""
+	}
+	i := strings.Index(line, "<")
+	if i < 0 {
+		return ""
+	}
+	j := strings.Index(line, ">")
+	if j < 0 {
+		return ""
+	}
+	k := strings.Index(line[1:], "<")
+	if k < 0 {
+		return ""
+	}
+	j++
+	k++
+	return line[j:k]
 }
 func getQuoted(line string) (val string, pos int) {
 	i := strings.Index(line, "\"")
