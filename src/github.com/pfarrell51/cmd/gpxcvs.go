@@ -38,9 +38,9 @@ func main() {
 			}
 			active = true
 			i := strings.Index(line[pos:], "lat=")
-			i = pos + i + 4 // length of lat="
+			i += (pos + 4) // length of lat="
 			lat, pos = getQuoted(line[i:])
-			i = i + pos
+			i += pos
 			lns := strings.Index(line[i:], "lon=")
 			i += (lns + 4)
 			lng, pos = getQuoted(line[i:])
