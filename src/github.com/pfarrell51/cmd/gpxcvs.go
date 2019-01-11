@@ -1,4 +1,5 @@
 // convert an GPX file into a simple csv file
+// extracts timestamp, lat, long, elevation and speed
 // reads stdin
 
 package main
@@ -109,7 +110,7 @@ func getXmlVal(line string) string {
 	return line[j:k]
 }
 
-// gets the value between double quotes, sush as <foo bar="mumble">
+// gets the value between double quotes, such as <foo bar="mumble">
 // returns mumble
 func getQuoted(line string) (val string, pos int) {
 	i := strings.Index(line, "\"")
