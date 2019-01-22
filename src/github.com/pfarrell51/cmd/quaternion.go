@@ -36,8 +36,7 @@ func (q Quaternion) Norm() Quaternion {
 
 // returns conjugate of the aregument (same real, reverse since of i,j,k)
 func (q Quaternion) Conj() Quaternion {
-	rval := Quaternion{}
-	rval.a = q.a
+	rval := Quaternion{q.a, q.b, q.c, q.d}
 	if rval.b != -0.0 {
 		rval.b = -q.b
 	}
@@ -58,7 +57,7 @@ func Prod(ain ...Quaternion) Quaternion {
 		fmt.Printf("pl: %s\n", q)
 		w = rval.a*q.a - rval.b*q.b - rval.c*q.c - rval.d*q.d
 		x = rval.a*q.b + rval.b*q.a + rval.c*q.d - rval.d*q.c
-		y = rval.a*q.c + rval.c*q.a + rval.d*q.b - rval.a*q.d
+		y = rval.a*q.c + rval.c*q.a + rval.d*q.b - rval.b*q.d
 		z = rval.a*q.d + rval.d*q.a + rval.b*q.c - rval.c*q.b
 		rval = Quaternion{w, x, y, z}
 	}
