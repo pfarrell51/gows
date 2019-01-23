@@ -4,6 +4,7 @@ package quaternion
 
 import (
 	"fmt"
+	"math"
 	"testing"
 )
 
@@ -18,11 +19,20 @@ var (
 	qv4 = Quaternion{0, 2, 1, 2}
 	qv5 = Quaternion{0, -2, -1, -2}
 	qv6 = Quaternion{-1, -1, 1, 1}
+	qa1 = Quaternion{4, -4, -4, 4}
+	qa2 = Quaternion{0.5, -0.5, -0.5, 0.5}
+	qa3 = Quaternion{0.0625, 0.0625, 0.0625, -0.0625}
+	qa4 = Quaternion{0.24765262787484427, 0.2940044459739585, 0.3943046179925829, 0.8347175749221727}
+	qa5 = Quaternion{-0.7904669075670613, 0.44891659738265544, -0.3627631346111533, 0.205033813803568}
+	qa6 = Quaternion{math.Cos(math.Pi / 2), math.Sin(math.Pi/2) / math.Sqrt(3),
+		math.Sin(math.Pi/2) / math.Sqrt(3), -math.Sin(math.Pi/2) / math.Sqrt(3)}
+	m = [3][3]float64{[3]float64{-0.333333333, 0.666666667, -0.666666667},
+		[3]float64{0.666666667, -0.333333333, -0.666666667},
+		[3]float64{-0.666666667, -0.666666667, -0.333333333}}
 )
 
 func TestMagnitude(t *testing.T) {
 	mag := q1.Magnitude()
-	fmt.Printf("mag: %g\n", mag)
 	if mag < 0 {
 		t.Fail()
 	}
@@ -32,31 +42,43 @@ func TestMagnitude(t *testing.T) {
 func TestNorm(t *testing.T) {
 	rval := q1.Norm()
 	if rval.Magnitude() != 1 {
-		t.Fail()
+		t.Error("identity norm")
+	}
+	rval = qa1.Norm()
+	if rval != qa2 {
+		t.Error("4's norm")
+	}
+}
+
+func TestVectorMag(t *testing.T) {
+	if qv4.Magnitude() != 3 {
+		t.Error("vector mag")
+	}
+}
+
+func TestMixedMag(t *testing.T) {
+	if qa1.Magnitude() != 8 {
+		t.Errorf("mixed mag %g", qa5.Magnitude())
 	}
 }
 func TestConj(t *testing.T) {
 	rval := q1.Conj()
-	fmt.Printf("conj: %s\n", rval)
 	if rval != q1 {
 		t.Error("conj1")
 	}
 	rval = qv5.Conj()
-	fmt.Printf("conj-b: %s\n", rval)
 	if qv4 != qv5.Conj() {
 		t.Error("conj2")
 	}
 }
 func TestSum1(t *testing.T) {
 	rval := Sum(q1, q2)
-	fmt.Printf("in Sum1() %s \n", rval)
 	if rval != q3 {
 		t.Errorf("sum1")
 	}
 }
 func TestProd1(t *testing.T) {
 	rval := Prod(q1, q2)
-	fmt.Printf("in Prod1() %s \n", rval)
 	if rval != q4 {
 		t.Error("prod1a")
 	}
@@ -70,5 +92,43 @@ func TestVectorProd(t *testing.T) {
 	rval := Prod(qv1, qv2, qv3)
 	if rval != qv6 {
 		t.Errorf("vector prod  %s != %s", rval, qv6)
+	}
+}
+func TestInv(t *testing.T) {
+	if qa1.Inv() != qa3 {
+		t.Error("Inv")
+	}
+}
+
+func TestEuler(t *testing.T) {
+	phi, theta, psi := Euler(qa4)
+	if math.Abs(phi-1.0) > 1e-6 ||
+		math.Abs(theta+0.3) > 1e-6 ||
+		math.Abs(psi-2.4) > 1e-6 {
+		t.Error("Euler")
+	}
+}
+
+func TestFromEuler(t *testing.T) {
+	q := FromEuler(-1.2, 0.4, 5.5)
+	if math.Abs(q.a-qa5.a) > 1e-6 ||
+		math.Abs(q.b-qa5.b) > 1e-6 ||
+		math.Abs(q.c-qa5.c) > 1e-6 ||
+		math.Abs(q.d-qa5.d) > 1e-6 {
+		t.Errorf("FromEuler %s", q)
+	}
+
+}
+
+func TestRotMat(t *testing.T) {
+	mm := RotMat(qa6)
+	for i, x := range mm {
+		for j, y := range x {
+			if math.Abs(m[i][j]-y) > 1e-6 {
+				xx := math.Abs(m[i][j] - y)
+				fmt.Printf("xx: %g m[] %g y: %g\n", xx, m[i][j], y)
+				t.Error("Rot")
+			}
+		}
 	}
 }

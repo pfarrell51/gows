@@ -1,4 +1,6 @@
 // utilities (math) for Quaternions
+// developed by Irish mathematician William Rowan Hamilton in 1843
+// code inspired by work of Eric Westphal
 
 package quaternion
 
@@ -20,8 +22,13 @@ func (q Quaternion) String() string {
 // magnitude(a + i b + c j + d k) = sqrt ( a**2 + b** 2+c**2+ d**2)
 
 func (q Quaternion) Magnitude() float64 {
-	var rval float64
-	rval = math.Sqrt(q.a*q.a + q.b*q.b + q.c*q.c + q.d*q.d)
+	rval := math.Sqrt(q.L2Magnitude())
+	return rval
+}
+
+// L2Magnitude returns the "L2-Norm" of a Quaternion (W,X,Y,Z) -> W*W+X*X+Y*Y+Z*Z
+func (q Quaternion) L2Magnitude() float64 {
+	rval := q.a*q.a + q.b*q.b + q.c*q.c + q.d*q.d
 	return rval
 }
 
@@ -49,12 +56,18 @@ func (q Quaternion) Conj() Quaternion {
 	return rval
 }
 
+// Inv returns the Quaternion conjugate rescaled so that Q Q* = 1
+func (qin Quaternion) Inv() Quaternion {
+	k2 := qin.L2Magnitude()
+	q := qin.Conj()
+	return Quaternion{q.a / k2, q.b / k2, q.c / k2, q.d / k2}
+}
+
 // non-commutatve product of any number of q's
 func Prod(ain ...Quaternion) Quaternion {
 	rval := Quaternion{1, 0, 0, 0}
 	var w, x, y, z float64
 	for _, q := range ain {
-		fmt.Printf("pl: %s\n", q)
 		w = rval.a*q.a - rval.b*q.b - rval.c*q.c - rval.d*q.d
 		x = rval.a*q.b + rval.b*q.a + rval.c*q.d - rval.d*q.c
 		y = rval.a*q.c + rval.c*q.a + rval.d*q.b - rval.b*q.d
@@ -64,7 +77,7 @@ func Prod(ain ...Quaternion) Quaternion {
 	return rval
 }
 
-// som of any number of q's
+// sum of any number of q's
 func Sum(ain ...Quaternion) Quaternion {
 	rval := Quaternion{}
 	for _, q := range ain {
@@ -75,4 +88,45 @@ func Sum(ain ...Quaternion) Quaternion {
 	}
 	return rval
 
+}
+
+// Euler returns the Euler angles phi, theta, psi corresponding to a Quaternion
+func Euler(q Quaternion) (float64, float64, float64) {
+	r := q.Norm()
+	phi := math.Atan2(2*(r.a*r.b+r.c*r.d), 1-2*(r.b*r.b+r.c*r.c))
+	theta := math.Asin(2 * (r.a*r.c - r.d*r.b))
+	psi := math.Atan2(2*(r.b*r.c+r.a*r.d), 1-2*(r.c*r.c+r.d*r.d))
+	return phi, theta, psi
+}
+
+// FromEuler returns a Quaternion corresponding to Euler angles phi, theta, psi
+func FromEuler(phi, theta, psi float64) Quaternion {
+	q := Quaternion{}
+	q.a = math.Cos(phi/2)*math.Cos(theta/2)*math.Cos(psi/2) +
+		math.Sin(phi/2)*math.Sin(theta/2)*math.Sin(psi/2)
+	q.b = math.Sin(phi/2)*math.Cos(theta/2)*math.Cos(psi/2) -
+		math.Cos(phi/2)*math.Sin(theta/2)*math.Sin(psi/2)
+	q.c = math.Cos(phi/2)*math.Sin(theta/2)*math.Cos(psi/2) +
+		math.Sin(phi/2)*math.Cos(theta/2)*math.Sin(psi/2)
+	q.d = math.Cos(phi/2)*math.Cos(theta/2)*math.Sin(psi/2) -
+		math.Sin(phi/2)*math.Sin(theta/2)*math.Cos(psi/2)
+	return q
+}
+
+// RotMat returns the rotation matrix (as float array) corresponding to a Quaternion
+func RotMat(qin Quaternion) [3][3]float64 {
+	q := qin.Norm()
+	m := [3][3]float64{}
+	m[0][0] = 1 - 2*(q.c*q.c+q.d*q.d)
+	m[0][1] = 2 * (q.b*q.c - q.a*q.d)
+	m[0][2] = 2 * (q.a*q.c + q.b*q.d)
+
+	m[1][1] = 1 - 2*(q.d*q.d+q.b*q.b)
+	m[1][2] = 2 * (q.c*q.d - q.a*q.b)
+	m[1][0] = 2 * (q.a*q.d + q.c*q.b)
+
+	m[2][2] = 1 - 2*(q.b*q.b+q.c*q.c)
+	m[2][0] = 2 * (q.d*q.a - q.a*q.c)
+	m[2][1] = 2 * (q.a*q.a + q.d*q.c)
+	return m
 }
