@@ -126,7 +126,7 @@ func RotMat(qin Quaternion) [3][3]float64 {
 	m[1][0] = 2 * (q.a*q.d + q.c*q.b)
 
 	m[2][2] = 1 - 2*(q.b*q.b+q.c*q.c)
-	m[2][0] = 2 * (q.d*q.a - q.a*q.c)
-	m[2][1] = 2 * (q.a*q.a + q.d*q.c)
+	m[2][0] = 2 * (q.d*q.b - q.a*q.c)
+	m[2][1] = 2 * (q.a*q.b + q.d*q.c)
 	return m
 }

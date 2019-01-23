@@ -3,7 +3,6 @@
 package quaternion
 
 import (
-	"fmt"
 	"math"
 	"testing"
 )
@@ -36,7 +35,6 @@ func TestMagnitude(t *testing.T) {
 	if mag < 0 {
 		t.Fail()
 	}
-
 }
 
 func TestNorm(t *testing.T) {
@@ -86,7 +84,6 @@ func TestProd1(t *testing.T) {
 	if rval != q1 {
 		t.Error("prod1b")
 	}
-
 }
 func TestVectorProd(t *testing.T) {
 	rval := Prod(qv1, qv2, qv3)
@@ -108,7 +105,6 @@ func TestEuler(t *testing.T) {
 		t.Error("Euler")
 	}
 }
-
 func TestFromEuler(t *testing.T) {
 	q := FromEuler(-1.2, 0.4, 5.5)
 	if math.Abs(q.a-qa5.a) > 1e-6 ||
@@ -117,16 +113,12 @@ func TestFromEuler(t *testing.T) {
 		math.Abs(q.d-qa5.d) > 1e-6 {
 		t.Errorf("FromEuler %s", q)
 	}
-
 }
-
 func TestRotMat(t *testing.T) {
 	mm := RotMat(qa6)
 	for i, x := range mm {
 		for j, y := range x {
 			if math.Abs(m[i][j]-y) > 1e-6 {
-				xx := math.Abs(m[i][j] - y)
-				fmt.Printf("xx: %g m[] %g y: %g\n", xx, m[i][j], y)
 				t.Error("Rot")
 			}
 		}
