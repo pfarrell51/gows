@@ -10,7 +10,10 @@ import (
 )
 
 type Quaternion struct {
-	a, b, c, d float64
+	a, // scalar
+	b, // i
+	c, // j
+	d float64 // k
 }
 
 func (q Quaternion) String() string {
@@ -41,7 +44,7 @@ func (q Quaternion) Norm() Quaternion {
 	return rval
 }
 
-// returns conjugate of the aregument (same real, reverse since of i,j,k)
+// returns conjugate of the aregument (same real, reverse sense of i,j,k)
 func (q Quaternion) Conj() Quaternion {
 	rval := Quaternion{q.a, q.b, q.c, q.d}
 	if rval.b != -0.0 {
