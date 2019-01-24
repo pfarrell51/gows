@@ -10,8 +10,9 @@ import (
 var (
 	q1  = Quaternion{1, 0, 0, 0}
 	q2  = Quaternion{a: 10}
-	q3  = Quaternion{11, 0, 0, 0}
-	q4  = Quaternion{10, 0, 0, 0}
+	q3  = Quaternion{a: 11}
+	q4  = Quaternion{a: 10}
+	q5  = Quaternion{1, 1, 1, 1}
 	qv1 = Quaternion{0, 1, 0, 0}
 	qv2 = Quaternion{0, 0, 1, 1}
 	qv3 = Quaternion{0, 1, 0, 1}
@@ -32,8 +33,16 @@ var (
 
 func TestMagnitude(t *testing.T) {
 	mag := q1.Magnitude()
-	if mag < 0 {
+	if mag != 1 {
 		t.Fail()
+	}
+	mag = q2.Magnitude()
+	if mag != 10 {
+		t.Error("mag not 10")
+	}
+	mag = q5.Magnitude()
+	if mag != 2.0 {
+		t.Errorf("mag 1,1,1,1 is %g not 2.0", mag)
 	}
 }
 
@@ -49,8 +58,28 @@ func TestNorm(t *testing.T) {
 }
 
 func TestVectorMag(t *testing.T) {
-	if qv4.Magnitude() != 3 {
-		t.Error("vector mag")
+	mag := qv4.Magnitude()
+	if mag != 3 {
+		t.Error("vector mag not 3")
+	}
+	if mag != qv5.Magnitude() {
+		t.Errorf("vector mag not %g", qv5.Magnitude())
+	}
+	mag = qa2.Magnitude()
+	if mag != 1.00 {
+		t.Errorf("vector mag not %g", qa2.Magnitude())
+	}
+	mag = qa3.Magnitude()
+	if mag != 0.125 {
+		t.Errorf("vector mag not %g", qa3.Magnitude())
+	}
+	mag = qa4.Magnitude()
+	if mag != 1 {
+		t.Errorf("vector mag not %g", qa4.Magnitude())
+	}
+	mag = qa5.Magnitude()
+	if mag != 1 {
+		t.Errorf("vector mag not %g", qa5.Magnitude())
 	}
 }
 
@@ -83,6 +112,10 @@ func TestProd1(t *testing.T) {
 	rval = Prod(q1, q1)
 	if rval != q1 {
 		t.Error("prod1b")
+	}
+	rval = Prod(q1, q5)
+	if rval != q5 {
+		t.Error("prod1c")
 	}
 }
 func TestVectorProd(t *testing.T) {
