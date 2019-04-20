@@ -74,8 +74,15 @@ func getVals(line []string) (rtime time.Time, rlatlng Latlong, rele int32) {
 func printCSV(tval time.Time, latlng Latlong, ele, spd int32) {
 	fmt.Printf("%v, %g, %g, %d, %d\n", tval, latlng.lat, latlng.lng, ele, spd)
 }
+
+// distance using law of cosines
+//    d = acos( sin φ1 * sin φ2 + cos φ1 * cos φ2 * cos Δλ ) * R
 func (l1 Latlong) distance(l2 Latlong) float64 {
 	var deltaLong = l1.lng - l2.lng
-	var rval = math.Acos(math.Sin(l1.lat)*math.Sin(l2.lat)+math.Cos(l1.lat)*math.Cos(l2.lat)*math.Cos(deltaLong)) * earthRadiusMiles
+	deltaLat := math.Abs(l1.lat - l2.lat)
+	fmt.Printf("d lat: %g  dLong: %g\n", deltaLat, deltaLong)
+	partial := math.Sin(l1.lat)*math.Sin(l2.lat) + math.Cos(l1.lat)*math.Cos(l2.lat)*math.Cos(deltaLong)
+	fmt.Printf("partial: %g aCos(P) %g\n", partial, math.Acos(partial))
+	var rval = math.Acos(partial) * earthRadiusMiles
 	return rval
 }
