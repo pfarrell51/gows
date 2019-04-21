@@ -25,8 +25,8 @@ type latlong struct {
 
 func main() {
 	var oldTime time.Time
-//	var oldlatlng latlong
-//	var oldelev int32
+	var oldlatlng latlong
+	var oldelev int32
 	fmt.Printf("#time, lat, long, ele, spd, bearing\n")
 	ln := 0
 	r := csv.NewReader(os.Stdin)
@@ -41,16 +41,20 @@ func main() {
 		}
 		ln++
 		time, latlng, elev := getVals(record)
+		fmt.Print("new line ")
 		printCSV(time, latlng, elev, 0)
 		// do stuff
-		deltaTime := time.Sub(oldTime)
-		fmt.Printf("delta time: %d\n", deltaTime)
+		deltaTime := time.Sub(oldTime).Seconds()
+		fmt.Printf("delta time: %g\n", deltaTime)
+		dist := latlng.distance(oldlatlng)
+		speed := dist / (deltaTime / 3600.0)
+		fmt.Printf("dTime %g, distance: %g speed: %g \n", deltaTime, dist, speed)
 
 		oldTime = time
-//		oldlatlng = latlng
-//		oldelev = elev
+		oldlatlng = latlng
+		oldelev = elev
 	}
-//	printCSV(oldTime, oldlatlng, oldelev, 0)
+	printCSV(oldTime, oldlatlng, oldelev, 0)
 }
 
 // parse out current line's values, converting to useful values
@@ -79,13 +83,7 @@ func printCSV(tval time.Time, latlng latlong, ele, spd int32) {
 func (l1 latlong) distance(l2 latlong) float64 {
 	lr1 := latlong{l1.lat * (math.Pi / 180.0), l1.lng * (math.Pi / 180.0)}
 	lr2 := latlong{l2.lat * (math.Pi / 180.0), l2.lng * (math.Pi / 180.0)}
-	fmt.Printf("1 deg (%g, %g) rads (%g, %g)\n", l1.lat, l1.lng, lr1.lat, lr1.lng)
-	fmt.Printf("2 deg (%g, %g) rads (%g, %g)\n", l2.lat, l2.lng, lr2.lat, lr2.lng)
-	deltaLong := (lr1.lng - lr2.lng)
-	deltaLat := math.Abs(lr1.lat - lr2.lat)
-	fmt.Printf("d lat: %g  dLong: %g\n", deltaLat, deltaLong)
-	partial := math.Sin(lr1.lat)*math.Sin(lr2.lat) + math.Cos(lr1.lat)*math.Cos(lr2.lat)*math.Cos(deltaLong)
-	fmt.Printf("partial: %g aCos(P) %g\n", partial, math.Acos(partial))
+	partial := math.Sin(lr1.lat)*math.Sin(lr2.lat) + math.Cos(lr1.lat)*math.Cos(lr2.lat)*math.Cos(lr1.lng-lr2.lng)
 	var rval = math.Acos(partial) * earthRadiusMiles
 	return rval
 }
