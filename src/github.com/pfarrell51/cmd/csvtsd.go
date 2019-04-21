@@ -18,6 +18,8 @@ import (
 
 const meterTo1kFeet = 3280
 const earthRadiusMiles = 3959
+const makeRadians = math.Pi / 180.0
+
 
 type latlong struct {
 	lat, lng float64
@@ -26,7 +28,7 @@ type latlong struct {
 func main() {
 	var oldTime time.Time
 	var oldlatlng latlong
-	var oldelev int32
+	var oldelev, speed int32
 	fmt.Printf("#time, lat, long, ele, spd, bearing\n")
 	ln := 0
 	r := csv.NewReader(os.Stdin)
@@ -41,20 +43,17 @@ func main() {
 		}
 		ln++
 		time, latlng, elev := getVals(record)
-		fmt.Print("new line ")
-		printCSV(time, latlng, elev, 0)
+
 		// do stuff
 		deltaTime := time.Sub(oldTime).Seconds()
-		fmt.Printf("delta time: %g\n", deltaTime)
 		dist := latlng.distance(oldlatlng)
-		speed := dist / (deltaTime / 3600.0)
-		fmt.Printf("dTime %g, distance: %g speed: %g \n", deltaTime, dist, speed)
-
+		speed = int32(dist / (deltaTime / 3600.0))
+		printCSV(oldTime, oldlatlng, oldelev, speed)
 		oldTime = time
 		oldlatlng = latlng
 		oldelev = elev
 	}
-	printCSV(oldTime, oldlatlng, oldelev, 0)
+	printCSV(oldTime, oldlatlng, oldelev, speed)
 }
 
 // parse out current line's values, converting to useful values
@@ -68,10 +67,8 @@ func getVals(line []string) (rtime time.Time, rlatlng latlong, rele int32) {
 	rlatlong.lat, err = strconv.ParseFloat(strings.Trim(line[1], " 	"), 64)
 	rlatlong.lng, err = strconv.ParseFloat(strings.Trim(line[2], " 	"), 64)
 	relev, err := strconv.ParseInt(strings.Trim(line[3], " 	"), 0, 32)
-	relev *= meterTo1kFeet
-	relev /= 1000 // remove 1000 back to feet
-	fmt.Printf("%v %g %g %d\n", rtime, rlatlong.lat, rlatlong.lng, relev)
-	return rtime, rlatlong, rele
+	relev = (relev * meterTo1kFeet) / 1000
+	return rtime, rlatlong, int32(relev)
 }
 func printCSV(tval time.Time, latlng latlong, ele, spd int32) {
 	fmt.Printf("%v, %g, %g, %d, %d\n", tval, latlng.lat, latlng.lng, ele, spd)
@@ -81,8 +78,8 @@ func printCSV(tval time.Time, latlng latlong, ele, spd int32) {
 //    d = acos( sin φ1 * sin φ2 + cos φ1 * cos φ2 * cos Δλ ) * R
 // note, lat long incoming is in degrees, we want radians
 func (l1 latlong) distance(l2 latlong) float64 {
-	lr1 := latlong{l1.lat * (math.Pi / 180.0), l1.lng * (math.Pi / 180.0)}
-	lr2 := latlong{l2.lat * (math.Pi / 180.0), l2.lng * (math.Pi / 180.0)}
+	lr1 := latlong{l1.lat * makeRadians, l1.lng * makeRadians}		// convert degrees to radians
+	lr2 := latlong{l2.lat * makeRadians, l2.lng * makeRadians}
 	partial := math.Sin(lr1.lat)*math.Sin(lr2.lat) + math.Cos(lr1.lat)*math.Cos(lr2.lat)*math.Cos(lr1.lng-lr2.lng)
 	var rval = math.Acos(partial) * earthRadiusMiles
 	return rval
