@@ -13,7 +13,7 @@ import (
 )
 
 func Files(fsys fs.FS, patharg string) {
-	comRegex, err := regexp.Compile(".(Mm)r(pP)4")
+	comRegex, err := regexp.Compile(".(M|m)(p|P)4")
 	if err != nil {
 		fmt.Println("PIB")
 		return
@@ -28,10 +28,8 @@ func Files(fsys fs.FS, patharg string) {
 			return nil
 		}
 		pathAsBytes := []byte(path)
-		fmt.Println(pathAsBytes)
 		ext := comRegex.Find(pathAsBytes)
 		if ext == nil {
-			fmt.Println("regex failed ", path)
 			return nil
 		} else {
 			fmt.Println("success ", ext)
