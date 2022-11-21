@@ -1,3 +1,3 @@
-module src/github.com/pfarrell51/cmd
+module github.com/pfarrell51/
 
 go 1.19
