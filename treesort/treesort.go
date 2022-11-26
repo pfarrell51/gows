@@ -6,7 +6,6 @@
 // Package treesort provides insertion sort using an unbalanced binary tree.
 package treesort
 
-// !+
 type tree struct {
 	value       int
 	left, right *tree
