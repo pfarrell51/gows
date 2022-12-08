@@ -9,13 +9,28 @@ import (
 	"testing"
 )
 
+const numInt = 50
+
 func TestSort(t *testing.T) {
-	data := make([]int, 50)
+	data := make([]int, numInt)
 	for i := range data {
-		data[i] = rand.Int() % 50
+		data[i] = rand.Int() % numInt
 	}
 	Sort(data)
 	if !sort.IntsAreSorted(data) {
+		t.Errorf("not sorted: %v", data)
+	}
+}
+func TestSort2(t *testing.T) {
+	data := make([]int, numInt)
+	for i := range data {
+		data[i] = rand.Int() % numInt
+	}
+	Sort(data)
+	d := data[1]
+	data[1] = data[numInt-1]
+	data[numInt-1] = d
+	if sort.IntsAreSorted(data) {
 		t.Errorf("not sorted: %v", data)
 	}
 }
