@@ -1,5 +1,5 @@
 // test driver for gopro rename utility
-package main
+package goprorename
 
 import (
 	"fstest"

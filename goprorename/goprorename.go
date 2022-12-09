@@ -1,22 +1,17 @@
-// shell program to rename files created by a GoPro into a single, sensible
+// rename files created by a GoPro into a single, sensible
 // ordering of files so that the order is obvious for easy processing
 // by other utulities such as RaceRender
 //
 // goPro naming conventions: https://community.gopro.com/s/article/GoPro-Camera-File-Naming-Convention?language=en_US
 
-package main
+package goprorename
 
 import (
 	"fmt"
 	"io/fs"
-	"os"
 	"regexp"
 	"strings"
 )
-
-// the new testing/fstest package provides a TestFS function that checks for and
-// reports common mistakes. It also provides a simple in-memory file systemi
-// implementation, MapFS, which can be useful for testing code that accepts fs.FS implementations."
 
 func ProcessFiles(fsys fs.FS, patharg string) {
 	extRegex := regexp.MustCompile(".(M|m)(p|P)4")
@@ -43,16 +38,4 @@ func ProcessFiles(fsys fs.FS, patharg string) {
 		}
 		return nil
 	})
-}
-
-// get argument from shell, if any or default
-
-func main() {
-	pathArg := "."
-	if len(os.Args) > 1 {
-		pathArg = os.Args[1]
-	}
-	fs := os.DirFS(pathArg)
-	fmt.Println("fs from arg: ", fs)
-	ProcessFiles(fs, pathArg)
 }
