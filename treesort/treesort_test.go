@@ -4,14 +4,29 @@
 package treesort
 
 import (
+	"fmt"
 	"math/rand"
 	"sort"
 	"testing"
+	"time"
 )
 
-const numInt = 50
+const numInt = 14
 
-func TestSort(t *testing.T) {
+func TestTreeCanned(t *testing.T) {
+	data := []int{7, 2, 9, 1, 11, 15}
+	var root *tree //  &tree{value: value}
+	fmt.Println("fresh root ", root)
+	for i := range data {
+		fmt.Printf("i: %d d:%d\n", i, data[i])
+		root = root.add(data[i])
+		fmt.Println("root: ", root)
+	}
+	fmt.Println("final root ", root)
+}
+
+func TestSortRan(t *testing.T) {
+	rand.Seed(time.Now().UTC().UnixNano())
 	data := make([]int, numInt)
 	for i := range data {
 		data[i] = rand.Int() % numInt
@@ -21,7 +36,7 @@ func TestSort(t *testing.T) {
 		t.Errorf("not sorted: %v", data)
 	}
 }
-func TestSort2(t *testing.T) {
+func TestSortiRan2(t *testing.T) {
 	data := make([]int, numInt)
 	for i := range data {
 		data[i] = rand.Int() % numInt
@@ -31,6 +46,6 @@ func TestSort2(t *testing.T) {
 	data[1] = data[numInt-1]
 	data[numInt-1] = d
 	if sort.IntsAreSorted(data) {
-		t.Errorf("not sorted: %v", data)
+		t.Errorf("sorted: %v", data)
 	}
 }
