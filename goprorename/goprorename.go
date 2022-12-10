@@ -17,6 +17,11 @@ func ProcessFiles(fsys fs.FS, patharg string) {
 	extRegex := regexp.MustCompile(".(M|m)(p|P)4")
 	nameRegex := regexp.MustCompile("(?s)(GX|H)(\\d{2})(\\d{4})")
 	fs.WalkDir(fsys, patharg, func(path string, d fs.DirEntry, err error) error {
+		fmt.Println("Embeded func ", d, " in ", path)
+		if d == nil {
+			fmt.Println("d is nil")
+			return nil
+		}
 		if err != nil {
 			fmt.Println("Error processing", d, " in ", path)
 			fmt.Println("error is ", err)
