@@ -5,18 +5,32 @@ import (
 	"math/rand"
 )
 
-type Tree struct {
+type Tree[T any] struct {
 	cmp  func(a, b string) int
 	root *node
 }
-type node struct {
+type nodei[T any] struct {
 	left, right *node
-	data        string
+	data        T
 }
 
+func (bt *Tree[T]) find(val T) **node[T] {
+	pl := &bt.root
+	for *pl != nil {
+		switch cmp := bt.cmp(val, (*pl).data); {
+		case cmp < 0:
+			pl = &(*pl).left
+		case cmp > 0:
+			pl = &(*pl).right
+		default:
+			return pl
+		}
+	}
+	return pl
+}
 func insert(n node) *node {
 	if root == nil {
-		
+
 		return &node{nil, v, nil}
 	}
 	if it.cmp(v, t.data) < 0 {
@@ -46,7 +60,6 @@ func populateTree(t *Tree) {
 	return t
 }
 func main() {
-
 	theTree := populateTree()
 	printTree(theTree)
 
