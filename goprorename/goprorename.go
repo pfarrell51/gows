@@ -52,7 +52,8 @@ func Files(path string) (count int) {
 			prefix := nameParts[0][1]
 			chapter := nameParts[0][2]
 			clip := nameParts[0][3]
-			fmt.Printf("mv %s   %2s%4s%2s.mp4\n", dName, prefix, clip, chapter)
+			key := prefix + clip + chapter
+			fmt.Printf("mv %s %s.mp4\n", dName, key)
 		}
 		return nil
 	})
