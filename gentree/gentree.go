@@ -5,13 +5,13 @@ import (
 	"math/rand"
 )
 
+type node[T any] struct {
+	left, right *node[T]
+	data        T
+}
 type Tree[T any] struct {
 	cmp  func(a, b string) int
-	root *node
-}
-type nodei[T any] struct {
-	left, right *node
-	data        T
+	root *node[T]
 }
 
 func (bt *Tree[T]) find(val T) **node[T] {
@@ -28,9 +28,8 @@ func (bt *Tree[T]) find(val T) **node[T] {
 	}
 	return pl
 }
-func insert(n node) *node {
+func insert(n node[T]) *node[T] {
 	if root == nil {
-
 		return &node{nil, v, nil}
 	}
 	if it.cmp(v, t.data) < 0 {
@@ -43,7 +42,7 @@ func insert(n node) *node {
 func cmp(a, b string) {
 	return strings.compare(a, b)
 }
-func printTree(t *Tree) {
+func printTree(t *Tree[T]) {
 	if t == nil {
 		fmt.Println("tree is empty")
 		return
