@@ -9,38 +9,52 @@ package goprorename
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"regexp"
 	"strings"
 )
 
-func ProcessFiles(fsys fs.FS, patharg string) {
-	extRegex := regexp.MustCompile(".(M|m)(p|P)4")
-	nameRegex := regexp.MustCompile("(?s)(GX|H)(\\d{2})(\\d{4})")
-	fs.WalkDir(fsys, patharg, func(path string, d fs.DirEntry, err error) error {
-		fmt.Println("Embeded func ", d, " in ", path)
+var extRegex = regexp.MustCompile(".(M|m)(p|P)4")
+var nameRegex = regexp.MustCompile("(?s)(GX|H)(\\d{2})(\\d{4})")
+
+func ProcessFiles(pathArg string) {
+
+	// TODO: list of skips or regex for skip or function call to check skip
+	//subDirToSkip := "skip"
+
+	fmt.Println(Files(pathArg))
+}
+
+func Files(path string) (count int) {
+	fsys := os.DirFS(path)
+	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
+		// fmt.Println("Embeded func ", d)
+		if err != nil {
+			fmt.Println("Error processing", p, " in ", d)
+			fmt.Println("error is ", err)
+			return nil
+		}
 		if d == nil {
 			fmt.Println("d is nil")
 			return nil
 		}
-		if err != nil {
-			fmt.Println("Error processing", d, " in ", path)
-			fmt.Println("error is ", err)
+		dName := d.Name()
+		if strings.HasPrefix(p, ".") {
 			return nil
 		}
-		if strings.HasPrefix(path, ".") {
-			return nil
-		}
-		ext := extRegex.FindString(path)
+		ext := extRegex.FindString(p)
 		if len(ext) == 0 {
 			return nil
 		}
-		nameParts := nameRegex.FindAllStringSubmatch(path, -1)
+		nameParts := nameRegex.FindAllStringSubmatch(p, -1)
 		if len(nameParts) > 0 && len(nameParts[0]) > 3 {
+			count++
 			prefix := nameParts[0][1]
 			chapter := nameParts[0][2]
 			clip := nameParts[0][3]
-			fmt.Println("p: ", prefix, " chpt ", chapter, " clip ", clip)
+			fmt.Printf("mv %s   %2s%4s%2s.mp4\n", dName, prefix, clip, chapter)
 		}
 		return nil
 	})
+	return count
 }
