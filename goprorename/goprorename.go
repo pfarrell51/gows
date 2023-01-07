@@ -8,27 +8,25 @@ package goprorename
 
 import (
 	"fmt"
+	"github.com/emirpasic/gods/maps/treemap"
 	"io/fs"
 	"os"
 	"regexp"
 	"strings"
 )
 
+type gpfile struct {
+	oldname string
+	newname string
+}
+
 var extRegex = regexp.MustCompile(".(M|m)(p|P)4")
 var nameRegex = regexp.MustCompile("(?s)(GX|H)(\\d{2})(\\d{4})")
 
 func ProcessFiles(pathArg string) {
-
-	// TODO: list of skips or regex for skip or function call to check skip
-	//subDirToSkip := "skip"
-
-	fmt.Println(Files(pathArg))
-}
-
-func Files(path string) (count int) {
-	fsys := os.DirFS(path)
+	theMap := treemap.NewWithStringComparator()
+	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		// fmt.Println("Embeded func ", d)
 		if err != nil {
 			fmt.Println("Error processing", p, " in ", d)
 			fmt.Println("error is ", err)
@@ -48,14 +46,30 @@ func Files(path string) (count int) {
 		}
 		nameParts := nameRegex.FindAllStringSubmatch(p, -1)
 		if len(nameParts) > 0 && len(nameParts[0]) > 3 {
-			count++
 			prefix := nameParts[0][1]
 			chapter := nameParts[0][2]
 			clip := nameParts[0][3]
 			key := prefix + clip + chapter
-			fmt.Printf("mv %s %s.mp4\n", dName, key)
+			entry := gpfile{dName, key}
+			fmt.Println(" dname ", dName, " key ", key, " entry ", entry)
+			theMap.Put(key, entry)
+			val, _ := theMap.Get(key)
+			fmt.Println(key, val)
 		}
 		return nil
 	})
-	return count
+	//	var gt interface{} = &gpfile{}
+	keyList := theMap.Keys()
+	for k, v := range keyList {
+		fmt.Println("k of keylist ", k)
+		g, ok := theMap.Get(k)
+		gv, ok := g.(*gpfile)
+		if ok {
+			//	v, _ := theMap.Get(k)
+			fmt.Printf("mv %s %s\n", gv.oldname, gv.newname)
+			fmt.Printf("k,v=%s %s\n", k, v)
+		} else {
+			fmt.Println("error, bad type")
+		}
+	}
 }
