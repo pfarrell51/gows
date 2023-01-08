@@ -24,6 +24,7 @@ func ProcessFiles(pathArg string) {
 	processMap(rmap)
 
 }
+
 // walk all files, looking for nice GoPro created video files.
 // fill in a map keyed by the desired new name order
 func walkFiles(pathArg string) map[string]string {
@@ -59,6 +60,7 @@ func walkFiles(pathArg string) map[string]string {
 	})
 	return theMap
 }
+
 // go thru the map, sort by key
 // then create new ordering that makes sense to human
 func processMap(m map[string]string) map[string]string {
@@ -80,7 +82,7 @@ func processMap(m map[string]string) map[string]string {
 		source, _ := m[k]
 		delete(m, k)
 		m[k] = source
-		fmt.Printf("mv %s %s%02d.mp4\n", m[k], firstChpt, cnum)
+		fmt.Printf("mv %s %2s%02d%4s.mp4\n", source, firstChpt[0:2], cnum, firstChpt[2:6])
 	}
 	return m
 }
