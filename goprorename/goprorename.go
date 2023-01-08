@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"os"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -64,6 +65,10 @@ func walkFiles(pathArg string) map[string]string {
 // go thru the map, sort by key
 // then create new ordering that makes sense to human
 func processMap(m map[string]string) map[string]string {
+	var cmd = "mv "
+	if runtime.GOOS == "windows" {
+		cmd = "ren "
+	}
 	keys := make([]string, 0, len(m)) // copy to a slice to sort
 	for k := range m {
 		keys = append(keys, k)
@@ -82,7 +87,7 @@ func processMap(m map[string]string) map[string]string {
 		source, _ := m[k]
 		delete(m, k)
 		m[k] = source
-		fmt.Printf("mv %s %2s%02d%4s.mp4\n", source, firstChpt[0:2], cnum, firstChpt[2:6])
+		fmt.Printf("%s%s %2s%02d%4s.mp4\n", cmd, source, firstChpt[0:2], cnum, firstChpt[2:6])
 	}
 	return m
 }
