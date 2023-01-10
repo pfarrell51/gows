@@ -1,9 +1,20 @@
-// rename files created by a GoPro into a single, sensible
-// ordering of files so that the order is obvious for easy processing
-// by other utulities such as RaceRender
-//
-// goPro naming conventions: https://community.gopro.com/s/article/GoPro-Camera-File-Naming-Convention?language=en_US
+/*
+working library to do processing to fix/ rename files created by a GoPro into a single, sensible
+ordering of files so that the order is obvious for easy processing
+by other utulities such as RaceRender
 
+See mg/main.go for how it is called.
+
+goPro naming conventions: https://community.gopro.com/s/article/GoPro-Camera-File-Naming-Convention?language=en_US
+
+For example, if you have files named GX010352.MP4 and GX020354.MP4
+on a Linux or OS-X system, the output would be
+    mv GX010352.MP4 GX035201.mp4 
+    mv GX020354.MP4 GX035202.mp4
+
+    On a Windows system, the "mv" command would be changed to "ren" for rename.
+
+*/
 package goprorename
 
 import (
@@ -19,6 +30,10 @@ import (
 
 var extRegex = regexp.MustCompile(".(M|m)(p|P)4")
 var nameRegex = regexp.MustCompile("(?s)(GX|H)(\\d{2})(\\d{4})")
+i
+// walked the argument directory path looking for .mp4 files generated
+// by a GoPro camera, creating a map of old and new filenames
+// then calling the processMap function
 
 func ProcessFiles(pathArg string) {
 	rmap := walkFiles(pathArg)
