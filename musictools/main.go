@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"github.com/dlclark/metaphone3"
+	g "github.com/zyedidia/generic"
+	"github.com/zyedidia/generic/btree"
 	"io/fs"
 	"os"
 	"regexp"
@@ -17,12 +20,10 @@ func main() {
 		os.Exit(1)
 	}
 	pathArg := os.Args[1]
-	fmt.Println(pathArg)
-	fmt.Println(runtime.GOOS)
+	ProcessFiles(pathArg)
 }
 
-var extRegex = regexp.MustCompile(".(M|m)(p|P)4")
-var nameRegex = regexp.MustCompile("(?s)(GX|H)(\\d{2})(\\d{4})")
+var extRegex = regexp.MustCompile(".(M|m)(p|P)3")
 
 func ProcessFiles(pathArg string) {
 	rmap := walkFiles(pathArg)
@@ -33,6 +34,9 @@ func ProcessFiles(pathArg string) {
 // walk all files, looking for nice GoPro created video files.
 // fill in a map keyed by the desired new name order
 func walkFiles(pathArg string) map[string]string {
+	tree := btree.New[string, string](g.Less[string])
+	tree.Put("foo", "baz")
+	var enc metaphone3.Encoder
 	theMap := make(map[string]string)
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
@@ -49,18 +53,14 @@ func walkFiles(pathArg string) map[string]string {
 		if strings.HasPrefix(p, ".") {
 			return nil
 		}
+		fmt.Println(p, d, dName)
 		ext := extRegex.FindString(p)
 		if len(ext) == 0 {
+			fmt.Println("no extension for ", p)
 			return nil
 		}
-		nameParts := nameRegex.FindAllStringSubmatch(p, -1)
-		if len(nameParts) > 0 && len(nameParts[0]) > 3 {
-			prefix := nameParts[0][1]
-			chapter := nameParts[0][2]
-			clip := nameParts[0][3]
-			key := prefix + clip + chapter
-			theMap[key] = dName
-		}
+		prim, sec := enc.Encode(dName)
+		fmt.Println("dName ", dName, " pri: ", prim, " sec: ", sec)
 		return nil
 	})
 	return theMap
