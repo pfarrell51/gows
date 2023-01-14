@@ -1,3 +1,6 @@
+// this program helps clean up the mp3 and flac files in my hits playlist
+// its main task is to normalize the file names to relect the artist and song title
+
 package main
 
 import (
