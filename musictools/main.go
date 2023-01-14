@@ -14,6 +14,10 @@ import (
 	"strings"
 )
 
+var tree = btree.New[string, string](g.Less[string])
+var enc metaphone3.Encoder
+var extRegex = regexp.MustCompile(".((M|m)(p|P)3)|((M|m)(p|P)4)|((F|f)(L|l)(A|a)(C|c))")
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Printf("Usage: %s DIRNAME", os.Args[0])
@@ -23,20 +27,37 @@ func main() {
 	ProcessFiles(pathArg)
 }
 
-var extRegex = regexp.MustCompile(".(M|m)(p|P)3")
-
 func ProcessFiles(pathArg string) {
+	loadMetaPhone()
 	rmap := walkFiles(pathArg)
 	processMap(rmap)
-
+}
+func loadMetaPhone() {
+	albumNames := [...]string{"ABBA", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers", "Animals",
+		"Arlo_Guthrie", "Band_The", "Basia", "BeachBoys", "Beatles", "BlindFaith", "BloodSweatTears", "Boston",
+		"BrewerAndShipley", "BuffaloSpringfield", "Byrds", "CensorBeep.mp4", "Chesapeake",
+		"Cream", "Crosby_Stills_Nash",
+		"David_Bromberg", "Derek_Dominos", "Dire_Straits", "Doobie_Brothers", "Doors", "Dylan", "Elton_John",
+		"Emmylou_Harris", "Fleetwood_Mac", "Heart", "James_Taylor", "Jefferson_Airplane", "Jethro_Tull",
+		"John_Denver", "John_Hartford", "John_Starling", "Joni_Mitchell", "Judy_Collins", "Kingston_Trio",
+		"Led_Zepplin", "Linda_Ronstadt", "Lynyrd_Skynyrd", "Mamas_Popas", "Meatloaf", "Mike_Auldridge",
+		"New_Riders_Purple_Sage", "Pablo_Cruise", "Paul_Simon", "Peter_Paul_Mary", "Rolling_Stones",
+		"Roy_Orbison", "Santana", "Seals_Croft", "Seldom_Scene", "Simon_Garfunkel", "Steely_Dan",
+		"5th_Dimension", "TonyRice", "Traveling_Wilburys", "Who", "Yes",
+	}
+	for _, n := range albumNames {
+		prim, sec := enc.Encode(n)
+		tree.Put(prim, n)
+		if len(sec) > 0 {
+			fmt.Printf("found a secondary: %s for %s\n", sec, n)
+			tree.Put(sec, n)
+		}
+	}
 }
 
 // walk all files, looking for nice GoPro created video files.
 // fill in a map keyed by the desired new name order
 func walkFiles(pathArg string) map[string]string {
-	tree := btree.New[string, string](g.Less[string])
-	tree.Put("foo", "baz")
-	var enc metaphone3.Encoder
 	theMap := make(map[string]string)
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
@@ -59,11 +80,37 @@ func walkFiles(pathArg string) map[string]string {
 			fmt.Println("no extension for ", p)
 			return nil
 		}
+
 		prim, sec := enc.Encode(dName)
-		fmt.Println("dName ", dName, " pri: ", prim, " sec: ", sec)
+		_, ok := tree.Get(prim)
+		if !ok {
+			fmt.Printf("Song %s did not find primary match for %s\n", dName, prim)
+			_, ok := tree.Get(sec)
+			if !ok {
+				fmt.Println("no match for either primary or secondary ", dName)
+				group := findGroup(dName)
+				if len(group) == 0 {
+					fmt.Println("no group found for song ", dName)
+					return nil
+				}
+				fmt.Printf("found group %s for song %s\n", group, dName)
+			}
+		}
 		return nil
 	})
 	return theMap
+}
+func findGroup(s string) string {
+	nameRegex := regexp.MustCompile("\\S?(\\w*)\\S")
+	group := nameRegex.FindString(s)
+	fmt.Printf(">%s<\n", group)
+	prim, _ := enc.Encode(group)
+	group, ok := tree.Get(prim)
+	if !ok {
+		fmt.Println("very bad")
+		return ""
+	}
+	return group
 }
 
 // go thru the map, sort by key
