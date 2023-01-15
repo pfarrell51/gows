@@ -4,40 +4,53 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/dlclark/metaphone3"
 	g "github.com/zyedidia/generic"
 	"github.com/zyedidia/generic/btree"
 	"io/fs"
 	"os"
+	"path"
 	"regexp"
-	"runtime"
-	"sort"
-	"strconv"
 	"strings"
+	"unicode"
 )
 
 var tree = btree.New[string, string](g.Less[string])
 var enc metaphone3.Encoder
-var extRegex = regexp.MustCompile(".((M|m)(p|P)3)|((M|m)(p|P)4)|((F|f)(L|l)(A|a)(C|c))")
+var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))")
 
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Printf("Usage: %s DIRNAME", os.Args[0])
 		os.Exit(1)
 	}
-	pathArg := os.Args[1]
+	loadMetaPhone()
+	pathArg := path.Clean(os.Args[1])
 	ProcessFiles(pathArg)
 }
 
 func ProcessFiles(pathArg string) {
-	loadMetaPhone()
 	rmap := walkFiles(pathArg)
 	processMap(rmap)
 }
+func justLetter(a string) string {
+	buff := bytes.Buffer{}
+	for _, c := range a {
+		if unicode.IsLetter(c) {
+			buff.WriteRune(c)
+		} else if c == '_' {
+			// ignore it
+		} else if c == '-' {
+			break
+		}
+	}
+	return buff.String()
+}
 func loadMetaPhone() {
-	albumNames := [...]string{"ABBA", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers", "Animals",
-		"Arlo_Guthrie", "Band_The", "Basia", "BeachBoys", "Beatles", "BlindFaith", "BloodSweatTears", "Boston",
+	groupNames := [...]string{"ABBA", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers", "Animals",
+		"Arlo_Guthrie", "Band", "Basia", "BeachBoys", "Beatles", "BlindFaith", "BloodSweatTears", "Boston",
 		"BrewerAndShipley", "BuffaloSpringfield", "Byrds", "CensorBeep.mp4", "Chesapeake",
 		"Cream", "Crosby_Stills_Nash",
 		"David_Bromberg", "Derek_Dominos", "Dire_Straits", "Doobie_Brothers", "Doors", "Dylan", "Elton_John",
@@ -48,11 +61,10 @@ func loadMetaPhone() {
 		"Roy_Orbison", "Santana", "Seals_Croft", "Seldom_Scene", "Simon_Garfunkel", "Steely_Dan",
 		"5th_Dimension", "TonyRice", "Traveling_Wilburys", "Who", "Yes",
 	}
-	for _, n := range albumNames {
-		prim, sec := enc.Encode(n)
+	for _, n := range groupNames {
+		prim, sec := enc.Encode(justLetter(n))
 		tree.Put(prim, n)
 		if len(sec) > 0 {
-			fmt.Printf("found a secondary: %s for %s\n", sec, n)
 			tree.Put(sec, n)
 		}
 	}
@@ -73,32 +85,43 @@ func walkFiles(pathArg string) map[string]string {
 			fmt.Println("d is nil")
 			return nil
 		}
-		dName := d.Name()
 		if strings.HasPrefix(p, ".") {
-			return nil
-		}
-		fmt.Println(p, d, dName)
-		ext := extRegex.FindString(p)
-		if len(ext) == 0 {
-			fmt.Println("no extension for ", p)
-			return nil
+			return nil // hidden, not interesting
 		}
 
-		prim, sec := enc.Encode(dName)
+		ext := extRegex.FindString(p)
+		if len(ext) == 0 {
+			return nil // not interesting extension
+		}
+		var addThe, cmd, group string
+		ps, pn := path.Split(p)
+		if strings.HasPrefix(pn, "The ") {
+			addThe = "The "
+			pn = pn[4:]
+		}
+		prim, sec := enc.Encode(justLetter(pn))
 		_, ok := tree.Get(prim)
-		if !ok {
-			fmt.Printf("Song %s did not find primary match for %s\n", dName, prim)
-			_, ok := tree.Get(sec)
+		if ok {
+			group = pn
+			theMap[prim] = pn
+			cmd = fmt.Sprintf("1mv '%s/%s'\n  -> '%s/+%s%s%s: - %s", pathArg, p,
+				pathArg, ps, addThe, group, pn)
+		} else {
+			_, ok = tree.Get(sec)
 			if !ok {
-				fmt.Println("no match for either primary or secondary ", dName)
-				group := findGroup(dName)
+				group = findGroup(pn)
 				if len(group) == 0 {
-					fmt.Println("no group found for song ", dName)
+					fmt.Println("no group found for song ", p)
 					return nil
 				}
-				fmt.Printf("found group %s for song %s\n", group, dName)
+				cmd = fmt.Sprintf("2mv '%s/%s'\n  -> '%s/+%s%s%s: - %s", pathArg, p,
+				pathArg, ps, addThe, group, pn)
 			}
 		}
+		if len(cmd) > 0 {
+			fmt.Println(cmd)
+		}
+
 		return nil
 	})
 	return theMap
@@ -119,29 +142,5 @@ func findGroup(s string) string {
 // go thru the map, sort by key
 // then create new ordering that makes sense to human
 func processMap(m map[string]string) map[string]string {
-	var cmd = "mv "
-	if runtime.GOOS == "windows" {
-		cmd = "ren "
-	}
-	keys := make([]string, 0, len(m)) // copy to a slice to sort
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	var firstChpt string
-	var cnum int
-	for _, k := range keys {
-		if cnum < 1 {
-			firstChpt = k[0:6]
-			c, _ := strconv.Atoi(k[6:8])
-			cnum = c
-		} else {
-			cnum++
-		}
-		source, _ := m[k]
-		delete(m, k)
-		m[k] = source
-		fmt.Printf("%s%s %2s%02d%4s.mp4\n", cmd, source, firstChpt[0:2], cnum, firstChpt[2:6])
-	}
 	return m
 }
