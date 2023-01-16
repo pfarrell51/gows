@@ -70,12 +70,18 @@ func loadMetaPhone() {
 	}
 }
 
+func processFile(pathArg string, fsys fs.FS, root string, d fs.DirEntry, err error) error {
+	fmt.Printf("pa: %s  p: %s, d: %v, \n", pathArg, fsys, root)
+	return nil
+}
+
 // walk all files, looking for nice GoPro created video files.
 // fill in a map keyed by the desired new name order
 func walkFiles(pathArg string) map[string]string {
 	theMap := make(map[string]string)
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
+		err = processFile(pathArg, fsys, p, d, err)
 		if err != nil {
 			fmt.Println("Error processing", p, " in ", d)
 			fmt.Println("error is ", err)
@@ -104,8 +110,8 @@ func walkFiles(pathArg string) map[string]string {
 		if ok {
 			group = pn
 			theMap[prim] = pn
-			cmd = fmt.Sprintf("1mv '%s/%s'\n  -> '%s/+%s%s%s: - %s", pathArg, p,
-				pathArg, ps, addThe, group, pn)
+			cmd = fmt.Sprintf("1mv '%s/%s'\n  -> '%s/%s%s%s", pathArg, p,
+				pathArg, ps, addThe, group)
 		} else {
 			_, ok = tree.Get(sec)
 			if !ok {
@@ -115,7 +121,7 @@ func walkFiles(pathArg string) map[string]string {
 					return nil
 				}
 				cmd = fmt.Sprintf("2mv '%s/%s'\n  -> '%s/+%s%s%s: - %s", pathArg, p,
-				pathArg, ps, addThe, group, pn)
+					pathArg, ps, addThe, group, pn)
 			}
 		}
 		if len(cmd) > 0 {
