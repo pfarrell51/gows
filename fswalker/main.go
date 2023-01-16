@@ -14,12 +14,9 @@ func main() {
 	}
 	pathArg := os.Args[1]
 
-	// TODO: list of skips or regex for skip or function call to check skip
-	//subDirToSkip := "skip"
 	fmt.Println(Files(pathArg))
 
 }
-
 func Files(path string) (count int) {
 	fsys := os.DirFS(path)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
