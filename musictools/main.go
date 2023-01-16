@@ -69,9 +69,50 @@ func loadMetaPhone() {
 		}
 	}
 }
-
-func processFile(pathArg string, fsys fs.FS, root string, d fs.DirEntry, err error) error {
-	fmt.Printf("pa: %s  p: %s, d: %v, \n", pathArg, fsys, root)
+// this is the local  WalkDirFunc called by WalkDir for each file
+// pathArg is the path to the base of our walk
+// p is the current path/name
+func processFile(pathArg string, theMap map[string]string, fsys fs.FS, p string, d fs.DirEntry, err error) error {
+	if err != nil {
+		fmt.Println("Error processing", p, " in ", d)
+		fmt.Println("error is ", err)
+		return nil
+	}
+	if d == nil || d.IsDir() || strings.HasPrefix(p, ".") {
+		return nil
+	}
+	ext := extRegex.FindString(p)
+	if len(ext) == 0 {
+		return nil // not interesting extension
+	}
+	var addThe, cmd, group string
+	ps, pn := path.Split(p)
+	if strings.HasPrefix(pn, "The ") {
+		addThe = "The "
+		pn = pn[4:]
+	}
+	prim, sec := enc.Encode(justLetter(pn))
+	_, ok := tree.Get(prim)
+	if ok {
+		group = pn
+		theMap[prim] = pn
+		cmd = fmt.Sprintf("1mv '%s/%s'\n  -> '%s/%s%s%s", pathArg, p,
+			pathArg, ps, addThe, group)
+	} else {
+		_, ok = tree.Get(sec)
+		if !ok {
+			group = findGroup(pn)
+			if len(group) == 0 {
+				fmt.Println("no group found for song ", p)
+				return nil
+			}
+			cmd = fmt.Sprintf("2mv '%s/%s'\n  -> '%s/+%s%s%s: - %s", pathArg, p,
+				pathArg, ps, addThe, group, pn)
+		}
+	}
+	if len(cmd) > 0 {
+		fmt.Println(cmd)
+	}
 	return nil
 }
 
@@ -81,53 +122,7 @@ func walkFiles(pathArg string) map[string]string {
 	theMap := make(map[string]string)
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		err = processFile(pathArg, fsys, p, d, err)
-		if err != nil {
-			fmt.Println("Error processing", p, " in ", d)
-			fmt.Println("error is ", err)
-			return nil
-		}
-		if d == nil {
-			fmt.Println("d is nil")
-			return nil
-		}
-		if strings.HasPrefix(p, ".") {
-			return nil // hidden, not interesting
-		}
-
-		ext := extRegex.FindString(p)
-		if len(ext) == 0 {
-			return nil // not interesting extension
-		}
-		var addThe, cmd, group string
-		ps, pn := path.Split(p)
-		if strings.HasPrefix(pn, "The ") {
-			addThe = "The "
-			pn = pn[4:]
-		}
-		prim, sec := enc.Encode(justLetter(pn))
-		_, ok := tree.Get(prim)
-		if ok {
-			group = pn
-			theMap[prim] = pn
-			cmd = fmt.Sprintf("1mv '%s/%s'\n  -> '%s/%s%s%s", pathArg, p,
-				pathArg, ps, addThe, group)
-		} else {
-			_, ok = tree.Get(sec)
-			if !ok {
-				group = findGroup(pn)
-				if len(group) == 0 {
-					fmt.Println("no group found for song ", p)
-					return nil
-				}
-				cmd = fmt.Sprintf("2mv '%s/%s'\n  -> '%s/+%s%s%s: - %s", pathArg, p,
-					pathArg, ps, addThe, group, pn)
-			}
-		}
-		if len(cmd) > 0 {
-			fmt.Println(cmd)
-		}
-
+		err = processFile(pathArg, theMap, fsys, p, d, err)
 		return nil
 	})
 	return theMap
