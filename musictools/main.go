@@ -19,7 +19,6 @@ import (
 	"unicode"
 )
 
-var songMap map[string]song
 var gptree = btree.New[string, string](g.Less[string])
 var enc metaphone3.Encoder
 var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))")
@@ -44,7 +43,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	songMap = make(map[string]song)
 	loadMetaPhone()
 	pathArg := path.Clean(os.Args[1])
 	ProcessFiles(pathArg)
@@ -88,6 +86,9 @@ func loadMetaPhone() {
 		}
 	}
 }
+
+// most of my music files have file names with the artist name, a hyphen and then the track title
+// so this pulls out the information and fills in the "song" object.
 func splitFilename(name string) *song {
 	var regMulti = regexp.MustCompile(nameP + divP)
 	var regPunch = regexp.MustCompile(divP)
@@ -120,7 +121,7 @@ func splitFilename(name string) *song {
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
 // p is the current path/name
-func processFile(pathArg string, fsys fs.FS, p string, d fs.DirEntry, err error) error {
+func processFile(pathArg string, sMap map[string]song, fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	if err != nil {
 		fmt.Println("Error processing", p, " in ", d)
 		fmt.Println("error is ", err)
@@ -134,32 +135,33 @@ func processFile(pathArg string, fsys fs.FS, p string, d fs.DirEntry, err error)
 		return nil // not interesting extension
 	}
 
-	var cmd string
 	ps, pn := path.Split(p)
 	aSong := splitFilename(pn)
 	aSong.path = path.Join(pathArg, ps, pn)
 
-	songMap[aSong.titleH] = *aSong 
-	cmd = fmt.Sprintf("%v", aSong)
-	if len(cmd) > 0 {
-		fmt.Println(cmd)
-	}
+	sMap[aSong.titleH] = *aSong
 	return nil
 }
 
 // walk all files, looking for nice GoPro created video files.
 // fill in a map keyed by the desired new name order
-func walkFiles(pathArg string) map[string]string {
+func walkFiles(pathArg string) map[string]song {
+	songMap := make(map[string]song)
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		err = processFile(pathArg, fsys, p, d, err)
+		err = processFile(pathArg, songMap, fsys, p, d, err)
 		return nil
 	})
-	return nil
+	return songMap
 }
 
 // go thru the map, sort by key
 // then create new ordering that makes sense to human
-func processMap(m map[string]string) map[string]string {
+func processMap(m map[string]song) map[string]song {
+	for _, aSong := range m {
+		if aSong.artist == "" {
+			fmt.Println(aSong.path)
+		}
+	}
 	return m
 }
