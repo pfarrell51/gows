@@ -17,7 +17,7 @@ import (
 	"unicode"
 )
 
-var tree = btree.New[string, string](g.Less[string])
+var gptree = btree.New[string, string](g.Less[string])
 var enc metaphone3.Encoder
 var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))")
 
@@ -63,16 +63,17 @@ func loadMetaPhone() {
 	}
 	for _, n := range groupNames {
 		prim, sec := enc.Encode(justLetter(n))
-		tree.Put(prim, n)
+		gptree.Put(prim, n)
 		if len(sec) > 0 {
-			tree.Put(sec, n)
+			gptree.Put(sec, n)
 		}
 	}
 }
+
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
 // p is the current path/name
-func processFile(pathArg string, theMap map[string]string, fsys fs.FS, p string, d fs.DirEntry, err error) error {
+func processFile(pathArg string, fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	if err != nil {
 		fmt.Println("Error processing", p, " in ", d)
 		fmt.Println("error is ", err)
@@ -85,31 +86,16 @@ func processFile(pathArg string, theMap map[string]string, fsys fs.FS, p string,
 	if len(ext) == 0 {
 		return nil // not interesting extension
 	}
-	var addThe, cmd, group string
+	var addThe, cmd string
 	ps, pn := path.Split(p)
 	if strings.HasPrefix(pn, "The ") {
 		addThe = "The "
 		pn = pn[4:]
 	}
-	prim, sec := enc.Encode(justLetter(pn))
-	_, ok := tree.Get(prim)
-	if ok {
-		group = pn
-		theMap[prim] = pn
-		cmd = fmt.Sprintf("1mv '%s/%s'\n  -> '%s/%s%s%s", pathArg, p,
-			pathArg, ps, addThe, group)
-	} else {
-		_, ok = tree.Get(sec)
-		if !ok {
-			group = findGroup(pn)
-			if len(group) == 0 {
-				fmt.Println("no group found for song ", p)
-				return nil
-			}
-			cmd = fmt.Sprintf("2mv '%s/%s'\n  -> '%s/+%s%s%s: - %s", pathArg, p,
-				pathArg, ps, addThe, group, pn)
-		}
-	}
+	
+	group := findGroup(pn)
+	cmd = fmt.Sprintf("1mv '%s/%s'\n  -> '%s/%s%s%s", pathArg, p, pn, addThe, ps, group)
+
 	if len(cmd) > 0 {
 		fmt.Println(cmd)
 	}
@@ -119,22 +105,21 @@ func processFile(pathArg string, theMap map[string]string, fsys fs.FS, p string,
 // walk all files, looking for nice GoPro created video files.
 // fill in a map keyed by the desired new name order
 func walkFiles(pathArg string) map[string]string {
-	theMap := make(map[string]string)
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		err = processFile(pathArg, theMap, fsys, p, d, err)
+		err = processFile(pathArg, fsys, p, d, err)
 		return nil
 	})
-	return theMap
+	return nil
 }
 func findGroup(s string) string {
 	nameRegex := regexp.MustCompile("\\S?(\\w*)\\S")
 	group := nameRegex.FindString(s)
 	fmt.Printf(">%s<\n", group)
 	prim, _ := enc.Encode(group)
-	group, ok := tree.Get(prim)
+	group, ok := gptree.Get(prim)
 	if !ok {
-		fmt.Println("very bad")
+		fmt.Printf("very bad, add %s to group list\n", s)
 		return ""
 	}
 	return group
