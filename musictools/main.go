@@ -21,6 +21,20 @@ var gptree = btree.New[string, string](g.Less[string])
 var enc metaphone3.Encoder
 var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))")
 
+const nameP = "(([0-9A-Za-z]*)\\s*)*"
+const divP = "-+"
+
+type song struct {
+	artist  string
+	artistH string
+	artistHasThe bool 
+	album   string
+	albumH  string
+	title   string
+	titleH  string
+	path    string
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Printf("Usage: %s DIRNAME", os.Args[0])
@@ -69,6 +83,31 @@ func loadMetaPhone() {
 		}
 	}
 }
+func splitFilename(name string) *song {
+	var regMulti = regexp.MustCompile(nameP + divP)
+	var regPunch = regexp.MustCompile(divP)
+	var rval = new(song)
+	nameB := []byte(strings.Trim(name, " 	_"))
+	fmt.Printf("full name %s\n", nameB)
+	punchS := regPunch.Find(nameB)
+	if punchS != nil {
+		groupS := regMulti.Find(nameB)
+		if groupS == nil {
+			fmt.Println("PIB, group empty ", groupS)
+			return rval
+		}
+		songN := strings.Trim(name[len(groupS):], " 	_")
+		rval.title = songN
+		rval.titleH, _ = enc.Encode(justLetter(songN))
+		rval.artist = string(groupS[0:len(groupS)-2])
+		if strings.HasPrefix(rval.artist, "The ") {
+			rval.artistHasThe = true
+			rval.artist = rval.artist[4:]
+		}
+		rval.artistH, _ = enc.Encode(justLetter(rval.artist))
+	}
+	return rval
+}
 
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
@@ -86,16 +125,12 @@ func processFile(pathArg string, fsys fs.FS, p string, d fs.DirEntry, err error)
 	if len(ext) == 0 {
 		return nil // not interesting extension
 	}
-	var addThe, cmd string
-	ps, pn := path.Split(p)
-	if strings.HasPrefix(pn, "The ") {
-		addThe = "The "
-		pn = pn[4:]
-	}
-	
-	group := findGroup(pn)
-	cmd = fmt.Sprintf("1mv '%s/%s'\n  -> '%s/%s%s%s", pathArg, p, pn, addThe, ps, group)
 
+	var cmd string
+	ps, pn := path.Split(p)
+	aSong := splitFilename(pn)
+	aSong.path = path.Join(pathArg, ps, pn)
+	cmd = fmt.Sprintf("1mv '%s' -> '%s/%s", aSong.path,  aSong.artist, aSong.title )
 	if len(cmd) > 0 {
 		fmt.Println(cmd)
 	}
