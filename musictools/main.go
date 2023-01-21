@@ -7,6 +7,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"github.com/dlclark/metaphone3"
 	g "github.com/zyedidia/generic"
@@ -22,6 +23,7 @@ import (
 var gptree = btree.New[string, string](g.Less[string])
 var enc metaphone3.Encoder
 var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))")
+var doRename bool
 
 const nameP = "(([0-9A-Za-z]*)\\s*)*"
 const divP = "-+"
@@ -42,9 +44,10 @@ func main() {
 		fmt.Printf("Usage: %s DIRNAME", os.Args[0])
 		os.Exit(1)
 	}
-
+	flag.BoolVar(&doRename, "rename",  false, "perform rename function on needed files")
+	flag.Parse()
 	loadMetaPhone()
-	pathArg := path.Clean(os.Args[1])
+	pathArg := path.Clean(flag.Arg(0))
 	ProcessFiles(pathArg)
 }
 
