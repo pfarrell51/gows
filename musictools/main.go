@@ -44,7 +44,7 @@ func main() {
 		fmt.Printf("Usage: %s DIRNAME", os.Args[0])
 		os.Exit(1)
 	}
-	flag.BoolVar(&doRename, "rename",  false, "perform rename function on needed files")
+	flag.BoolVar(&doRename, "rename", false, "perform rename function on needed files")
 	flag.Parse()
 	loadMetaPhone()
 	pathArg := path.Clean(flag.Arg(0))
@@ -96,7 +96,7 @@ func splitFilename(name string) *song {
 	var regMulti = regexp.MustCompile(nameP + divP)
 	var regPunch = regexp.MustCompile(divP)
 	var rval = new(song)
-	nameB := []byte(strings.Trim(name, " 	_"))
+	nameB := []byte(strings.TrimSpace(name))
 	punchS := regPunch.Find(nameB)
 	if punchS == nil {
 		// no group
@@ -109,7 +109,7 @@ func splitFilename(name string) *song {
 		fmt.Println("PIB, group empty ", groupS)
 		return rval
 	}
-	songN := strings.Trim(name[len(groupS):], " 	_")
+	songN := strings.TrimSpace(name[len(groupS):])
 	rval.title = songN
 	rval.titleH, _ = enc.Encode(justLetter(songN))
 	rval.artist = string(groupS[0 : len(groupS)-2])
