@@ -8,6 +8,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"github.com/dhowden/tag"
 	"github.com/dlclark/metaphone3"
@@ -36,17 +37,18 @@ var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 const divP = "-+"
 
 var dashRegex = regexp.MustCompile(divP)
-
+var doRename bool
 var songMap map[string]song
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("Usage: %s DIRNAME", os.Args[0])
+		fmt.Printf("Usage: %s DIRNAME\n", os.Args[0])
 		os.Exit(1)
 	}
-
+	flag.BoolVar(&doRename, "rename", false, "perform rename function on needed files")
+	flag.Parse()
 	songMap = make(map[string]song)
-	pathArg := path.Clean(os.Args[1])
+	pathArg := path.Clean(flag.Arg(0))
 	ProcessFiles(pathArg)
 }
 
