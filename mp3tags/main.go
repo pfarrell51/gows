@@ -102,14 +102,15 @@ func whichSong(sn *song) *song {
 
 	m, err := tag.ReadFrom(file)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("%v %s", err, sn.title)
+		return sn
 	}
 	sn.title = m.Title() // The title of the track (see Metadata interface for more details).
 	if sn.title == "" {
 		_, filename := path.Split(sn.path)
 		punchIdx := dashRegex.FindStringIndex(filename)
 		if punchIdx != nil {
-			sn.title = strings.Trim(filename[punchIdx[1]:], " 	")
+			sn.title = strings.TrimSpace(filename[punchIdx[1]:])
 		}
 	}
 	sn.titleH, _ = enc.Encode(justLetter(sn.title))
