@@ -26,7 +26,7 @@ var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))")
 var doRename bool
 
 const nameP = "(([0-9A-Za-z]*)\\s*)*"
-const divP = "-+"
+const divP = " -+"	// want space for names like Led Zeppelin - Bron-Yr-Aur
 
 type song struct {
 	artist       string

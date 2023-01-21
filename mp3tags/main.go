@@ -34,7 +34,7 @@ type song struct {
 var enc metaphone3.Encoder
 var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 
-const divP = "-+"
+const divP = " -+"	     // want space for names like Led Zeppelin - Bron-Yr-Aur
 
 var dashRegex = regexp.MustCompile(divP)
 var doRename bool
