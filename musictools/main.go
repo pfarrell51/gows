@@ -22,7 +22,6 @@ import (
 
 var gptree = btree.New[string, string](g.Less[string])
 var enc metaphone3.Encoder
-var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))")
 var doRename bool
 
 const nameP = "(([0-9A-Za-z]*)\\s*)*"
@@ -98,11 +97,11 @@ func loadMetaPhone() {
 	}
 }
 
+	var regMulti = regexp.MustCompile(nameP + divP)
+	var regPunch = regexp.MustCompile(divP)
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "song" object.
 func splitFilename(name string) *song {
-	var regMulti = regexp.MustCompile(nameP + divP)
-	var regPunch = regexp.MustCompile(divP)
 	var rval = new(song)
 	nameB := []byte(strings.TrimSpace(name))
 	punchS := regPunch.Find(nameB)
@@ -129,6 +128,7 @@ func splitFilename(name string) *song {
 	return rval
 }
 
+var extRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
 // p is the current path/name
@@ -141,13 +141,16 @@ func processFile(pathArg string, sMap map[string]song, fsys fs.FS, p string, d f
 	if d == nil || d.IsDir() || strings.HasPrefix(p, ".") {
 		return nil
 	}
+	ext := path.Ext(p)
+	if len(ext) == 0   {
+		return nil // not interesting extension
+	}
 	extR := extRegex.FindStringIndex(p)
 	if extR == nil {
 		return nil // not interesting extension
 	}
-	ext := p[extR[0]:extR[1]]
-	ps, pn := path.Split(p[:extR[0]])
-	fmt.Println(pn)
+	shortp := p[0:extR[0]-1]
+	ps, pn := path.Split(shortp)
 	aSong := splitFilename(pn)
 	aSong.ext = ext
 	aSong.path = path.Join(pathArg, ps, pn) + ext
