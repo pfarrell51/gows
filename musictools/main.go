@@ -26,7 +26,7 @@ var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))")
 var doRename bool
 
 const nameP = "(([0-9A-Za-z]*)\\s*)*"
-const divP = " -+"	// want space for names like Led Zeppelin - Bron-Yr-Aur
+const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
 
 type song struct {
 	artist       string
@@ -37,12 +37,20 @@ type song struct {
 	title        string
 	titleH       string
 	path         string
+	ext	     string
 }
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("Usage: %s DIRNAME", os.Args[0])
+		fmt.Printf("Usage: %s [flags] directory-spec\n", os.Args[0])
 		os.Exit(1)
+	}
+	flag.Usage = func() {
+		w := flag.CommandLine.Output() // may be os.Stderr - but not necessarily
+		fmt.Fprintf(w, "Usage of %s: [flags] directory-spec \n", os.Args[0])
+		flag.PrintDefaults()
+		fmt.Fprintf(w, "default is to list files that need love.\n")
+
 	}
 	flag.BoolVar(&doRename, "rename", false, "perform rename function on needed files")
 	flag.Parse()
@@ -133,14 +141,16 @@ func processFile(pathArg string, sMap map[string]song, fsys fs.FS, p string, d f
 	if d == nil || d.IsDir() || strings.HasPrefix(p, ".") {
 		return nil
 	}
-	ext := extRegex.FindString(p)
-	if len(ext) == 0 {
+	extR := extRegex.FindStringIndex(p)
+	if extR == nil {
 		return nil // not interesting extension
 	}
-
-	ps, pn := path.Split(p)
+	ext := p[extR[0]:extR[1]]
+	ps, pn := path.Split(p[:extR[0]])
+	fmt.Println(pn)
 	aSong := splitFilename(pn)
-	aSong.path = path.Join(pathArg, ps, pn)
+	aSong.ext = ext
+	aSong.path = path.Join(pathArg, ps, pn) + ext
 
 	sMap[aSong.titleH] = *aSong
 	return nil
@@ -162,8 +172,12 @@ func walkFiles(pathArg string) map[string]song {
 // then create new ordering that makes sense to human
 func processMap(m map[string]song) map[string]song {
 	for _, aSong := range m {
-		if aSong.artist == "" {
-			fmt.Println(aSong.path)
+		if !doRename {
+			if aSong.artist == "" {
+				fmt.Println(aSong.path)
+			}
+		} else {
+			fmt.Printf("mv '%s' '%s: %s%s'\n", aSong.path, aSong.title, aSong.artist, aSong.ext)
 		}
 	}
 	return m
