@@ -114,6 +114,7 @@ const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
 var regMulti = regexp.MustCompile(nameP + divP)
 var regPunch = regexp.MustCompile(divP)
 var newStyle = regexp.MustCompile(":\\s")
+var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
 
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "song" object.
@@ -137,6 +138,10 @@ func splitFilename(ps, pn string) *song {
 		}
 	default:
 		// fall thru, old style
+		sortKey := sortKeyExp.Find(nameB)		// cut out leading "X_"
+		if len(sortKey) > 0 {
+			nameB = nameB[2:]
+		}
 		groupS := regMulti.Find(nameB)
 		if groupS == nil {
 			fmt.Println("PIB, group empty ", groupS)
