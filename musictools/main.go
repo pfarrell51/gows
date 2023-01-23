@@ -40,6 +40,7 @@ type song struct {
 }
 
 func init() {
+	enc.MaxLength = 24
 	loadMetaPhone()
 }
 func main() {
@@ -59,18 +60,6 @@ func main() {
 	flag.BoolVar(&noGroup, "n", false, "nogroup - `list files that do not have an artist/group in the title")
 	flag.Parse()
 
-	fc := 0
-	switch {
-	case doRename:
-		fc++
-	case justList:
-		fc++
-	case noGroup:
-		fc++
-	}
-	if fc > 1 {
-		fmt.Printf("too many flags speciied: %d, only one at a time allowed", fc)
-	}
 	pathArg := path.Clean(flag.Arg(0))
 	ProcessFiles(pathArg)
 }
@@ -118,33 +107,44 @@ const nameP = "(([0-9A-Za-z]*)\\s*)*"
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
 var regMulti = regexp.MustCompile(nameP + divP)
 var regPunch = regexp.MustCompile(divP)
+var newStyle = regexp.MustCompile(":\\s")
 
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "song" object.
 func splitFilename(ps, pn string) *song {
 	var rval = new(song)
 	nameB := []byte(strings.TrimSpace(pn))
-	punchS := regPunch.Find(nameB)
-	if punchS == nil {
+	punctS := regPunch.FindIndex(nameB)
+	newStyleS := newStyle.FindIndex(nameB)
+	var groupN, songN string
+	switch {
+	case punctS == nil:
 		// no punct => no group. Use what you have as song title
 		rval.title = strings.TrimSpace(pn)
 		rval.titleH, _ = enc.Encode(justLetter(rval.title))
 		if len(ps) > 1 {
-			fmt.Printf("g: %s t: %s\n", ps, rval.title)
+			fmt.Printf("no punct g: %s t: %s\n", ps, rval.title)
 			rval.inArtistDirectory = true
 			rval.artist = ps
 		}
 		return rval
+	case newStyleS != nil:
+		fmt.Printf("Yay  %s\n", ps+pn)
+		groupN = string(nameB[:newStyleS[1]])
+		songN = strings.TrimSpace(string(nameB[newStyleS[1]:]))
+	default:
+		// fall thru, old style
+		groupS := regMulti.Find(nameB)
+		if groupS == nil {
+			fmt.Println("PIB, group empty ", groupS)
+			return rval
+		}
+		groupN = strings.TrimSpace(string(groupS[:len(groupS)-2]))
+		songN = strings.TrimSpace(pn[punctS[1]:])
 	}
-	groupS := regMulti.Find(nameB)
-	if groupS == nil {
-		fmt.Println("PIB, group empty ", groupS)
-		return rval
-	}
-	songN := string(nameB)
 	rval.title = songN
 	rval.titleH, _ = enc.Encode(justLetter(songN))
-	rval.artist = string(groupS[0 : len(groupS)-2])
+	rval.artist = groupN
 	if strings.HasPrefix(rval.artist, "The ") {
 		rval.artistHasThe = true
 		rval.artist = rval.artist[4:]
@@ -180,7 +180,11 @@ func processFile(pathArg string, sMap map[string]song, fsys fs.FS, p string, d f
 	aSong := splitFilename(ps, pn)
 	aSong.ext = ext
 	aSong.path = path.Join(pathArg, ps, pn) + ext
-
+	v := sMap[aSong.titleH]
+	if len(v.titleH) > 0 {
+		fmt.Printf("existing song for %s %s == %s\n", aSong.path, aSong.title, v.title)
+		return nil
+	}
 	sMap[aSong.titleH] = *aSong
 	return nil
 }
@@ -210,7 +214,7 @@ func processMap(m map[string]song) map[string]song {
 			fmt.Printf("%s\n", aSong.path)
 		case noGroup:
 			if aSong.artist == "" {
-				fmt.Printf("no artist/group in title %s\n", aSong.path)
+				fmt.Printf("no artist/group %s\n", aSong.path)
 			}
 		default:
 			fmt.Printf("default %s\n", aSong.path)
