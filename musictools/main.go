@@ -72,7 +72,7 @@ func main() {
 
 func ProcessFiles(pathArg string) {
 	rmap := walkFiles(pathArg)
-	processMap(rmap)
+	processMap(pathArg, rmap)
 }
 func justLetter(a string) string {
 	buff := bytes.Buffer{}
@@ -98,7 +98,7 @@ func loadMetaPhone() {
 		"Led_Zepplin", "Linda_Ronstadt", "Lynyrd_Skynyrd", "Mamas_Popas", "Meatloaf", "Mike_Auldridge",
 		"New_Riders_Purple_Sage", "Pablo_Cruise", "Paul_Simon", "Peter_Paul_Mary", "Rolling_Stones",
 		"Roy_Orbison", "Santana", "Seals_Croft", "Seldom_Scene", "Simon_Garfunkel", "Steely_Dan",
-		"5th_Dimension", "TonyRice", "Traveling_Wilburys", "Who", "Yes",
+		"Steven_Stills", "5th_Dimension", "TonyRice", "Traveling_Wilburys", "Who", "Yes",
 	}
 	for _, n := range groupNames {
 		prim, sec := enc.Encode(justLetter(n))
@@ -213,15 +213,21 @@ func walkFiles(pathArg string) map[string]song {
 
 // go thru the map, sort by key
 // then create new ordering that makes sense to human
-func processMap(m map[string]song) map[string]song {
+func processMap(pathArg string, m map[string]song) map[string]song {
 	uniqueArtists := make(map[string]bool)
 
 	for _, aSong := range m {
 		switch {
 		case doRename:
 			if aSong.artist == "" {
-				fmt.Printf("rename artist is blank %s\n", aSong.path)
+				fmt.Printf("#rename artist is blank %s\n", aSong.path)
+				continue
 			}
+			if aSong.artistInDirectory {
+				continue
+			}
+			fmt.Printf("mv '%s' '%s/%s: %s%s'\n", aSong.path, 
+				pathArg, aSong.artist, aSong.title, aSong.ext)
 		case justList:
 			the := ""
 			if aSong.artistHasThe {
