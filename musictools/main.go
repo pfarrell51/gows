@@ -9,15 +9,18 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/dlclark/metaphone3"
-	g "github.com/zyedidia/generic"
-	"github.com/zyedidia/generic/btree"
 	"io/fs"
 	"os"
 	"path"
 	"regexp"
 	"strings"
 	"unicode"
+
+	"github.com/dlclark/metaphone3"
+	g "github.com/zyedidia/generic"
+	"github.com/zyedidia/generic/btree"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var gptree = btree.New[string, string](g.Less[string])
@@ -87,7 +90,7 @@ func justLetter(a string) string {
 func loadMetaPhone() {
 	groupNames := [...]string{"ABBA", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers", "Animals",
 		"Arlo_Guthrie", "Band", "Basia", "BeachBoys", "Beatles", "BlindFaith", "BloodSweatTears", "Boston",
-		"BrewerAndShipley", "BuffaloSpringfield", "Byrds", "CensorBeep.mp4", "Chesapeake",
+		"BrewerAndShipley", "BuffaloSpringfield", "Byrds", "Chesapeake",
 		"Cream", "Crosby_Stills_Nash",
 		"David_Bromberg", "Derek_Dominos", "Dire_Straits", "Doobie_Brothers", "Doors", "Dylan", "Elton_John",
 		"Emmylou_Harris", "Fleetwood_Mac", "Heart", "James_Taylor", "Jefferson_Airplane", "Jethro_Tull",
@@ -130,6 +133,7 @@ func splitFilename(ps, pn string) *song {
 		if len(ps) > 1 {
 			rval.artistInDirectory = true
 			groupN = ps[:len(ps)-1]
+			groupN = cases.Title(language.English, cases.NoLower).String(groupN)
 		}
 	default:
 		// fall thru, old style
