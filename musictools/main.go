@@ -118,20 +118,17 @@ func splitFilename(ps, pn string) *song {
 	newStyleS := newStyle.FindIndex(nameB)
 	var groupN, songN string
 	switch {
+	case newStyleS != nil:
+		groupN = string(nameB[:newStyleS[1]])
+		songN = strings.TrimSpace(string(nameB[newStyleS[1]:]))
 	case punctS == nil:
 		// no punct => no group. Use what you have as song title
-		rval.title = strings.TrimSpace(pn)
-		rval.titleH, _ = enc.Encode(justLetter(rval.title))
+		songN = strings.TrimSpace(pn)
 		if len(ps) > 1 {
 			fmt.Printf("no punct g: %s t: %s\n", ps, rval.title)
 			rval.inArtistDirectory = true
-			rval.artist = ps
+			groupN = ps
 		}
-		return rval
-	case newStyleS != nil:
-		fmt.Printf("Yay  %s\n", ps+pn)
-		groupN = string(nameB[:newStyleS[1]])
-		songN = strings.TrimSpace(string(nameB[newStyleS[1]:]))
 	default:
 		// fall thru, old style
 		groupS := regMulti.Find(nameB)
@@ -211,7 +208,7 @@ func processMap(m map[string]song) map[string]song {
 				fmt.Printf("rename artist is blank %s\n", aSong.path)
 			}
 		case justList:
-			fmt.Printf("%s\n", aSong.path)
+			fmt.Printf("%s by %s\n", aSong.title, aSong.artist)
 		case noGroup:
 			if aSong.artist == "" {
 				fmt.Printf("no artist/group %s\n", aSong.path)
