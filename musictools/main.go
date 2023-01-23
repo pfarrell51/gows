@@ -23,22 +23,25 @@ import (
 var gptree = btree.New[string, string](g.Less[string])
 var enc metaphone3.Encoder
 var doRename bool
-
-const nameP = "(([0-9A-Za-z]*)\\s*)*"
-const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
+var justList bool
+var noGroup bool
 
 type song struct {
-	artist       string
-	artistH      string
-	artistHasThe bool
-	album        string
-	albumH       string
-	title        string
-	titleH       string
-	path         string
-	ext	     string
+	artist            string
+	artistH           string
+	artistHasThe      bool
+	inArtistDirectory bool
+	album             string
+	albumH            string
+	title             string
+	titleH            string
+	path              string
+	ext               string
 }
 
+func init() {
+	loadMetaPhone()
+}
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Printf("Usage: %s [flags] directory-spec\n", os.Args[0])
@@ -51,9 +54,23 @@ func main() {
 		fmt.Fprintf(w, "default is to list files that need love.\n")
 
 	}
-	flag.BoolVar(&doRename, "rename", false, "perform rename function on needed files")
+	flag.BoolVar(&doRename, "r", false, "rename - perform rename function on needed files")
+	flag.BoolVar(&justList, "l", false, "list - `list files")
+	flag.BoolVar(&noGroup, "n", false, "nogroup - `list files that do not have an artist/group in the title")
 	flag.Parse()
-	loadMetaPhone()
+
+	fc := 0
+	switch {
+	case doRename:
+		fc++
+	case justList:
+		fc++
+	case noGroup:
+		fc++
+	}
+	if fc > 1 {
+		fmt.Printf("too many flags speciied: %d, only one at a time allowed", fc)
+	}
 	pathArg := path.Clean(flag.Arg(0))
 	ProcessFiles(pathArg)
 }
@@ -97,18 +114,26 @@ func loadMetaPhone() {
 	}
 }
 
-	var regMulti = regexp.MustCompile(nameP + divP)
-	var regPunch = regexp.MustCompile(divP)
+const nameP = "(([0-9A-Za-z]*)\\s*)*"
+const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
+var regMulti = regexp.MustCompile(nameP + divP)
+var regPunch = regexp.MustCompile(divP)
+
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "song" object.
-func splitFilename(name string) *song {
+func splitFilename(ps, pn string) *song {
 	var rval = new(song)
-	nameB := []byte(strings.TrimSpace(name))
+	nameB := []byte(strings.TrimSpace(pn))
 	punchS := regPunch.Find(nameB)
 	if punchS == nil {
-		// no group
-		rval.title = name
-		rval.titleH, _ = enc.Encode(justLetter(name))
+		// no punct => no group. Use what you have as song title
+		rval.title = strings.TrimSpace(pn)
+		rval.titleH, _ = enc.Encode(justLetter(rval.title))
+		if len(ps) > 1 {
+			fmt.Printf("g: %s t: %s\n", ps, rval.title)
+			rval.inArtistDirectory = true
+			rval.artist = ps
+		}
 		return rval
 	}
 	groupS := regMulti.Find(nameB)
@@ -116,7 +141,7 @@ func splitFilename(name string) *song {
 		fmt.Println("PIB, group empty ", groupS)
 		return rval
 	}
-	songN := strings.TrimSpace(name[len(groupS):])
+	songN := string(nameB)
 	rval.title = songN
 	rval.titleH, _ = enc.Encode(justLetter(songN))
 	rval.artist = string(groupS[0 : len(groupS)-2])
@@ -129,6 +154,7 @@ func splitFilename(name string) *song {
 }
 
 var extRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
+
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
 // p is the current path/name
@@ -142,16 +168,16 @@ func processFile(pathArg string, sMap map[string]song, fsys fs.FS, p string, d f
 		return nil
 	}
 	ext := path.Ext(p)
-	if len(ext) == 0   {
+	if len(ext) == 0 {
 		return nil // not interesting extension
 	}
 	extR := extRegex.FindStringIndex(p)
 	if extR == nil {
 		return nil // not interesting extension
 	}
-	shortp := p[0:extR[0]-1]
+	shortp := p[0 : extR[0]-1]
 	ps, pn := path.Split(shortp)
-	aSong := splitFilename(pn)
+	aSong := splitFilename(ps, pn)
 	aSong.ext = ext
 	aSong.path = path.Join(pathArg, ps, pn) + ext
 
@@ -175,12 +201,19 @@ func walkFiles(pathArg string) map[string]song {
 // then create new ordering that makes sense to human
 func processMap(m map[string]song) map[string]song {
 	for _, aSong := range m {
-		if !doRename {
+		switch {
+		case doRename:
 			if aSong.artist == "" {
-				fmt.Println(aSong.path)
+				fmt.Printf("rename artist is blank %s\n", aSong.path)
 			}
-		} else {
-			fmt.Printf("mv '%s' '%s: %s%s'\n", aSong.path, aSong.title, aSong.artist, aSong.ext)
+		case justList:
+			fmt.Printf("%s\n", aSong.path)
+		case noGroup:
+			if aSong.artist == "" {
+				fmt.Printf("no artist/group in title %s\n", aSong.path)
+			}
+		default:
+			fmt.Printf("default %s\n", aSong.path)
 		}
 	}
 	return m
