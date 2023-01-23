@@ -22,6 +22,7 @@ import (
 
 var gptree = btree.New[string, string](g.Less[string])
 var enc metaphone3.Encoder
+var showArtistNotInMap bool
 var doRename bool
 var justList bool
 var noGroup bool
@@ -30,7 +31,8 @@ type song struct {
 	artist            string
 	artistH           string
 	artistHasThe      bool
-	inArtistDirectory bool
+	artistInDirectory bool
+	artistKnown       bool
 	album             string
 	albumH            string
 	title             string
@@ -55,9 +57,10 @@ func main() {
 		fmt.Fprintf(w, "default is to list files that need love.\n")
 
 	}
-	flag.BoolVar(&doRename, "r", false, "rename - perform rename function on needed files")
+	flag.BoolVar(&showArtistNotInMap, "a", false, "artist map  list artist not in gpmap")
 	flag.BoolVar(&justList, "l", false, "list - `list files")
 	flag.BoolVar(&noGroup, "n", false, "nogroup - `list files that do not have an artist/group in the title")
+	flag.BoolVar(&doRename, "r", false, "rename - perform rename function on needed files")
 	flag.Parse()
 
 	pathArg := path.Clean(flag.Arg(0))
@@ -119,15 +122,14 @@ func splitFilename(ps, pn string) *song {
 	var groupN, songN string
 	switch {
 	case newStyleS != nil:
-		groupN = string(nameB[:newStyleS[1]])
-		songN = strings.TrimSpace(string(nameB[newStyleS[1]:]))
+		groupN = string(nameB[newStyleS[1]:])
+		songN = strings.TrimSpace(string(nameB[:newStyleS[0]]))
 	case punctS == nil:
 		// no punct => no group. Use what you have as song title
 		songN = strings.TrimSpace(pn)
 		if len(ps) > 1 {
-			fmt.Printf("no punct g: %s t: %s\n", ps, rval.title)
-			rval.inArtistDirectory = true
-			groupN = ps
+			rval.artistInDirectory = true
+			groupN = ps[:len(ps)-1]
 		}
 	default:
 		// fall thru, old style
@@ -136,17 +138,19 @@ func splitFilename(ps, pn string) *song {
 			fmt.Println("PIB, group empty ", groupS)
 			return rval
 		}
-		groupN = strings.TrimSpace(string(groupS[:len(groupS)-2]))
+		groupN = string(groupS[:len(groupS)-2])
 		songN = strings.TrimSpace(pn[punctS[1]:])
 	}
 	rval.title = songN
 	rval.titleH, _ = enc.Encode(justLetter(songN))
-	rval.artist = groupN
+	rval.artist = strings.TrimSpace(groupN)
 	if strings.HasPrefix(rval.artist, "The ") {
 		rval.artistHasThe = true
 		rval.artist = rval.artist[4:]
 	}
 	rval.artistH, _ = enc.Encode(justLetter(rval.artist))
+	_, ok := gptree.Get(rval.artistH)
+	rval.artistKnown = ok
 	return rval
 }
 
@@ -201,6 +205,8 @@ func walkFiles(pathArg string) map[string]song {
 // go thru the map, sort by key
 // then create new ordering that makes sense to human
 func processMap(m map[string]song) map[string]song {
+	uniqueArtists := make(map[string]bool)
+
 	for _, aSong := range m {
 		switch {
 		case doRename:
@@ -208,13 +214,23 @@ func processMap(m map[string]song) map[string]song {
 				fmt.Printf("rename artist is blank %s\n", aSong.path)
 			}
 		case justList:
-			fmt.Printf("%s by %s\n", aSong.title, aSong.artist)
+			the := ""
+			if aSong.artistHasThe {
+				the = "The "
+			}
+			fmt.Printf("%s by %s%s\n", aSong.title, the, aSong.artist)
+		case showArtistNotInMap && !aSong.artistKnown:
+			uniqueArtists[aSong.artist] = true
 		case noGroup:
 			if aSong.artist == "" {
-				fmt.Printf("no artist/group %s\n", aSong.path)
+				fmt.Printf("nogroup %s\n", aSong.path)
 			}
 		default:
-			fmt.Printf("default %s\n", aSong.path)
+		}
+	}
+	if showArtistNotInMap {
+		for k, _ := range uniqueArtists {
+			fmt.Printf("addto map k: %s\n", k)
 		}
 	}
 	return m
