@@ -97,9 +97,10 @@ func justLetter(a string) string {
 }
 func loadMetaPhone() {
 	groupNames := [...]string{
-		"5th_Dimension", "ABBA", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers",
-		"Animals", "Aretha Franklin", "Arlo_Guthrie", "Association", "Band", "Basia",
-		"BeachBoys", "Beatles", "BlindFaith", "BloodSweatTears", "Boston", "Box Tops",
+		"5th_Dimension", "ABBA", "Alice Cooper", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers",
+		"Animals", "Aretha Franklin", "Arlo_Guthrie", "Association", "Average White Band", "Band", "Basia",
+		"BeachBoys", "Beatles", "Bee Gees", "Billy Joel", "BlindFaith", "BloodSweatTears",
+		"Blue Oyster Cult", "Boston", "Box Tops", "Bread",
 		"Brewer and Shipley", "Brewer & Shipley", "BuffaloSpringfield", "Byrds",
 		"Carole King", "Carpenters", "Cheap Trick", "Chesapeake", "Cream", "Crosby & Nash",
 		"Crosby and Nash", "Crosby Stills And Nash", "Crosby_Stills_Nash_Young", "David Allan Coe",
