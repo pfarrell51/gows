@@ -106,20 +106,23 @@ func loadMetaPhone() {
 		"David Bowie", "David_Bromberg", "Deep Purple", "Derek and the Dominos",
 		"Derek_Dominos", "Detroit Wheels",
 		"Dire_Straits", "Doc Watson", "Don McLean", "Doobie_Brothers", "Doors", "Dylan",
-		"Elton_John", "Emmylou_Harris", "Fifth Dimension", "Fleetwood_Mac", "Genesis",
-		"George Harrison", "Graham Nash", "Hall and Oates", "Heart", "Isley Brothers",
-		"Jackie Wilson", "Jackson Browne",
+		"Elton_John", "Emerson, Lake & Palmer", "Emmylou_Harris", "Fifth Dimension",
+		"Fleetwood_Mac", "Genesis",
+		"George Harrison", "Graham Nash", "Gram Parsons", "Hall and Oates", "Hall & Oates",
+		"Heart", "Isley Brothers", "Jackie Wilson", "Jackson Browne",
 		"James_Taylor", "Jefferson_Airplane", "Jethro_Tull", "Jimmy Buffett", "John_Denver",
 		"John_Hartford", "John_Starling", "Joni_Mitchell", "Judy_Collins", "Kansas",
-		"Kingston_Trio", "Led_Zepplin", "Linda_Ronstadt", "Lynyrd_Skynyrd",
-		"Mamas And Papas", "Maria Muldaur",
-		"Meatloaf", "Mike_Auldridge", "Moody Blues", "Neal Young", "Neil Diamond",
+		"Kingston_Trio", "Led_Zepplin", "Linda_Ronstadt", "Lovin Spoonful", "Lynyrd_Skynyrd",
+		"Mamas And Papas", "Mamas & The Papas", "Maria Muldaur",
+		"Meatloaf", "Mike_Auldridge", "Mith Ryder & The Detroit Wheels", "Moody Blues",
+		"Neal Young", "Neil Diamond",
 		"New Riders of the Purple Sage", "New_Riders_Purple_Sage",
 		"Nitty Gritty Dirt Band", "Oates", "Otis Redding", "Pablo_Cruise", "Palmer",
 		"Paul_Simon", "Peter_Paul_Mary", "Rascals", "Ringo Starr", "Roberta Flack", "Rolling_Stones",
 		"Roy_Orbison", "Sam And Dave", "Santana", "Seals and Crofts", "Seals_Croft", "Seldom_Scene",
 		"Shadows Of Knight", "Simon and Garfunkel", "Simon_Garfunkel", "Sonny And Cher",
-		"Spoonful", "Steely_Dan", "Steppenwolf", "Steven_Stills", "Sting", "Sunshine Band",
+		"Spoonful", "Seals & Crofts",  "Steely_Dan", "Steppenwolf", "Steven_Stills",
+		"stevie Ray Vaughan and Double Trouble", "Sting", "Sunshine Band",
 		"Three Dog Night", "TonyRice", "Traveling_Wilburys", "Turtles", "Warren Zevon",
 		"Who", "Wilson Pickett", "Yes",
 	}
@@ -150,36 +153,34 @@ func splitFilename(ps, pn string) *song {
 
 	var groupN, songN string
 	switch {
-	case commasS != nil:
-		if dashS == nil {
-			songN = strings.TrimSpace(string(nameB[:commasS[0]]))
-			groupN = strings.TrimSpace(string(nameB[commasS[1]:]))
-			rval.alreadyNew = true
-		} else {
-			//  dashS != nil:
-			groupN = string(nameB[:dashS[0]])
-			songN = strings.TrimSpace(string(nameB[dashS[1]:]))
-			rval.alreadyNew = true
-			if dashS != nil {
-				var cc int
-				for i := 0; i < dashS[0]; i++ {
-					switch nameB[i] {
-					case ',':
-						cc++
-					case '&':
-						cc++
-					case '-':
-						break
-					}
-				}
-				if cc > 1 {
-					rval.alreadyNew = false
-					groupN = strings.TrimSpace(string(nameB[:dashS[1]-1]))
-					songN = strings.TrimSpace(string(nameB[dashS[1]:]))
+	case commasS != nil && dashS == nil:
+		songN = strings.TrimSpace(string(nameB[:commasS[0]]))
+		groupN = strings.TrimSpace(string(nameB[commasS[1]:]))
+		rval.alreadyNew = true
+	case commasS != nil && dashS != nil:
+		//  dashS != nil:
+		groupN = string(nameB[:dashS[0]])
+		songN = strings.TrimSpace(string(nameB[dashS[1]:]))
+		rval.alreadyNew = true
+		if dashS != nil {
+			var cc int
+			for i := 0; i < dashS[0]; i++ {
+				switch nameB[i] {
+				case ',':
+					cc++
+				case '&':
+					cc++
+				case '-':
+					break
 				}
 			}
-			// fmt.Printf("in switch t: %s sung by %s\n", songN, groupN)
+			if cc > 1 {
+				rval.alreadyNew = false
+				groupN = strings.TrimSpace(string(nameB[:dashS[1]-1]))
+				songN = strings.TrimSpace(string(nameB[dashS[1]:]))
+			}
 		}
+		// fmt.Printf("in switch t: %s sung by %s\n", songN, groupN)
 	case commasS == nil && dashS == nil:
 		// no punct => no group. Use what you have as song title
 		songN = strings.TrimSpace(pn)
@@ -188,7 +189,7 @@ func splitFilename(ps, pn string) *song {
 			groupN = ps[:len(ps)-1]
 			groupN = cases.Title(language.English, cases.NoLower).String(groupN)
 		}
-	default:
+	case commasS == nil && dashS != nil:
 		// fall thru, old style
 		sortKey := sortKeyExp.Find(nameB) // cut out leading "X_"
 		if len(sortKey) > 0 {
@@ -232,7 +233,7 @@ func processFile(pathArg string, sMap map[string]song, fsys fs.FS, p string, d f
 	}
 	ext := path.Ext(p)
 	if len(ext) == 0 {
-		return nil // not interesting extension
+		return nil // no extension, not interesting
 	}
 	extR := extRegex.FindStringIndex(p)
 	if extR == nil {
@@ -248,7 +249,8 @@ func processFile(pathArg string, sMap map[string]song, fsys fs.FS, p string, d f
 		if aSong.artistH == v.artistH {
 			fmt.Printf("#existing duplicate song for %s %s == %s\n", aSong.path, aSong.title, v.title)
 		} else {
-			fmt.Printf("#possible dup song for %s %s == %s %s\n", aSong.path, aSong.title, v.title, v.artist)
+			fmt.Printf("#possible dup song for %s %s == %s %s\n", aSong.path, aSong.title,
+						v.title, v.artist)
 			aSong.titleH += "1"
 		}
 		return nil
