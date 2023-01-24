@@ -3,7 +3,7 @@
 //
 // this is not multi-processing safe
 
-// Bugs 
+// Bugs
 // can't handle two commas in title
 // bad quoting of ', such as ain't or can't
 
@@ -102,7 +102,7 @@ func loadMetaPhone() {
 		"BeachBoys", "Beatles", "BlindFaith", "BloodSweatTears", "Boston", "Box Tops",
 		"Brewer and Shipley", "Brewer & Shipley", "BuffaloSpringfield", "Byrds",
 		"Carole King", "Carpenters", "Cheap Trick", "Chesapeake", "Cream", "Crosby & Nash",
-		"Crosby and Nash", "Crosby Stills And Nash", "Crosby_Stills_Nash", "David Allan Coe",
+		"Crosby and Nash", "Crosby Stills And Nash", "Crosby_Stills_Nash_Young", "David Allan Coe",
 		"David Bowie", "David_Bromberg", "Deep Purple", "Derek and the Dominos",
 		"Derek_Dominos", "Detroit Wheels",
 		"Dire_Straits", "Doc Watson", "Don McLean", "Doobie_Brothers", "Doors", "Dylan",
@@ -136,24 +136,51 @@ const nameP = "(([0-9A-Za-z&]*)\\s*)*"
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
 var regMulti = regexp.MustCompile(nameP + divP)
 var regDash = regexp.MustCompile(divP)
-var newStyle = regexp.MustCompile(",\\s")
+var commas = regexp.MustCompile(",\\s")
 var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
 
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "song" object.
 func splitFilename(ps, pn string) *song {
 	var rval = new(song)
-	//fmt.Printf("sf: %s\n", pn)
+	// fmt.Printf("sf: %s\n", pn)
 	nameB := []byte(strings.TrimSpace(pn))
 	dashS := regDash.FindIndex(nameB)
-	newStyleS := newStyle.FindIndex(nameB)
+	commasS := commas.FindIndex(nameB)
+
 	var groupN, songN string
 	switch {
-	case newStyleS != nil:
-		groupN = string(nameB[newStyleS[1]:])
-		songN = strings.TrimSpace(string(nameB[:newStyleS[0]]))
-		rval.alreadyNew = true
-	case dashS == nil:
+	case commasS != nil:
+		if dashS == nil {
+			songN = strings.TrimSpace(string(nameB[:commasS[0]]))
+			groupN = strings.TrimSpace(string(nameB[commasS[1]:]))
+			rval.alreadyNew = true
+		} else {
+			//  dashS != nil:
+			groupN = string(nameB[:dashS[0]])
+			songN = strings.TrimSpace(string(nameB[dashS[1]:]))
+			rval.alreadyNew = true
+			if dashS != nil {
+				var cc int
+				for i := 0; i < dashS[0]; i++ {
+					switch nameB[i] {
+					case ',':
+						cc++
+					case '&':
+						cc++
+					case '-':
+						break
+					}
+				}
+				if cc > 1 {
+					rval.alreadyNew = false
+					groupN = strings.TrimSpace(string(nameB[:dashS[1]-1]))
+					songN = strings.TrimSpace(string(nameB[dashS[1]:]))
+				}
+			}
+			// fmt.Printf("in switch t: %s sung by %s\n", songN, groupN)
+		}
+	case commasS == nil && dashS == nil:
 		// no punct => no group. Use what you have as song title
 		songN = strings.TrimSpace(pn)
 		if len(ps) > 1 {
@@ -178,6 +205,7 @@ func splitFilename(ps, pn string) *song {
 	rval.title = songN
 	rval.titleH, _ = enc.Encode(justLetter(songN))
 	rval.artist = strings.TrimSpace(groupN)
+	// fmt.Printf("main %s by %s\n", rval.title, rval.artist)
 	if strings.HasPrefix(rval.artist, "The ") {
 		rval.artistHasThe = true
 		rval.artist = rval.artist[4:]
@@ -217,7 +245,12 @@ func processFile(pathArg string, sMap map[string]song, fsys fs.FS, p string, d f
 	aSong.path = path.Join(pathArg, ps, pn) + ext
 	v := sMap[aSong.titleH]
 	if len(v.titleH) > 0 {
-		fmt.Printf("existing song for %s %s == %s\n", aSong.path, aSong.title, v.title)
+		if aSong.artistH == v.artistH {
+			fmt.Printf("#existing duplicate song for %s %s == %s\n", aSong.path, aSong.title, v.title)
+		} else {
+			fmt.Printf("#possible dup song for %s %s == %s %s\n", aSong.path, aSong.title, v.title, v.artist)
+			aSong.titleH += "1"
+		}
 		return nil
 	}
 	sMap[aSong.titleH] = *aSong
