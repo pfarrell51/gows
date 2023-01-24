@@ -3,6 +3,10 @@
 //
 // this is not multi-processing safe
 
+// Bugs 
+// can't handle two commas in title
+// bad quoting of ', such as ain't or can't
+
 package main
 
 import (
