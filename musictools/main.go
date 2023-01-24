@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"runtime"
 	"strings"
 	"unicode"
 
@@ -96,8 +97,8 @@ func loadMetaPhone() {
 		"BeachBoys", "Beatles", "BlindFaith", "BloodSweatTears", "Boston", "Box Tops",
 		"Brewer and Shipley", "Brewer & Shipley", "BuffaloSpringfield", "Byrds",
 		"Carole King", "Carpenters", "Cheap Trick", "Chesapeake", "Cream", "Crosby & Nash",
-		"Crosby and Nash", "Crosby Stills And Nash", "Crosby_Stills_Nash", "David Allan Coe", 
-		"David Bowie", "David_Bromberg", "Deep Purple", "Derek and the Dominos", 
+		"Crosby and Nash", "Crosby Stills And Nash", "Crosby_Stills_Nash", "David Allan Coe",
+		"David Bowie", "David_Bromberg", "Deep Purple", "Derek and the Dominos",
 		"Derek_Dominos", "Detroit Wheels",
 		"Dire_Straits", "Doc Watson", "Don McLean", "Doobie_Brothers", "Doors", "Dylan",
 		"Elton_John", "Emmylou_Harris", "Fifth Dimension", "Fleetwood_Mac", "Genesis",
@@ -130,7 +131,7 @@ const nameP = "(([0-9A-Za-z&]*)\\s*)*"
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
 var regMulti = regexp.MustCompile(nameP + divP)
 var regDash = regexp.MustCompile(divP)
-var newStyle = regexp.MustCompile(":\\s")
+var newStyle = regexp.MustCompile(",\\s")
 var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
 
 // most of my music files have file names with the artist name, a hyphen and then the track title
@@ -243,8 +244,15 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 			if aSong.artistInDirectory {
 				continue
 			}
-			fmt.Printf("mv '%s' '%s/%s: %s%s'\n", aSong.path,
-				pathArg, aSong.artist, aSong.title, aSong.ext)
+			cmd := "mv"
+			if runtime.GOOS == "windows" {
+				cmd = "ren "
+			}
+			if strings.Contains(aSong.title, "'") {
+				cmd = "#" + cmd
+			}
+			fmt.Printf("%s '%s' '%s/%s, %s%s'\n", cmd, aSong.path,
+				pathArg, aSong.title, aSong.artist, aSong.ext)
 		case justList:
 			the := ""
 			if aSong.artistHasThe {
