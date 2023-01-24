@@ -33,6 +33,7 @@ var noGroup bool
 var zDumpArtist bool
 
 type song struct {
+	alreadyNew        bool
 	artist            string
 	artistH           string
 	artistHasThe      bool
@@ -138,6 +139,7 @@ var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
 // so this pulls out the information and fills in the "song" object.
 func splitFilename(ps, pn string) *song {
 	var rval = new(song)
+	//fmt.Printf("sf: %s\n", pn)
 	nameB := []byte(strings.TrimSpace(pn))
 	dashS := regDash.FindIndex(nameB)
 	newStyleS := newStyle.FindIndex(nameB)
@@ -146,6 +148,7 @@ func splitFilename(ps, pn string) *song {
 	case newStyleS != nil:
 		groupN = string(nameB[newStyleS[1]:])
 		songN = strings.TrimSpace(string(nameB[:newStyleS[0]]))
+		rval.alreadyNew = true
 	case dashS == nil:
 		// no punct => no group. Use what you have as song title
 		songN = strings.TrimSpace(pn)
@@ -237,6 +240,9 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 	for _, aSong := range m {
 		switch {
 		case doRename:
+			if aSong.alreadyNew {
+				continue
+			}
 			if aSong.artist == "" {
 				fmt.Printf("#rename artist is blank %s\n", aSong.path)
 				continue
