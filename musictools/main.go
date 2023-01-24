@@ -29,6 +29,7 @@ var showArtistNotInMap bool
 var doRename bool
 var justList bool
 var noGroup bool
+var zDumpArtist bool
 
 type song struct {
 	artist            string
@@ -64,6 +65,7 @@ func main() {
 	flag.BoolVar(&justList, "l", false, "list - `list files")
 	flag.BoolVar(&noGroup, "n", false, "nogroup - `list files that do not have an artist/group in the title")
 	flag.BoolVar(&doRename, "r", false, "rename - perform rename function on needed files")
+	flag.BoolVar(&zDumpArtist, "z", false, "list artist names one per line")
 	flag.Parse()
 
 	pathArg := path.Clean(flag.Arg(0))
@@ -88,17 +90,32 @@ func justLetter(a string) string {
 	return buff.String()
 }
 func loadMetaPhone() {
-	groupNames := [...]string{"ABBA", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers", "Animals",
-		"Arlo_Guthrie", "Band", "Basia", "BeachBoys", "Beatles", "BlindFaith", "BloodSweatTears", "Boston",
-		"BrewerAndShipley", "BuffaloSpringfield", "Byrds", "Chesapeake",
-		"Cream", "Crosby_Stills_Nash",
-		"David_Bromberg", "Derek_Dominos", "Dire_Straits", "Doobie_Brothers", "Doors", "Dylan", "Elton_John",
-		"Emmylou_Harris", "Fleetwood_Mac", "Heart", "James_Taylor", "Jefferson_Airplane", "Jethro_Tull",
-		"John_Denver", "John_Hartford", "John_Starling", "Joni_Mitchell", "Judy_Collins", "Kingston_Trio",
-		"Led_Zepplin", "Linda_Ronstadt", "Lynyrd_Skynyrd", "Mamas_Popas", "Meatloaf", "Mike_Auldridge",
-		"New_Riders_Purple_Sage", "Pablo_Cruise", "Paul_Simon", "Peter_Paul_Mary", "Rolling_Stones",
-		"Roy_Orbison", "Santana", "Seals_Croft", "Seldom_Scene", "Simon_Garfunkel", "Steely_Dan",
-		"Steven_Stills", "5th_Dimension", "TonyRice", "Traveling_Wilburys", "Who", "Yes",
+	groupNames := [...]string{
+		"5th_Dimension", "ABBA", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers",
+		"Animals", "Aretha Franklin", "Arlo_Guthrie", "Association", "Band", "Basia",
+		"BeachBoys", "Beatles", "BlindFaith", "BloodSweatTears", "Boston", "Box Tops",
+		"Brewer and Shipley", "Brewer & Shipley", "BuffaloSpringfield", "Byrds",
+		"Carole King", "Carpenters", "Cheap Trick", "Chesapeake", "Cream", "Crosby & Nash",
+		"Crosby and Nash", "Crosby Stills And Nash", "Crosby_Stills_Nash", "David Allan Coe", 
+		"David Bowie", "David_Bromberg", "Deep Purple", "Derek and the Dominos", 
+		"Derek_Dominos", "Detroit Wheels",
+		"Dire_Straits", "Doc Watson", "Don McLean", "Doobie_Brothers", "Doors", "Dylan",
+		"Elton_John", "Emmylou_Harris", "Fifth Dimension", "Fleetwood_Mac", "Genesis",
+		"George Harrison", "Graham Nash", "Hall and Oates", "Heart", "Isley Brothers",
+		"Jackie Wilson", "Jackson Browne",
+		"James_Taylor", "Jefferson_Airplane", "Jethro_Tull", "Jimmy Buffett", "John_Denver",
+		"John_Hartford", "John_Starling", "Joni_Mitchell", "Judy_Collins", "Kansas",
+		"Kingston_Trio", "Led_Zepplin", "Linda_Ronstadt", "Lynyrd_Skynyrd",
+		"Mamas And Papas", "Maria Muldaur",
+		"Meatloaf", "Mike_Auldridge", "Moody Blues", "Neal Young", "Neil Diamond",
+		"New Riders of the Purple Sage", "New_Riders_Purple_Sage",
+		"Nitty Gritty Dirt Band", "Oates", "Otis Redding", "Pablo_Cruise", "Palmer",
+		"Paul_Simon", "Peter_Paul_Mary", "Rascals", "Ringo Starr", "Roberta Flack", "Rolling_Stones",
+		"Roy_Orbison", "Sam And Dave", "Santana", "Seals and Crofts", "Seals_Croft", "Seldom_Scene",
+		"Shadows Of Knight", "Simon and Garfunkel", "Simon_Garfunkel", "Sonny And Cher",
+		"Spoonful", "Steely_Dan", "Steppenwolf", "Steven_Stills", "Sting", "Sunshine Band",
+		"Three Dog Night", "TonyRice", "Traveling_Wilburys", "Turtles", "Warren Zevon",
+		"Who", "Wilson Pickett", "Yes",
 	}
 	for _, n := range groupNames {
 		prim, sec := enc.Encode(justLetter(n))
@@ -109,10 +126,10 @@ func loadMetaPhone() {
 	}
 }
 
-const nameP = "(([0-9A-Za-z]*)\\s*)*"
+const nameP = "(([0-9A-Za-z&]*)\\s*)*"
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
 var regMulti = regexp.MustCompile(nameP + divP)
-var regPunch = regexp.MustCompile(divP)
+var regDash = regexp.MustCompile(divP)
 var newStyle = regexp.MustCompile(":\\s")
 var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
 
@@ -121,14 +138,14 @@ var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
 func splitFilename(ps, pn string) *song {
 	var rval = new(song)
 	nameB := []byte(strings.TrimSpace(pn))
-	punctS := regPunch.FindIndex(nameB)
+	dashS := regDash.FindIndex(nameB)
 	newStyleS := newStyle.FindIndex(nameB)
 	var groupN, songN string
 	switch {
 	case newStyleS != nil:
 		groupN = string(nameB[newStyleS[1]:])
 		songN = strings.TrimSpace(string(nameB[:newStyleS[0]]))
-	case punctS == nil:
+	case dashS == nil:
 		// no punct => no group. Use what you have as song title
 		songN = strings.TrimSpace(pn)
 		if len(ps) > 1 {
@@ -138,7 +155,7 @@ func splitFilename(ps, pn string) *song {
 		}
 	default:
 		// fall thru, old style
-		sortKey := sortKeyExp.Find(nameB)		// cut out leading "X_"
+		sortKey := sortKeyExp.Find(nameB) // cut out leading "X_"
 		if len(sortKey) > 0 {
 			nameB = nameB[2:]
 		}
@@ -147,8 +164,8 @@ func splitFilename(ps, pn string) *song {
 			fmt.Println("PIB, group empty ", groupS)
 			return rval
 		}
-		groupN = string(groupS[:len(groupS)-2])
-		songN = strings.TrimSpace(pn[punctS[1]:])
+		groupN = strings.TrimSpace(string(groupS[:len(groupS)-2]))
+		songN = strings.TrimSpace(pn[dashS[1]:])
 	}
 	rval.title = songN
 	rval.titleH, _ = enc.Encode(justLetter(songN))
@@ -226,7 +243,7 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 			if aSong.artistInDirectory {
 				continue
 			}
-			fmt.Printf("mv '%s' '%s/%s: %s%s'\n", aSong.path, 
+			fmt.Printf("mv '%s' '%s/%s: %s%s'\n", aSong.path,
 				pathArg, aSong.artist, aSong.title, aSong.ext)
 		case justList:
 			the := ""
@@ -247,6 +264,11 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 		for k, _ := range uniqueArtists {
 			fmt.Printf("addto map k: %s\n", k)
 		}
+	}
+	if zDumpArtist {
+		gptree.Each(func(key string, v string) {
+			fmt.Printf("\"%s\", \n", v)
+		})
 	}
 	return m
 }
