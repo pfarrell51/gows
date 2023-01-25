@@ -48,7 +48,7 @@ type song struct {
 	title             string
 	titleH            string
 	inPath            string
-	outPath		  string
+	outPath           string
 	ext               string
 }
 
@@ -99,8 +99,8 @@ func justLetter(a string) string {
 func loadMetaPhone() {
 	groupNames := [...]string{
 		"5th_Dimension", "ABBA", "Alice Cooper", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers",
-		"Animals", "Aretha Franklin", "Arlo_Guthrie", "Association", "Average White Band", 
-		"Band", "Basia", "BeachBoys", "Beatles", "Bee Gees", "Billy Joel", "BlindFaith", 
+		"Animals", "Aretha Franklin", "Arlo_Guthrie", "Association", "Average White Band",
+		"Band", "Basia", "BeachBoys", "Beatles", "Bee Gees", "Billy Joel", "BlindFaith",
 		"BloodSweatTears", "Blue Oyster Cult", "Boston", "Box Tops", "Bread",
 		"Brewer and Shipley", "Brewer & Shipley", "BuffaloSpringfield", "Byrds",
 		"Carole King", "Carpenters", "Cheap Trick", "Chesapeake", "Cream", "Crosby & Nash",
@@ -123,7 +123,7 @@ func loadMetaPhone() {
 		"Paul_Simon", "Peter_Paul_Mary", "Rascals", "Ringo Starr", "Roberta Flack", "Rolling_Stones",
 		"Roy_Orbison", "Sam And Dave", "Santana", "Seals and Crofts", "Seals_Croft", "Seldom_Scene",
 		"Shadows Of Knight", "Simon and Garfunkel", "Simon_Garfunkel", "Sonny And Cher",
-		"Spoonful", "Seals & Crofts",  "Steely_Dan", "Steppenwolf", "Steven_Stills",
+		"Spoonful", "Seals & Crofts", "Steely_Dan", "Steppenwolf", "Steven_Stills",
 		"stevie Ray Vaughan and Double Trouble", "Sting", "Sunshine Band",
 		"Three Dog Night", "TonyRice", "Traveling_Wilburys", "Turtles", "Warren Zevon",
 		"Who", "Wilson Pickett", "Yes",
@@ -139,7 +139,7 @@ func loadMetaPhone() {
 
 const nameP = "(([0-9A-Za-z&]*)\\s*)*"
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
-var regMulti = regexp.MustCompile(nameP + divP)
+ var regMulti = regexp.MustCompile(nameP + divP)
 var regDash = regexp.MustCompile(divP)
 var commas = regexp.MustCompile(",\\s")
 var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
@@ -148,12 +148,48 @@ var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
 // so this pulls out the information and fills in the "song" object.
 func splitFilename(ps, pn string) *song {
 	var rval = new(song)
-	// fmt.Printf("sf: %s\n", pn)
+	var groupN, songN string
+	fmt.Printf("sf: %s\n", pn)
 	nameB := []byte(strings.TrimSpace(pn))
+	if sortKeyExp.Match(nameB) {
+		fmt.Printf("removing leading chars %s\n", nameB[2:])
+		nameB = nameB[2:]
+	}
+	var c = regexp.MustCompile("[A-Za-z,&]*\\s")
+	var d = regexp.MustCompile("-\\s")
+	word := c.FindAllIndex(nameB, -1)
+	dash := d.FindIndex(nameB)
+
+	var partA, partB []byte
+	var ci = 0
+	for i := 0; i < len(word); i++ {
+		//fmt.Printf("ci: [%d:%d] %s\n", ci, word[i][0], string(nameB[word[i][0]:]))
+		partA = append(partA, nameB[ci:word[i][0]]...)
+		partA = append(partA, ' ')
+		ci = word[i][1]
+	}
+	//  fmt.Printf("partA %s\n", string(partA))
+	if dash != nil {
+		partA = append(partA, nameB[0:dash[0]]...)
+		partB = nameB[dash[1]:]
+
+		switch {
+		case dash[0] > word[len(word)-1][1]:
+			//fmt.Printf("greater %s .. %s\n", partA, partB)
+			groupN = string(partA)
+			songN = string(partB)
+		case dash[0] < word[len(word)-1][1]:
+			//fmt.Printf("less %s .. %s\n", partA, partB)
+			songN = string(partA)
+			groupN = string(partB)
+		default:
+			fmt.Println("PIB error, dash and word can not be equal")
+		}
+	}
+
 	dashS := regDash.FindIndex(nameB)
 	commasS := commas.FindIndex(nameB)
 
-	var groupN, songN string
 	switch {
 	case commasS != nil && dashS == nil:
 		songN = strings.TrimSpace(string(nameB[:commasS[0]]))
@@ -251,7 +287,7 @@ func processFile(pathArg string, sMap map[string]song, fsys fs.FS, p string, d f
 			fmt.Printf("#existing duplicate song for %s %s == %s\n", aSong.inPath, aSong.title, v.title)
 		} else {
 			fmt.Printf("#possible dup song for %s %s == %s %s\n", aSong.inPath, aSong.title,
-						v.title, v.artist)
+				v.title, v.artist)
 			aSong.titleH += "1"
 		}
 		return nil
@@ -275,7 +311,7 @@ func walkFiles(pathArg string) map[string]song {
 // go thru the map, sort by key
 // then create new ordering that makes sense to human
 func processMap(pathArg string, m map[string]song) map[string]song {
-	uniqueArtists := make(map[string]bool)
+	uniqueArtists := make(map[string]bool) // we just need a set, but use a map
 
 	for _, aSong := range m {
 		switch {
@@ -284,23 +320,24 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 			if runtime.GOOS == "windows" {
 				cmd = "ren "
 			}
-			if aSong.alreadyNew {
-				fmt.Printf("%s '%s' '%s/%s, %s%s'\n", cmd, aSong.inPath,
+			switch {
+			case aSong.alreadyNew:
+				fmt.Printf("pM aNew %s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
 					pathArg, aSong.title, aSong.artist, aSong.ext)
+			case aSong.artist == "":
+				fmt.Printf("#rename artist is blank %s\n", aSong.inPath)
+				cmd = "#" + cmd
 				continue
+			case aSong.artistInDirectory:
+				//continue
 			}
 			if aSong.artist == "" {
-				fmt.Printf("#rename artist is blank %s\n", aSong.inPath)
-				continue
+				fmt.Printf("pM dR0 %s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
+					pathArg, aSong.title, aSong.ext)
+			} else {
+				fmt.Printf("pM dR1 %s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
+					pathArg, aSong.title, aSong.artist, aSong.ext)
 			}
-			if aSong.artistInDirectory {
-				continue
-			}
-			if strings.Contains(aSong.title, "'") {
-				cmd = "#" + cmd
-			}
-			fmt.Printf("%s '%s' '%s/%s, %s%s'\n", cmd, aSong.inPath,
-				pathArg, aSong.title, aSong.artist, aSong.ext)
 		case justList:
 			the := ""
 			if aSong.artistHasThe {
