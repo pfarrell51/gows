@@ -47,7 +47,8 @@ type song struct {
 	albumH            string
 	title             string
 	titleH            string
-	path              string
+	inPath            string
+	outPath		  string
 	ext               string
 }
 
@@ -98,9 +99,9 @@ func justLetter(a string) string {
 func loadMetaPhone() {
 	groupNames := [...]string{
 		"5th_Dimension", "ABBA", "Alice Cooper", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers",
-		"Animals", "Aretha Franklin", "Arlo_Guthrie", "Association", "Average White Band", "Band", "Basia",
-		"BeachBoys", "Beatles", "Bee Gees", "Billy Joel", "BlindFaith", "BloodSweatTears",
-		"Blue Oyster Cult", "Boston", "Box Tops", "Bread",
+		"Animals", "Aretha Franklin", "Arlo_Guthrie", "Association", "Average White Band", 
+		"Band", "Basia", "BeachBoys", "Beatles", "Bee Gees", "Billy Joel", "BlindFaith", 
+		"BloodSweatTears", "Blue Oyster Cult", "Boston", "Box Tops", "Bread",
 		"Brewer and Shipley", "Brewer & Shipley", "BuffaloSpringfield", "Byrds",
 		"Carole King", "Carpenters", "Cheap Trick", "Chesapeake", "Cream", "Crosby & Nash",
 		"Crosby and Nash", "Crosby Stills And Nash", "Crosby_Stills_Nash_Young", "David Allan Coe",
@@ -159,7 +160,6 @@ func splitFilename(ps, pn string) *song {
 		groupN = strings.TrimSpace(string(nameB[commasS[1]:]))
 		rval.alreadyNew = true
 	case commasS != nil && dashS != nil:
-		//  dashS != nil:
 		groupN = string(nameB[:dashS[0]])
 		songN = strings.TrimSpace(string(nameB[dashS[1]:]))
 		rval.alreadyNew = true
@@ -244,13 +244,13 @@ func processFile(pathArg string, sMap map[string]song, fsys fs.FS, p string, d f
 	ps, pn := path.Split(shortp)
 	aSong := splitFilename(ps, pn)
 	aSong.ext = ext
-	aSong.path = path.Join(pathArg, ps, pn) + ext
+	aSong.inPath = path.Join(pathArg, ps, pn) + ext
 	v := sMap[aSong.titleH]
 	if len(v.titleH) > 0 {
 		if aSong.artistH == v.artistH {
-			fmt.Printf("#existing duplicate song for %s %s == %s\n", aSong.path, aSong.title, v.title)
+			fmt.Printf("#existing duplicate song for %s %s == %s\n", aSong.inPath, aSong.title, v.title)
 		} else {
-			fmt.Printf("#possible dup song for %s %s == %s %s\n", aSong.path, aSong.title,
+			fmt.Printf("#possible dup song for %s %s == %s %s\n", aSong.inPath, aSong.title,
 						v.title, v.artist)
 			aSong.titleH += "1"
 		}
@@ -280,24 +280,26 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 	for _, aSong := range m {
 		switch {
 		case doRename:
+			cmd := "mv"
+			if runtime.GOOS == "windows" {
+				cmd = "ren "
+			}
 			if aSong.alreadyNew {
+				fmt.Printf("%s '%s' '%s/%s, %s%s'\n", cmd, aSong.inPath,
+					pathArg, aSong.title, aSong.artist, aSong.ext)
 				continue
 			}
 			if aSong.artist == "" {
-				fmt.Printf("#rename artist is blank %s\n", aSong.path)
+				fmt.Printf("#rename artist is blank %s\n", aSong.inPath)
 				continue
 			}
 			if aSong.artistInDirectory {
 				continue
 			}
-			cmd := "mv"
-			if runtime.GOOS == "windows" {
-				cmd = "ren "
-			}
 			if strings.Contains(aSong.title, "'") {
 				cmd = "#" + cmd
 			}
-			fmt.Printf("%s '%s' '%s/%s, %s%s'\n", cmd, aSong.path,
+			fmt.Printf("%s '%s' '%s/%s, %s%s'\n", cmd, aSong.inPath,
 				pathArg, aSong.title, aSong.artist, aSong.ext)
 		case justList:
 			the := ""
@@ -309,7 +311,7 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 			uniqueArtists[aSong.artist] = true
 		case noGroup:
 			if aSong.artist == "" {
-				fmt.Printf("nogroup %s\n", aSong.path)
+				fmt.Printf("nogroup %s\n", aSong.inPath)
 			}
 		default:
 		}
