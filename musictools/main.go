@@ -124,7 +124,7 @@ func loadMetaPhone() {
 		"Roy_Orbison", "Sam And Dave", "Santana", "Seals and Crofts", "Seals_Croft", "Seldom_Scene",
 		"Shadows Of Knight", "Simon and Garfunkel", "Simon_Garfunkel", "Sonny And Cher",
 		"Spoonful", "Seals & Crofts", "Steely_Dan", "Steppenwolf", "Steven_Stills",
-		"stevie Ray Vaughan and Double Trouble", "Sting", "Sunshine Band",
+		"Stevie Ray Vaughan and Double Trouble", "Sting", "Sunshine Band",
 		"Three Dog Night", "TonyRice", "Traveling_Wilburys", "Turtles", "Warren Zevon",
 		"Who", "Wilson Pickett", "Yes",
 	}
@@ -137,108 +137,117 @@ func loadMetaPhone() {
 	}
 }
 
-const nameP = "(([0-9A-Za-z&]*)\\s*)*"
+const nameP = "(([0-9A-Za-z&']*)\\s*)*"
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
- var regMulti = regexp.MustCompile(nameP + divP)
+var regMulti = regexp.MustCompile(nameP + divP)
 var regDash = regexp.MustCompile(divP)
 var commas = regexp.MustCompile(",\\s")
 var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
+var semiExp = regexp.MustCompile("; ")
 
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "song" object.
 func splitFilename(ps, pn string) *song {
 	var rval = new(song)
 	var groupN, songN string
-	fmt.Printf("sf: %s\n", pn)
+	//fmt.Printf("sf: %s\n", pn)
 	nameB := []byte(strings.TrimSpace(pn))
 	if sortKeyExp.Match(nameB) {
 		fmt.Printf("removing leading chars %s\n", nameB[2:])
 		nameB = nameB[2:]
 	}
+
 	var c = regexp.MustCompile("[A-Za-z,&]*\\s")
 	var d = regexp.MustCompile("-\\s")
 	word := c.FindAllIndex(nameB, -1)
 	dash := d.FindIndex(nameB)
 
-	var partA, partB []byte
-	var ci = 0
-	for i := 0; i < len(word); i++ {
-		//fmt.Printf("ci: [%d:%d] %s\n", ci, word[i][0], string(nameB[word[i][0]:]))
-		partA = append(partA, nameB[ci:word[i][0]]...)
-		partA = append(partA, ' ')
-		ci = word[i][1]
-	}
-	//  fmt.Printf("partA %s\n", string(partA))
-	if dash != nil {
-		partA = append(partA, nameB[0:dash[0]]...)
-		partB = nameB[dash[1]:]
+	if semiExp.Match(nameB) {
+		semiLoc := semiExp.FindIndex(nameB)
+		songN = strings.TrimSpace(string(nameB[:semiLoc[0]]))
+		groupN = strings.TrimSpace(string(nameB[semiLoc[1]:]))
+		rval.alreadyNew = true
+	} else {
+		var partA, partB []byte
+		var ci = 0
+		for i := 0; i < len(word); i++ {
+			//fmt.Printf("ci: [%d:%d] %s\n", ci, word[i][0], string(nameB[word[i][0]:]))
+			partA = append(partA, nameB[ci:word[i][0]]...)
+			partA = append(partA, ' ')
+			ci = word[i][1]
+		}
+		//  fmt.Printf("partA %s\n", string(partA))
+		if dash != nil {
+			partA = append(partA, nameB[0:dash[0]]...)
+			partB = nameB[dash[1]:]
+
+			switch {
+			case dash[0] > word[len(word)-1][1]:
+				//fmt.Printf("greater %s .. %s\n", partA, partB)
+				groupN = string(partA)
+				songN = string(partB)
+			case dash[0] < word[len(word)-1][1]:
+				//fmt.Printf("less %s .. %s\n", partA, partB)
+				songN = string(partA)
+				groupN = string(partB)
+			default:
+				fmt.Println("PIB error, dash and word can not be equal")
+			}
+		}
+
+		dashS := regDash.FindIndex(nameB)
+		commasS := commas.FindIndex(nameB)
 
 		switch {
-		case dash[0] > word[len(word)-1][1]:
-			//fmt.Printf("greater %s .. %s\n", partA, partB)
-			groupN = string(partA)
-			songN = string(partB)
-		case dash[0] < word[len(word)-1][1]:
-			//fmt.Printf("less %s .. %s\n", partA, partB)
-			songN = string(partA)
-			groupN = string(partB)
-		default:
-			fmt.Println("PIB error, dash and word can not be equal")
-		}
-	}
-
-	dashS := regDash.FindIndex(nameB)
-	commasS := commas.FindIndex(nameB)
-
-	switch {
-	case commasS != nil && dashS == nil:
-		songN = strings.TrimSpace(string(nameB[:commasS[0]]))
-		groupN = strings.TrimSpace(string(nameB[commasS[1]:]))
-		rval.alreadyNew = true
-	case commasS != nil && dashS != nil:
-		groupN = string(nameB[:dashS[0]])
-		songN = strings.TrimSpace(string(nameB[dashS[1]:]))
-		rval.alreadyNew = true
-		if dashS != nil {
-			var cc int
-			for i := 0; i < dashS[0]; i++ {
-				switch nameB[i] {
-				case ',':
-					cc++
-				case '&':
-					cc++
-				case '-':
-					break
+		case commasS != nil && dashS == nil:
+			songN = strings.TrimSpace(string(nameB[:commasS[0]]))
+			groupN = strings.TrimSpace(string(nameB[commasS[1]:]))
+			rval.alreadyNew = true
+		case commasS != nil && dashS != nil:
+			groupN = string(nameB[:dashS[0]])
+			songN = strings.TrimSpace(string(nameB[dashS[1]:]))
+			rval.alreadyNew = true
+			if dashS != nil {
+				var cc int
+				for i := 0; i < dashS[0]; i++ {
+					switch nameB[i] {
+					case ',':
+						cc++
+					case '&':
+						cc++
+					case '-':
+						break
+					}
+				}
+				if cc > 1 {
+					rval.alreadyNew = false
+					groupN = strings.TrimSpace(string(nameB[:dashS[1]-1]))
+					songN = strings.TrimSpace(string(nameB[dashS[1]:]))
 				}
 			}
-			if cc > 1 {
-				rval.alreadyNew = false
-				groupN = strings.TrimSpace(string(nameB[:dashS[1]-1]))
-				songN = strings.TrimSpace(string(nameB[dashS[1]:]))
+		case commasS == nil && dashS == nil:
+			// no punct => no group. Use what you have as song title
+			songN = strings.TrimSpace(pn)
+			if len(ps) > 1 {
+				rval.artistInDirectory = true
+				groupN = ps[:len(ps)-1]
+				groupN = cases.Title(language.English, cases.NoLower).String(groupN)
 			}
+		case commasS == nil && dashS != nil:
+			// fall thru, old style
+			sortKey := sortKeyExp.Find(nameB) // cut out leading "X_"
+			if len(sortKey) > 0 {
+				nameB = nameB[2:]
+			}
+			groupS := regMulti.Find(nameB)
+			if groupS == nil {
+				fmt.Println("PIB, group empty ", groupS)
+				return rval
+			}
+			groupN = strings.TrimSpace(string(groupS[:len(groupS)-2]))
+			songN = strings.TrimSpace(pn[dashS[1]:])
+
 		}
-		// fmt.Printf("in switch t: %s sung by %s\n", songN, groupN)
-	case commasS == nil && dashS == nil:
-		// no punct => no group. Use what you have as song title
-		songN = strings.TrimSpace(pn)
-		if len(ps) > 1 {
-			rval.artistInDirectory = true
-			groupN = ps[:len(ps)-1]
-			groupN = cases.Title(language.English, cases.NoLower).String(groupN)
-		}
-	case commasS == nil && dashS != nil:
-		// fall thru, old style
-		sortKey := sortKeyExp.Find(nameB) // cut out leading "X_"
-		if len(sortKey) > 0 {
-			nameB = nameB[2:]
-		}
-		groupS := regMulti.Find(nameB)
-		if groupS == nil {
-			fmt.Println("PIB, group empty ", groupS)
-			return rval
-		}
-		groupN = strings.TrimSpace(string(groupS[:len(groupS)-2]))
-		songN = strings.TrimSpace(pn[dashS[1]:])
 	}
 	rval.title = songN
 	rval.titleH, _ = enc.Encode(justLetter(songN))
@@ -311,7 +320,7 @@ func walkFiles(pathArg string) map[string]song {
 // go thru the map, sort by key
 // then create new ordering that makes sense to human
 func processMap(pathArg string, m map[string]song) map[string]song {
-	uniqueArtists := make(map[string]bool) // we just need a set, but use a map
+	uniqueArtists := make(map[string]string) 	// we just need a set, but use a map
 
 	for _, aSong := range m {
 		switch {
@@ -322,8 +331,9 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 			}
 			switch {
 			case aSong.alreadyNew:
-				fmt.Printf("pM aNew %s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
-					pathArg, aSong.title, aSong.artist, aSong.ext)
+				continue
+				//fmt.Printf("pM aNew %s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
+				//	pathArg, aSong.title, aSong.artist, aSong.ext)
 			case aSong.artist == "":
 				fmt.Printf("#rename artist is blank %s\n", aSong.inPath)
 				cmd = "#" + cmd
@@ -332,10 +342,10 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 				//continue
 			}
 			if aSong.artist == "" {
-				fmt.Printf("pM dR0 %s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
+				fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
 					pathArg, aSong.title, aSong.ext)
 			} else {
-				fmt.Printf("pM dR1 %s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
+				fmt.Printf("%s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
 					pathArg, aSong.title, aSong.artist, aSong.ext)
 			}
 		case justList:
@@ -345,7 +355,8 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 			}
 			fmt.Printf("%s by %s%s\n", aSong.title, the, aSong.artist)
 		case showArtistNotInMap && !aSong.artistKnown:
-			uniqueArtists[aSong.artist] = true
+			prim, _ := enc.Encode(justLetter(aSong.artist))
+			uniqueArtists[ prim ] = aSong.artist
 		case noGroup:
 			if aSong.artist == "" {
 				fmt.Printf("nogroup %s\n", aSong.inPath)
