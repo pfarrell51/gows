@@ -156,6 +156,7 @@ var extRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 func parseFilename(pathArg, p string) *song {
 	//fmt.Printf("sf: %s\n", p)
 	var rval = new(song)
+	rval.inPath = path.Join(pathArg, p)
 	nameB := []byte(strings.TrimSpace(p))
 	if sortKeyExp.Match(nameB) {
 		nameB = nameB[2:]
@@ -165,7 +166,6 @@ func parseFilename(pathArg, p string) *song {
 	rval.ext = ext
 	nameB = nameB[0: extR[0]-1]
 	ps, pn := path.Split(string(nameB))
-	rval.inPath = path.Join(pathArg, ps, pn) + ext
 	rval.outPath = pathArg
 
 	var c = regexp.MustCompile("[A-Za-z,&]*\\s")
@@ -335,10 +335,10 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 				//continue
 			}
 			if aSong.artist == "" {
-				fmt.Printf("0%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
+				fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
 					aSong.outPath, aSong.title, aSong.ext)
 			} else {
-				fmt.Printf("1%s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
+				fmt.Printf("%s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
 					aSong.outPath, aSong.title, aSong.artist, aSong.ext)
 			}
 		case justList:
