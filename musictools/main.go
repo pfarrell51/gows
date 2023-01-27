@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/dlclark/metaphone3"
@@ -61,6 +62,7 @@ func main() {
 		fmt.Printf("Usage: %s [flags] directory-spec\n", os.Args[0])
 		os.Exit(1)
 	}
+	start := time.Now()
 	flag.Usage = func() {
 		w := flag.CommandLine.Output() // may be os.Stderr - but not necessarily
 		fmt.Fprintf(w, "Usage of %s: [flags] directory-spec \n", os.Args[0])
@@ -77,6 +79,8 @@ func main() {
 
 	pathArg := path.Clean(flag.Arg(0))
 	ProcessFiles(pathArg)
+	duration := time.Since(start)
+	fmt.Printf("%v\n", duration)
 }
 
 func ProcessFiles(pathArg string) {
@@ -137,50 +141,50 @@ func loadMetaPhone() {
 	}
 }
 
-const nameP = "(([0-9A-Za-z&']*)\\s*)*"
+const namePat = "(([0-9A-Za-z&']*)\\s*)*"
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
-var regMulti = regexp.MustCompile(nameP + divP)
+var regMulti = regexp.MustCompile(namePat + divP)
 var regDash = regexp.MustCompile(divP)
 var commas = regexp.MustCompile(",\\s")
 var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
 var semiExp = regexp.MustCompile("; ")
+var extRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
+
 
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "song" object.
-func splitFilename(ps, pn string) *song {
+func parseFilename(pathArg, p string) *song {
+	//fmt.Printf("sf: %s\n", p)
 	var rval = new(song)
-	var groupN, songN string
-	//fmt.Printf("sf: %s\n", pn)
-	nameB := []byte(strings.TrimSpace(pn))
+	nameB := []byte(strings.TrimSpace(p))
 	if sortKeyExp.Match(nameB) {
-		fmt.Printf("removing leading chars %s\n", nameB[2:])
 		nameB = nameB[2:]
 	}
+	extR := extRegex.FindIndex(nameB)
+	ext := path.Ext(p)
+	rval.ext = ext
+	nameB = nameB[0: extR[0]-1]
+	ps, pn := path.Split(string(nameB))
+	rval.inPath = path.Join(pathArg, ps, pn) + ext
+	rval.outPath = pathArg
 
 	var c = regexp.MustCompile("[A-Za-z,&]*\\s")
 	var d = regexp.MustCompile("-\\s")
 	word := c.FindAllIndex(nameB, -1)
 	dash := d.FindIndex(nameB)
 
+	var groupN, songN string
 	if semiExp.Match(nameB) {
 		semiLoc := semiExp.FindIndex(nameB)
 		songN = strings.TrimSpace(string(nameB[:semiLoc[0]]))
 		groupN = strings.TrimSpace(string(nameB[semiLoc[1]:]))
 		rval.alreadyNew = true
 	} else {
+		// I'm not convinced this code is needed
 		var partA, partB []byte
-		var ci = 0
-		for i := 0; i < len(word); i++ {
-			//fmt.Printf("ci: [%d:%d] %s\n", ci, word[i][0], string(nameB[word[i][0]:]))
-			partA = append(partA, nameB[ci:word[i][0]]...)
-			partA = append(partA, ' ')
-			ci = word[i][1]
-		}
-		//  fmt.Printf("partA %s\n", string(partA))
 		if dash != nil {
 			partA = append(partA, nameB[0:dash[0]]...)
 			partB = nameB[dash[1]:]
-
 			switch {
 			case dash[0] > word[len(word)-1][1]:
 				//fmt.Printf("greater %s .. %s\n", partA, partB)
@@ -195,9 +199,8 @@ func splitFilename(ps, pn string) *song {
 			}
 		}
 
-		dashS := regDash.FindIndex(nameB)
 		commasS := commas.FindIndex(nameB)
-
+		dashS := regDash.FindIndex(nameB)
 		switch {
 		case commasS != nil && dashS == nil:
 			songN = strings.TrimSpace(string(nameB[:commasS[0]]))
@@ -227,7 +230,7 @@ func splitFilename(ps, pn string) *song {
 			}
 		case commasS == nil && dashS == nil:
 			// no punct => no group. Use what you have as song title
-			songN = strings.TrimSpace(pn)
+			songN = strings.TrimSpace(string(nameB))
 			if len(ps) > 1 {
 				rval.artistInDirectory = true
 				groupN = ps[:len(ps)-1]
@@ -235,10 +238,6 @@ func splitFilename(ps, pn string) *song {
 			}
 		case commasS == nil && dashS != nil:
 			// fall thru, old style
-			sortKey := sortKeyExp.Find(nameB) // cut out leading "X_"
-			if len(sortKey) > 0 {
-				nameB = nameB[2:]
-			}
 			groupS := regMulti.Find(nameB)
 			if groupS == nil {
 				fmt.Println("PIB, group empty ", groupS)
@@ -263,8 +262,6 @@ func splitFilename(ps, pn string) *song {
 	return rval
 }
 
-var extRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
-
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
 // p is the current path/name
@@ -277,19 +274,15 @@ func processFile(pathArg string, sMap map[string]song, fsys fs.FS, p string, d f
 	if d == nil || d.IsDir() || strings.HasPrefix(p, ".") {
 		return nil
 	}
-	ext := path.Ext(p)
-	if len(ext) == 0 {
-		return nil // no extension, not interesting
-	}
 	extR := extRegex.FindStringIndex(p)
 	if extR == nil {
 		return nil // not interesting extension
 	}
-	shortp := p[0 : extR[0]-1]
-	ps, pn := path.Split(shortp)
-	aSong := splitFilename(ps, pn)
-	aSong.ext = ext
-	aSong.inPath = path.Join(pathArg, ps, pn) + ext
+
+	aSong := parseFilename(pathArg, p)
+	if aSong == nil {
+		return nil
+	}
 	v := sMap[aSong.titleH]
 	if len(v.titleH) > 0 {
 		if aSong.artistH == v.artistH {
@@ -320,7 +313,7 @@ func walkFiles(pathArg string) map[string]song {
 // go thru the map, sort by key
 // then create new ordering that makes sense to human
 func processMap(pathArg string, m map[string]song) map[string]song {
-	uniqueArtists := make(map[string]string) 	// we just need a set, but use a map
+	uniqueArtists := make(map[string]string) // we just need a set, but use a map
 
 	for _, aSong := range m {
 		switch {
@@ -342,11 +335,11 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 				//continue
 			}
 			if aSong.artist == "" {
-				fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
-					pathArg, aSong.title, aSong.ext)
+				fmt.Printf("0%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
+					aSong.outPath, aSong.title, aSong.ext)
 			} else {
-				fmt.Printf("%s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
-					pathArg, aSong.title, aSong.artist, aSong.ext)
+				fmt.Printf("1%s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
+					aSong.outPath, aSong.title, aSong.artist, aSong.ext)
 			}
 		case justList:
 			the := ""
@@ -356,7 +349,7 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 			fmt.Printf("%s by %s%s\n", aSong.title, the, aSong.artist)
 		case showArtistNotInMap && !aSong.artistKnown:
 			prim, _ := enc.Encode(justLetter(aSong.artist))
-			uniqueArtists[ prim ] = aSong.artist
+			uniqueArtists[prim] = aSong.artist
 		case noGroup:
 			if aSong.artist == "" {
 				fmt.Printf("nogroup %s\n", aSong.inPath)
