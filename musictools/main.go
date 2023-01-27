@@ -141,7 +141,7 @@ func loadMetaPhone() {
 	}
 }
 
-const namePat = "(([0-9A-Za-z&']*)\\s*)*"
+const namePat = "(([0-9A-Za-z&'_]*)\\s*)*"
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
 var regMulti = regexp.MustCompile(namePat + divP)
 var regDash = regexp.MustCompile(divP)
