@@ -190,33 +190,32 @@ func parseFilename(pathArg, p string) *song {
 		rval.alreadyNew = true
 	} else {
 		//  no ;
-		var partA, partB []byte
 		if dash != nil {
-			partA = nameB[:dash[0]]
-			partB = nameB[dash[1]:]
+			sa := string(nameB[:dash[0]])
+			sb := string(nameB[dash[1]:])
 			if len(words) == 0 {
-				groupN = string(partA)
-				songN = string(partB)
+				groupN = sa
+				songN = sb
 			} else {
-				sa := string(partA)
-				sb := string(partB)
+				sa := sa
+				sb := sb
 				if strings.HasPrefix(sa, "The ") {
-					partA = partA[4:]
+					sa = sa[4:]
 				}
 				if strings.HasPrefix(sb, "The ") {
-					partB = partB[4:]
+					sb = sb[4:]
 				}
-				ta, _ := enc.Encode(justLetter(string(partA)))
-				tb, _ := enc.Encode(justLetter(string(partB)))
+				ta, _ := enc.Encode(justLetter(sa))
+				tb, _ := enc.Encode(justLetter(sb))
 				_, OKa := gptree.Get(ta)
 				if OKa {
-					songN = string(partB)
-					groupN = string(partA)
+					songN = sb
+					groupN = sa
 				}
 				_, OKb := gptree.Get(tb)
 				if OKb {
-					groupN = string(partB)
-					songN = string(partA)
+					groupN = sb
+					songN = sa
 				}
 			}
 		} else {
