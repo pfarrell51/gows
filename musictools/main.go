@@ -167,6 +167,7 @@ func parseFilename(pathArg, p string) *song {
 	ext := path.Ext(p)
 	rval.ext = ext
 	nameB = nameB[0 : extR[0]-1]
+
 	var groupN, songN string
 	ps, _ := path.Split(string(nameB))
 	if len(ps) > 0 {
@@ -197,15 +198,23 @@ func parseFilename(pathArg, p string) *song {
 				groupN = string(partA)
 				songN = string(partB)
 			} else {
+				sa := string(partA)
+				sb := string(partB)
+				if strings.HasPrefix(sa, "The ") {
+					partA = partA[4:]
+				}
+				if strings.HasPrefix(sb, "The ") {
+					partB = partB[4:]
+				}
 				ta, _ := enc.Encode(justLetter(string(partA)))
 				tb, _ := enc.Encode(justLetter(string(partB)))
-				_, OKs := gptree.Get(ta)
-				if OKs {
+				_, OKa := gptree.Get(ta)
+				if OKa {
 					songN = string(partB)
 					groupN = string(partA)
 				}
-				_, OKg := gptree.Get(tb)
-				if OKg {
+				_, OKb := gptree.Get(tb)
+				if OKb {
 					groupN = string(partB)
 					songN = string(partA)
 				}
