@@ -141,7 +141,7 @@ func loadMetaPhone() {
 		"KC The Sunshine Band", "Kingston_Trio", "Led_Zepplin", "Linda_Ronstadt",
 		"Lovin Spoonful", "Lynyrd_Skynyrd",
 		"Mamas And Papas", "Mamas & The Papas", "Maria Muldaur",
-		"Meatloaf", "Mike_Auldridge", "Mith Ryder & The Detroit Wheels", "Moody Blues",
+		"Meatloaf", "Mike_Auldridge", "Mith Ryder & Detroit Wheels", "Moody Blues",
 		"Neal Young", "Neil Diamond",
 		"New Riders of the Purple Sage", "New_Riders_Purple_Sage",
 		"Nitty Gritty Dirt Band", "Oates", "Otis Redding", "Pablo_Cruise", "Palmer",
