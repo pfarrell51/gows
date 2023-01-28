@@ -95,13 +95,18 @@ func ProcessFiles(pathArg string) {
 		dumpGptree()
 	}
 }
-var regAnd = regexp.MustCompile("(?i) and ")
+
+var regAnd = regexp.MustCompile("(?i) (and|the) ")
+
 func justLetter(a string) string {
 	buff := bytes.Buffer{}
-	loc := regAnd.FindStringIndex(a) //buff.Bytes())
-	if loc != nil {
-		a = a[:loc[0]] + a[loc[1]:]
-		// xfmt.Printf("found and in %s %v\n", a, loc)
+	loc := []int{0, 0}
+	for j := 0; j < 4; j++ {	// 4 allows to and and two the, but it will nearly alwaysbreak before that
+		loc = regAnd.FindStringIndex(a)
+		if len(loc) < 1 {
+			break
+		}
+		a = a[0:loc[0]] + a[loc[1]-1:]
 	}
 	for _, c := range a {
 		if unicode.IsLetter(c) {
@@ -161,6 +166,10 @@ var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
 var extRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 var underToSpace = regexp.MustCompile("_")
 
+var cReg = regexp.MustCompile(",\\s")
+var dReg = regexp.MustCompile("-\\s")
+var commaExp = regexp.MustCompile(",\\s")
+
 // parse the file info to find artist and song title
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "song" object.
@@ -191,10 +200,8 @@ func parseFilename(pathArg, p string) *song {
 		songN = string(nameB)
 		groupN = ps[0 : len(ps)-1] // cut off trailing slash
 	}
-	var c = regexp.MustCompile(",\\s")
-	var d = regexp.MustCompile("-\\s")
-	words := c.FindAllIndex(nameB, -1)
-	dash := d.FindIndex(nameB)
+	words := cReg.FindAllIndex(nameB, -1)
+	dash := dReg.FindIndex(nameB)
 
 	var semiExp = regexp.MustCompile("; ")
 	if semiExp.Match(nameB) {
@@ -234,7 +241,6 @@ func parseFilename(pathArg, p string) *song {
 			}
 		} else {
 			// fmt.Println("no dash and no ; try , ")
-			commaExp := regexp.MustCompile(",\\s")
 			commasS := commaExp.FindIndex(nameB)
 			if commasS == nil || len(commasS) == 0 {
 				songN = string(nameB)
@@ -348,7 +354,7 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 			fmt.Printf("%s by %s%s\n", aSong.title, the, aSong.artist)
 		case showArtistNotInMap && !aSong.artistKnown:
 			prim, _ := enc.Encode(justLetter(aSong.artist))
-			if len(prim) == 0 && len(aSong.artist) ==0 {
+			if len(prim) == 0 && len(aSong.artist) == 0 {
 				// fmt.Printf("prim: %s, a: %v\n", prim, aSong)
 				continue
 			}
