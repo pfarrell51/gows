@@ -4,8 +4,6 @@
 // this is not multi-processing safe
 
 // Bugs
-// can't handle two commas in title
-// bad quoting of ', such as ain't or can't
 
 package main
 
@@ -80,19 +78,23 @@ func main() {
 	pathArg := path.Clean(flag.Arg(0))
 	ProcessFiles(pathArg)
 	duration := time.Since(start)
-	fmt.Printf("%v\n", duration)
+	fmt.Printf("# %v\n", duration)
 }
 
 func ProcessFiles(pathArg string) {
-	rmap := walkFiles(pathArg)
-	processMap(pathArg, rmap)
+	if !zDumpArtist {
+		rmap := walkFiles(pathArg)
+		processMap(pathArg, rmap)
+	} else {
+		dumpGptree()
+	}
 }
 func justLetter(a string) string {
 	buff := bytes.Buffer{}
 	for _, c := range a {
 		if unicode.IsLetter(c) {
 			buff.WriteRune(c)
-		} else if c == '_' {
+		} else if c == '_' || c == '&' {
 			// ignore it
 		} else if c == '-' {
 			break
@@ -105,7 +107,7 @@ func loadMetaPhone() {
 		"5th_Dimension", "ABBA", "Alice Cooper", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers",
 		"Animals", "Aretha Franklin", "Arlo_Guthrie", "Association", "Average White Band",
 		"Band", "Basia", "BeachBoys", "Beatles", "Bee Gees", "Billy Joel", "BlindFaith",
-		"BloodSweatTears", "Blue Oyster Cult", "Boston", "Box Tops", "Bread",
+		"BloodSweatTears", "Blue Oyster Cult", "Bob Dylan", "Boston", "Box Tops", "Bread",
 		"Brewer and Shipley", "Brewer & Shipley", "BuffaloSpringfield", "Byrds",
 		"Carole King", "Carpenters", "Cheap Trick", "Chesapeake", "Cream", "Crosby & Nash",
 		"Crosby and Nash", "Crosby Stills And Nash", "Crosby_Stills_Nash_Young", "David Allan Coe",
@@ -141,114 +143,84 @@ func loadMetaPhone() {
 	}
 }
 
-const namePat = "(([0-9A-Za-z&'_]*)\\s*)*"
-const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
-var regMulti = regexp.MustCompile(namePat + divP)
-var regDash = regexp.MustCompile(divP)
-var commas = regexp.MustCompile(",\\s")
 var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
-var semiExp = regexp.MustCompile("; ")
 var extRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
-
 
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "song" object.
 func parseFilename(pathArg, p string) *song {
-	//fmt.Printf("sf: %s\n", p)
+	// fmt.Printf("sf: %s\n", p)
 	var rval = new(song)
 	rval.inPath = path.Join(pathArg, p)
+	rval.outPath = pathArg
 	nameB := []byte(strings.TrimSpace(p))
 	if sortKeyExp.Match(nameB) {
 		nameB = nameB[2:]
 	}
 	extR := extRegex.FindIndex(nameB)
+	if extR == nil || len(extR) == 0 {
+		return rval
+	}
 	ext := path.Ext(p)
 	rval.ext = ext
-	nameB = nameB[0: extR[0]-1]
-	ps, pn := path.Split(string(nameB))
-	rval.outPath = pathArg
-
-	var c = regexp.MustCompile("[A-Za-z,&]*\\s")
+	nameB = nameB[0 : extR[0]-1]
+	var groupN, songN string
+	ps, _ := path.Split(string(nameB))
+	if len(ps) > 0 {
+		rval.artistInDirectory = true
+		rval.outPath = path.Join(rval.outPath, ps)
+		nameB = nameB[len(ps):]
+		songN = string(nameB)
+		groupN = ps[0 : len(ps)-1] // cut off trailing slash
+	}
+	var c = regexp.MustCompile(",\\s")
 	var d = regexp.MustCompile("-\\s")
-	word := c.FindAllIndex(nameB, -1)
+	words := c.FindAllIndex(nameB, -1)
 	dash := d.FindIndex(nameB)
 
-	var groupN, songN string
+	var semiExp = regexp.MustCompile("; ")
 	if semiExp.Match(nameB) {
 		semiLoc := semiExp.FindIndex(nameB)
 		songN = strings.TrimSpace(string(nameB[:semiLoc[0]]))
 		groupN = strings.TrimSpace(string(nameB[semiLoc[1]:]))
 		rval.alreadyNew = true
 	} else {
-		// I'm not convinced this code is needed
+		//  no ;
 		var partA, partB []byte
 		if dash != nil {
-			partA = append(partA, nameB[0:dash[0]]...)
+			partA = nameB[:dash[0]]
 			partB = nameB[dash[1]:]
-			switch {
-			case dash[0] > word[len(word)-1][1]:
-				//fmt.Printf("greater %s .. %s\n", partA, partB)
+			if len(words) == 0 {
 				groupN = string(partA)
 				songN = string(partB)
-			case dash[0] < word[len(word)-1][1]:
-				//fmt.Printf("less %s .. %s\n", partA, partB)
-				songN = string(partA)
-				groupN = string(partB)
-			default:
-				fmt.Println("PIB error, dash and word can not be equal")
-			}
-		}
-
-		commasS := commas.FindIndex(nameB)
-		dashS := regDash.FindIndex(nameB)
-		switch {
-		case commasS != nil && dashS == nil:
-			songN = strings.TrimSpace(string(nameB[:commasS[0]]))
-			groupN = strings.TrimSpace(string(nameB[commasS[1]:]))
-			rval.alreadyNew = true
-		case commasS != nil && dashS != nil:
-			groupN = string(nameB[:dashS[0]])
-			songN = strings.TrimSpace(string(nameB[dashS[1]:]))
-			rval.alreadyNew = true
-			if dashS != nil {
-				var cc int
-				for i := 0; i < dashS[0]; i++ {
-					switch nameB[i] {
-					case ',':
-						cc++
-					case '&':
-						cc++
-					case '-':
-						break
-					}
+			} else {
+				ta, _ := enc.Encode(justLetter(string(partA)))
+				tb, _ := enc.Encode(justLetter(string(partB)))
+				_, OKs := gptree.Get(ta)
+				if OKs {
+					songN = string(partB)
+					groupN = string(partA)
 				}
-				if cc > 1 {
-					rval.alreadyNew = false
-					groupN = strings.TrimSpace(string(nameB[:dashS[1]-1]))
-					songN = strings.TrimSpace(string(nameB[dashS[1]:]))
+				_, OKg := gptree.Get(tb)
+				if OKg {
+					groupN = string(partB)
+					songN = string(partA)
 				}
 			}
-		case commasS == nil && dashS == nil:
-			// no punct => no group. Use what you have as song title
-			songN = strings.TrimSpace(string(nameB))
-			if len(ps) > 1 {
-				rval.artistInDirectory = true
-				groupN = ps[:len(ps)-1]
-				groupN = cases.Title(language.English, cases.NoLower).String(groupN)
+		} else {
+			// fmt.Println("no dash and no ; try , ")
+			commaExp := regexp.MustCompile(",\\s")
+			commasS := commaExp.FindIndex(nameB)
+			if commasS == nil || len(commasS) == 0 {
+				songN = string(nameB)
+			} else {
+				songN = string(nameB[:commasS[0]])
+				groupN = string(nameB[commasS[1]:])
 			}
-		case commasS == nil && dashS != nil:
-			// fall thru, old style
-			groupS := regMulti.Find(nameB)
-			if groupS == nil {
-				fmt.Println("PIB, group empty ", groupS)
-				return rval
-			}
-			groupN = strings.TrimSpace(string(groupS[:len(groupS)-2]))
-			songN = strings.TrimSpace(pn[dashS[1]:])
-
 		}
 	}
-	rval.title = songN
+	groupN = cases.Title(language.English, cases.NoLower).String(strings.TrimSpace(groupN))
+	rval.title = strings.TrimSpace(songN)
 	rval.titleH, _ = enc.Encode(justLetter(songN))
 	rval.artist = strings.TrimSpace(groupN)
 	// fmt.Printf("main %s by %s\n", rval.title, rval.artist)
@@ -332,7 +304,9 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 				cmd = "#" + cmd
 				continue
 			case aSong.artistInDirectory:
-				//continue
+				fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
+					aSong.outPath, aSong.title, aSong.ext)
+				continue
 			}
 			if aSong.artist == "" {
 				fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
@@ -362,10 +336,12 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 			fmt.Printf("addto map k: %s\n", k)
 		}
 	}
+	return m
+}
+func dumpGptree() {
 	if zDumpArtist {
 		gptree.Each(func(key string, v string) {
 			fmt.Printf("\"%s\", \n", v)
 		})
 	}
-	return m
 }
