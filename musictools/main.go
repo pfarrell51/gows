@@ -95,12 +95,18 @@ func ProcessFiles(pathArg string) {
 		dumpGptree()
 	}
 }
+var regAnd = regexp.MustCompile("(?i) and ")
 func justLetter(a string) string {
 	buff := bytes.Buffer{}
+	loc := regAnd.FindStringIndex(a) //buff.Bytes())
+	if loc != nil {
+		a = a[:loc[0]] + a[loc[1]:]
+		// xfmt.Printf("found and in %s %v\n", a, loc)
+	}
 	for _, c := range a {
 		if unicode.IsLetter(c) {
 			buff.WriteRune(c)
-		} else if c == '_' || c == '&' {
+		} else if c == '_' || c == '&' || unicode.IsSpace(c) {
 			// ignore it
 		} else if c == '-' {
 			break
@@ -343,7 +349,7 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 		case showArtistNotInMap && !aSong.artistKnown:
 			prim, _ := enc.Encode(justLetter(aSong.artist))
 			if len(prim) == 0 && len(aSong.artist) ==0 {
-				fmt.Printf("prim: %s, a: %v\n", prim, aSong)
+				// fmt.Printf("prim: %s, a: %v\n", prim, aSong)
 				continue
 			}
 			uniqueArtists[prim] = aSong.artist
