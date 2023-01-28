@@ -145,7 +145,9 @@ func loadMetaPhone() {
 
 var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
 var extRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
+var underToSpace = regexp.MustCompile("_")
 
+// parse the file info to find artist and song title
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "song" object.
 func parseFilename(pathArg, p string) *song {
@@ -157,6 +159,7 @@ func parseFilename(pathArg, p string) *song {
 	if sortKeyExp.Match(nameB) {
 		nameB = nameB[2:]
 	}
+	nameB = underToSpace.ReplaceAll(nameB, []byte(" "))
 	extR := extRegex.FindIndex(nameB)
 	if extR == nil || len(extR) == 0 {
 		return rval
@@ -223,7 +226,7 @@ func parseFilename(pathArg, p string) *song {
 	rval.title = strings.TrimSpace(songN)
 	rval.titleH, _ = enc.Encode(justLetter(songN))
 	rval.artist = strings.TrimSpace(groupN)
-	// fmt.Printf("main %s by %s\n", rval.title, rval.artist)
+	//fmt.Printf("main %s by %s\n", rval.title, rval.artist)
 	if strings.HasPrefix(rval.artist, "The ") {
 		rval.artistHasThe = true
 		rval.artist = rval.artist[4:]
