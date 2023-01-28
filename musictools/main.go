@@ -75,6 +75,12 @@ func main() {
 	flag.BoolVar(&zDumpArtist, "z", false, "list artist names one per line")
 	flag.Parse()
 
+	if false {
+		ch := make(chan song)
+		v := <-ch
+		fmt.Println(v)
+	}
+
 	pathArg := path.Clean(flag.Arg(0))
 	ProcessFiles(pathArg)
 	duration := time.Since(start)
@@ -105,12 +111,13 @@ func justLetter(a string) string {
 func loadMetaPhone() {
 	groupNames := [...]string{
 		"5th_Dimension", "ABBA", "Alice Cooper", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers",
-		"Animals", "Aretha Franklin", "Arlo_Guthrie", "Association", "Average White Band",
+		"Animals", "Aquarius", "Aretha Franklin", "Arlo_Guthrie", "Association", "Average White Band",
 		"Band", "Basia", "BeachBoys", "Beatles", "Bee Gees", "Billy Joel", "BlindFaith",
-		"BloodSweatTears", "Blue Oyster Cult", "Bob Dylan", "Boston", "Box Tops", "Bread",
+		"BloodSweatTears", "Blue Oyster Cult", "Blues Brothers", "Bob Dylan", "Boston", "Box Tops", "Bread",
 		"Brewer and Shipley", "Brewer & Shipley", "BuffaloSpringfield", "Byrds",
 		"Carole King", "Carpenters", "Cheap Trick", "Chesapeake", "Cream", "Crosby & Nash",
-		"Crosby and Nash", "Crosby Stills And Nash", "Crosby_Stills_Nash_Young", "David Allan Coe",
+		"Crosby and Nash", "Crosby Stills & Nash", "Crosby Stills And Nash", "CSN&Y",
+		"Crosby Stills Nash Young", "Crosby Stills Nash & Young", "David Allan Coe",
 		"David Bowie", "David_Bromberg", "Deep Purple", "Derek and the Dominos",
 		"Derek_Dominos", "Detroit Wheels",
 		"Dire_Straits", "Doc Watson", "Don McLean", "Doobie_Brothers", "Doors", "Dylan",
@@ -120,7 +127,8 @@ func loadMetaPhone() {
 		"Heart", "Isley Brothers", "Jackie Wilson", "Jackson Browne",
 		"James_Taylor", "Jefferson_Airplane", "Jethro_Tull", "Jimmy Buffett", "John_Denver",
 		"John_Hartford", "John_Starling", "Joni_Mitchell", "Judy_Collins", "Kansas",
-		"Kingston_Trio", "Led_Zepplin", "Linda_Ronstadt", "Lovin Spoonful", "Lynyrd_Skynyrd",
+		"KC The Sunshine Band", "Kingston_Trio", "Led_Zepplin", "Linda_Ronstadt",
+		"Lovin Spoonful", "Lynyrd_Skynyrd",
 		"Mamas And Papas", "Mamas & The Papas", "Maria Muldaur",
 		"Meatloaf", "Mike_Auldridge", "Mith Ryder & The Detroit Wheels", "Moody Blues",
 		"Neal Young", "Neil Diamond",
@@ -334,6 +342,10 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 			fmt.Printf("%s by %s%s\n", aSong.title, the, aSong.artist)
 		case showArtistNotInMap && !aSong.artistKnown:
 			prim, _ := enc.Encode(justLetter(aSong.artist))
+			if len(prim) == 0 && len(aSong.artist) ==0 {
+				fmt.Printf("prim: %s, a: %v\n", prim, aSong)
+				continue
+			}
 			uniqueArtists[prim] = aSong.artist
 		case noGroup:
 			if aSong.artist == "" {
@@ -343,8 +355,8 @@ func processMap(pathArg string, m map[string]song) map[string]song {
 		}
 	}
 	if showArtistNotInMap {
-		for k, _ := range uniqueArtists {
-			fmt.Printf("addto map k: %s\n", k)
+		for k, v := range uniqueArtists {
+			fmt.Printf("addto map k: %s v: %s\n", k, v)
 		}
 	}
 	return m
