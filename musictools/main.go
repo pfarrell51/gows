@@ -101,12 +101,12 @@ var regAnd = regexp.MustCompile("(?i) (and|the) ")
 func justLetter(a string) string {
 	buff := bytes.Buffer{}
 	loc := []int{0, 0}
-	for j := 0; j < 4; j++ {	// 4 allows to and and two the, but it will nearly alwaysbreak before that
+	for j := 0; j < 4; j++ { // 4 allows to and and two the, but it will nearly alwaysbreak before that
 		loc = regAnd.FindStringIndex(a)
 		if len(loc) < 1 {
 			break
 		}
-		a = a[0:loc[0]] + a[loc[1]-1:]
+		a = a[:loc[0]] + a[loc[1]-1:]
 	}
 	for _, c := range a {
 		if unicode.IsLetter(c) {
