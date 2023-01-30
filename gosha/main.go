@@ -20,9 +20,11 @@ import (
 )
 
 type song struct {
+	artist,
+	artistH,
+	title,
+	sum string
 	alreadyNew bool
-	artist     string
-	artistH    string
 }
 
 func main() {
@@ -40,6 +42,8 @@ func main() {
 
 	pathArg := path.Clean(os.Args[1])
 	ProcessFiles(pathArg)
+	collectSongs()
+
 	duration := time.Since(start)
 	fmt.Printf("# %v\n", duration)
 }
@@ -47,13 +51,24 @@ func main() {
 func ProcessFiles(pathArg string) {
 	walkFiles(pathArg)
 }
+func collectSongs() {
+
+}
 
 // parse the file info to find artist and song title
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "song" object.
-func parseFilename(pathArg, p string) {
+func parseFilename(pathArg, p string) *song {
+	var rval = new(song)
 	fmt.Printf("sf: %s\n", p)
 	fn := path.Join(pathArg, p)
+	parts := strings.Split(p, "-")
+	if len(parts) > 1 {
+		rval.title = parts[1]
+		rval.artist = parts[0]
+	} else {
+		rval.artist = p
+	}
 	f, err := os.Open(fn)
 	if err != nil {
 		log.Fatal(err)
@@ -64,8 +79,9 @@ func parseFilename(pathArg, p string) {
 	if _, err := io.Copy(h, f); err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Printf("%x", h.Sum(nil))
+	rval.sum = fmt.Sprintf("%x", h.Sum(nil))
+	fmt.Println(rval)
+	return rval
 }
 
 // this is the local  WalkDirFunc called by WalkDir for each file
@@ -81,7 +97,8 @@ func processFile(pathArg string, fsys fs.FS, p string, d fs.DirEntry, err error)
 		return nil
 	}
 
-	parseFilename(pathArg, p)
+	aSong := parseFilename(pathArg, p)
+	fmt.Printf("%s\n", aSong.title)
 	return nil
 }
 
