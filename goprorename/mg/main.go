@@ -14,6 +14,7 @@ goPro naming conventions: [https://community.gopro.com/s/article/GoPro-Camera-Fi
 package main
 
 import (
+	"fmt"
 	"github.com/pfarrell51/gows/goprorename"
 	"os"
 )
@@ -23,6 +24,8 @@ func main() {
 	pathArg := "."
 	if len(os.Args) > 1 {
 		pathArg = os.Args[1]
+	} else {
+		fmt.Printf("usage %s <directory>\n", os.Args[0])
 	}
 	goprorename.ProcessFiles(pathArg)
 }
