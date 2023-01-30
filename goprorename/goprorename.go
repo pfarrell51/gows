@@ -30,7 +30,7 @@ import (
 
 var extRegex = regexp.MustCompile(".(M|m)(p|P)4")
 var nameRegex = regexp.MustCompile("(?s)(GX|H)(\\d{2})(\\d{4})")
-i
+
 // walked the argument directory path looking for .mp4 files generated
 // by a GoPro camera, creating a map of old and new filenames
 // then calling the processMap function
