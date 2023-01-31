@@ -18,7 +18,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/dhowden/tag"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -167,53 +166,6 @@ func parseFilename(pathArg, p string) *Song {
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
 var dashRegex = regexp.MustCompile(divP)
 
-func GetMetaData(pathArg, p string) *Song {
-	rval := new(Song)
-	rval.inPath = path.Join(pathArg, p)
-	rval.outPath = pathArg
-	file, err := os.Open(rval.inPath)
-	defer file.Close()
-	if err != nil {
-		fmt.Println(err)
-		return rval
-	}
-	m, err := tag.ReadFrom(file)
-	if err != nil {
-		fmt.Printf("%v %s", err, rval.title)
-		return rval
-	}
-	rval.title = m.Title() // The title of the track (see Metadata interface for more details).
-	if rval.title == "" {
-		_, filename := path.Split(rval.inPath)
-		punchIdx := dashRegex.FindStringIndex(filename)
-		if punchIdx != nil {
-			rval.title = strings.TrimSpace(filename[punchIdx[1]:])
-		}
-	}
-	rval.titleH, _ = GetEncoder().Encode(JustLetter(rval.title))
-	rval.artist = m.Artist()
-	rval.album = m.Album()
-
-	fmt.Printf("Format() %#v\n`", m.Format())
-	fmt.Printf("FileType() %#v\n", m.FileType())
-	fmt.Printf("Title() %#v\n", m.Title())
-	fmt.Printf("Album() %#v\n", m.Album())
-	fmt.Printf("Artist() %#v\n", m.Artist())
-	fmt.Printf("AlbumArtist() %#v\n", m.AlbumArtist())
-	fmt.Printf("Composer() %#v\n", m.Composer())
-	fmt.Printf("Genre() %#v\n", m.Genre())
-	fmt.Printf("Year() %#v\n", m.Year())
-	t, tt := m.Track()
-	fmt.Printf("Track() (int, int) %d of %d v\n", t, tt) // (int, int) // Number,Total
-	t, tt = m.Disc()
-	fmt.Printf("Disc() (int, int) %d of %d\n", t, tt)      // (int, int) // Number,Total
-	fmt.Printf("Picture() *Picture // %#v\n", m.Picture()) // *Picture //Artwork
-	fmt.Printf("Lyrics() %#v\n", m.Lyrics())
-	fmt.Printf("Comment() %#v\n", m.Comment())
-
-	return rval
-}
-
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
 // p is the current path/name
@@ -233,9 +185,12 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	aSong := new(Song)
 	if GetFlags().JsonOutput {
 		aSong = GetMetaData(pathArg, p)
-	} else {
-		aSong = parseFilename(pathArg, p)
+		key, _ := GetEncoder().Encode(JustLetter(aSong.title))
+		aSong.titleH = key
+		sMap[key] = *aSong
+		return nil
 	}
+	aSong = parseFilename(pathArg, p)
 	if aSong == nil {
 		return nil
 	}
@@ -250,6 +205,7 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 		}
 		return nil
 	}
+
 	sMap[aSong.titleH] = *aSong
 	return nil
 }
@@ -270,7 +226,9 @@ func WalkFiles(pathArg string) map[string]Song {
 // then create new ordering that makes sense to human
 func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 	if GetFlags().JsonOutput {
+		fmt.Println("PM starting json")
 		PrintJson(m)
+		fmt.Println("PM done with json")
 		return m
 	}
 	uniqueArtists := make(map[string]string) // we just need a set, but use a map

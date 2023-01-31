@@ -24,6 +24,8 @@ type Song struct {
 	albumH            string
 	title             string
 	titleH            string
+	track             int
+	year              int
 	inPath            string
 	outPath           string
 	ext               string
@@ -39,6 +41,7 @@ type FlagST struct {
 }
 
 var localFlags = new(FlagST)
+
 // copy user set flags to a local store
 func SetFlagArgs(f FlagST) {
 	localFlags.ShowArtistNotInMap = f.ShowArtistNotInMap
@@ -51,6 +54,7 @@ func SetFlagArgs(f FlagST) {
 func GetFlags() *FlagST {
 	return localFlags
 }
+
 var enc metaphone3.Encoder
 
 func GetEncoder() *metaphone3.Encoder {
