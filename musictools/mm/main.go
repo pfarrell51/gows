@@ -51,7 +51,10 @@ func main() {
 		v := <-ch
 		fmt.Println(v)
 	}
-
+	if flags.ZDumpArtist {
+		musictools.DumpGptree()
+		return
+	}
 	pathArg := path.Clean(flag.Arg(0))
 	ProcessFiles(pathArg)
 	duration := time.Since(start)
