@@ -187,7 +187,6 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	}
 	aSong := new(Song)
 	if GetFlags().JsonOutput {
-		fmt.Printf("p: %s\n", p)
 		aSong = GetMetaData(pathArg, p)
 		key, _ := GetEncoder().Encode(JustLetter(aSong.Title))
 		aSong.titleH = key
