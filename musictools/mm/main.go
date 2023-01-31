@@ -30,12 +30,12 @@ func main() {
 
 	}
 	var flags = new(musictools.FlagST)
-	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map  list artist not in gpmap")
-	flag.BoolVar(&flags.JustList, "l", false, "list - `list files")
-	flag.BoolVar(&flags.NoGroup, "n", false, "nogroup - `list files that do not have an artist/group in the title")
-	flag.BoolVar(&flags.DoRename, "r", false, "rename - perform rename function on needed files")
+	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (gpmap)")
+	flag.BoolVar(&flags.JustList, "l", false, "list - list files")
+	flag.BoolVar(&flags.NoGroup, "n", false, "nogroup - list files that do not have an artist/group in the title")
+	flag.BoolVar(&flags.DoRename, "r", false, "rename - output command to perform rename function on needed files")
 	flag.BoolVar(&flags.ZDumpArtist, "z", false, "list artist names one per line")
-	flag.BoolVar(&flags.JsonOutput, "j", false, "list metadata as json")
+	flag.BoolVar(&flags.JsonOutput, "j", false, "output metadata as json")
 	flag.BoolVar(&flags.Debug, "d", false, "debug on")
 	flag.Parse()
 	musictools.SetFlagArgs(*flags)
