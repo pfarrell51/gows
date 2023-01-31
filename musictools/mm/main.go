@@ -29,17 +29,24 @@ func main() {
 		fmt.Fprintf(w, "default is to list files that need love.\n")
 
 	}
+	var helpflag bool
 	var flags = new(musictools.FlagST)
 	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (gpmap)")
+	flag.BoolVar(&flags.Debug, "d", false, "debug on")
+	flag.BoolVar(&helpflag, "h", false, "help")
+	flag.BoolVar(&flags.JsonOutput, "j", false, "output metadata as json")
 	flag.BoolVar(&flags.JustList, "l", false, "list - list files")
 	flag.BoolVar(&flags.NoGroup, "n", false, "nogroup - list files that do not have an artist/group in the title")
 	flag.BoolVar(&flags.DoRename, "r", false, "rename - output command to perform rename function on needed files")
 	flag.BoolVar(&flags.ZDumpArtist, "z", false, "list artist names one per line")
-	flag.BoolVar(&flags.JsonOutput, "j", false, "output metadata as json")
-	flag.BoolVar(&flags.Debug, "d", false, "debug on")
 	flag.Parse()
+	if helpflag {
+		flag.Usage()
+		return
+	}
 	musictools.SetFlagArgs(*flags)
 
+i	//	fmt.Printf("-j Json %t, d: %t\n", flags.JsonOutput, flags.Debug)
 	if false {
 		ch := make(chan musictools.Song)
 		v := <-ch
