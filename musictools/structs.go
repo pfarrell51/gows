@@ -1,13 +1,9 @@
-// this program helps clean up the mp3 and flac files in my hits playlist
-// its main task is to normalize the file names to relect the artist and song title
-//
-// this is not multi-processing safe
-
-// Bugs
+// this  file contains structures and other "global" data stores
 
 package musictools
 
 import (
+	"fmt"
 	"github.com/dlclark/metaphone3"
 	g "github.com/zyedidia/generic"
 	"github.com/zyedidia/generic/btree"
@@ -20,8 +16,8 @@ type Song struct {
 	albumH            string
 	Title             string
 	titleH            string
-	Track             int	`json:",omitempty"`
-	Year              int	`json:",omitempty"`
+	Track             int `json:",omitempty"`
+	Year              int `json:",omitempty"`
 	alreadyNew        bool
 	artistHasThe      bool
 	artistInDirectory bool
@@ -52,9 +48,6 @@ func SetFlagArgs(f FlagST) {
 	localFlags.ZDumpArtist = f.ZDumpArtist
 	localFlags.JsonOutput = f.JsonOutput
 	localFlags.Debug = f.Debug
-	if localFlags.Debug {
-		localFlags.JsonOutput = true
-	}
 }
 func GetFlags() *FlagST {
 	return localFlags
