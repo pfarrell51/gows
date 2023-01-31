@@ -226,9 +226,7 @@ func WalkFiles(pathArg string) map[string]Song {
 // then create new ordering that makes sense to human
 func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 	if GetFlags().JsonOutput {
-		fmt.Println("PM starting json")
 		PrintJson(m)
-		fmt.Println("PM done with json")
 		return m
 	}
 	uniqueArtists := make(map[string]string) // we just need a set, but use a map

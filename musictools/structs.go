@@ -14,18 +14,18 @@ import (
 )
 
 type Song struct {
-	alreadyNew        bool
 	Artist            string
 	artistH           string
-	artistHasThe      bool
-	artistInDirectory bool
-	artistKnown       bool
 	Album             string
 	albumH            string
 	Title             string
 	titleH            string
-	Track             int
-	Year              int
+	Track             int	`json:",omitempty"`
+	Year              int	`json:",omitempty"`
+	alreadyNew        bool
+	artistHasThe      bool
+	artistInDirectory bool
+	artistKnown       bool
 	inPath            string
 	outPath           string
 	ext               string
