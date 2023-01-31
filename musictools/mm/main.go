@@ -16,7 +16,6 @@ import (
 	"time"
 )
 
-
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Printf("Usage: %s [flags] directory-spec\n", os.Args[0])
@@ -39,9 +38,6 @@ func main() {
 	flag.BoolVar(&flags.JsonOutput, "j", false, "list metadata as json")
 	flag.Parse()
 	musictools.SetFlagArgs(*flags)
-
-	songMap := make(map[string]musictools.Song)
-	fmt.Printf(" map: %#v\n", songMap)
 
 	if false {
 		ch := make(chan musictools.Song)
