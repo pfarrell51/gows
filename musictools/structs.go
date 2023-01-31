@@ -15,17 +15,17 @@ import (
 
 type Song struct {
 	alreadyNew        bool
-	artist            string
+	Artist            string
 	artistH           string
 	artistHasThe      bool
 	artistInDirectory bool
 	artistKnown       bool
-	album             string
+	Album             string
 	albumH            string
-	title             string
+	Title             string
 	titleH            string
-	track             int
-	year              int
+	Track             int
+	Year              int
 	inPath            string
 	outPath           string
 	ext               string

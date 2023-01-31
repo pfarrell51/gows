@@ -149,15 +149,15 @@ func parseFilename(pathArg, p string) *Song {
 		}
 	}
 	groupN = cases.Title(language.English, cases.NoLower).String(strings.TrimSpace(groupN))
-	rval.title = strings.TrimSpace(SongN)
+	rval.Title = strings.TrimSpace(SongN)
 	rval.titleH, _ = GetEncoder().Encode(JustLetter(SongN))
-	rval.artist = strings.TrimSpace(groupN)
+	rval.Artist = strings.TrimSpace(groupN)
 	//fmt.Printf("main %s by %s\n", rval.title, rval.artist)
-	if strings.HasPrefix(rval.artist, "The ") {
+	if strings.HasPrefix(rval.Artist, "The ") {
 		rval.artistHasThe = true
-		rval.artist = rval.artist[4:]
+		rval.Artist = rval.Artist[4:]
 	}
-	rval.artistH, _ = GetEncoder().Encode(JustLetter(rval.artist))
+	rval.artistH, _ = GetEncoder().Encode(JustLetter(rval.Artist))
 	_, ok := gptree.Get(rval.artistH)
 	rval.artistKnown = ok
 	return rval
@@ -185,7 +185,7 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	aSong := new(Song)
 	if GetFlags().JsonOutput {
 		aSong = GetMetaData(pathArg, p)
-		key, _ := GetEncoder().Encode(JustLetter(aSong.title))
+		key, _ := GetEncoder().Encode(JustLetter(aSong.Title))
 		aSong.titleH = key
 		sMap[key] = *aSong
 		return nil
@@ -197,10 +197,10 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	v := sMap[aSong.titleH]
 	if len(v.titleH) > 0 {
 		if aSong.artistH == v.artistH {
-			fmt.Printf("#existing duplicate Song for %s %s == %s\n", aSong.inPath, aSong.title, v.title)
+			fmt.Printf("#existing duplicate Song for %s %s == %s\n", aSong.inPath, aSong.Title, v.Title)
 		} else {
-			fmt.Printf("#possible dup Song for %s %s == %s %s\n", aSong.inPath, aSong.title,
-				v.title, v.artist)
+			fmt.Printf("#possible dup Song for %s %s == %s %s\n", aSong.inPath, aSong.Title,
+				v.Title, v.Artist)
 			aSong.titleH += "1"
 		}
 		return nil
@@ -245,37 +245,37 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 				continue
 				//fmt.Printf("pM aNew %s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
 				//	pathArg, aSong.title, aSong.artist, aSong.ext)
-			case aSong.artist == "":
+			case aSong.Artist == "":
 				fmt.Printf("#rename artist is blank %s\n", aSong.inPath)
 				cmd = "#" + cmd
 				continue
 			case aSong.artistInDirectory:
 				fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
-					aSong.outPath, aSong.title, aSong.ext)
+					aSong.outPath, aSong.Title, aSong.ext)
 				continue
 			}
-			if aSong.artist == "" {
+			if aSong.Artist == "" {
 				fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
-					aSong.outPath, aSong.title, aSong.ext)
+					aSong.outPath, aSong.Title, aSong.ext)
 			} else {
 				fmt.Printf("%s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
-					aSong.outPath, aSong.title, aSong.artist, aSong.ext)
+					aSong.outPath, aSong.Title, aSong.Artist, aSong.ext)
 			}
 		case GetFlags().JustList:
 			the := ""
 			if aSong.artistHasThe {
 				the = "The "
 			}
-			fmt.Printf("%s by %s%s\n", aSong.title, the, aSong.artist)
+			fmt.Printf("%s by %s%s\n", aSong.Title, the, aSong.Artist)
 		case GetFlags().ShowArtistNotInMap && !aSong.artistKnown:
-			prim, _ := GetEncoder().Encode(JustLetter(aSong.artist))
-			if len(prim) == 0 && len(aSong.artist) == 0 {
+			prim, _ := GetEncoder().Encode(JustLetter(aSong.Artist))
+			if len(prim) == 0 && len(aSong.Artist) == 0 {
 				// fmt.Printf("prim: %s, a: %v\n", prim, aSong)
 				continue
 			}
-			uniqueArtists[prim] = aSong.artist
+			uniqueArtists[prim] = aSong.Artist
 		case GetFlags().NoGroup:
-			if aSong.artist == "" {
+			if aSong.Artist == "" {
 				fmt.Printf("nogroup %s\n", aSong.inPath)
 			}
 		default:
