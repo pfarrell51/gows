@@ -46,7 +46,6 @@ func main() {
 	}
 	musictools.SetFlagArgs(*flags)
 
-i	//	fmt.Printf("-j Json %t, d: %t\n", flags.JsonOutput, flags.Debug)
 	if false {
 		ch := make(chan musictools.Song)
 		v := <-ch
