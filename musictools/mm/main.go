@@ -36,6 +36,7 @@ func main() {
 	flag.BoolVar(&flags.DoRename, "r", false, "rename - perform rename function on needed files")
 	flag.BoolVar(&flags.ZDumpArtist, "z", false, "list artist names one per line")
 	flag.BoolVar(&flags.JsonOutput, "j", false, "list metadata as json")
+	flag.BoolVar(&flags.Debug, "d", false, "debug on")
 	flag.Parse()
 	musictools.SetFlagArgs(*flags)
 

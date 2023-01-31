@@ -38,6 +38,7 @@ type FlagST struct {
 	NoGroup            bool
 	ZDumpArtist        bool
 	JsonOutput         bool
+	Debug              bool
 }
 
 var localFlags = new(FlagST)
@@ -50,6 +51,10 @@ func SetFlagArgs(f FlagST) {
 	localFlags.NoGroup = f.NoGroup
 	localFlags.ZDumpArtist = f.ZDumpArtist
 	localFlags.JsonOutput = f.JsonOutput
+	localFlags.Debug = f.Debug
+	if localFlags.Debug {
+		localFlags.JsonOutput = true
+	}
 }
 func GetFlags() *FlagST {
 	return localFlags
