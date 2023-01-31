@@ -27,21 +27,24 @@ func init() {
 	LoadArtistMap()
 }
 
+// top level entry point, takes the path to the directory to walk/process
 func ProcessFiles(pathArg string) {
-	if !GetFlags().ZDumpArtist {
-		rmap := WalkFiles(pathArg)
-		ProcessMap(pathArg, rmap)
-	} else {
+	if GetFlags().ZDumpArtist {
 		DumpGptree()
+		return
 	}
+	rmap := WalkFiles(pathArg)
+	ProcessMap(pathArg, rmap)
 }
 
 var regAnd = regexp.MustCompile("(?i) (and|the) ")
 
+// takes a string and returns just the letters. Also removes the words "and" and "the" from the string
+// since they are essentially noise words.
 func JustLetter(a string) string {
 	buff := bytes.Buffer{}
 	loc := []int{0, 0}
-	for j := 0; j < 4; j++ { // 4 allows to and and two the, but it will nearly alwaysbreak before that
+	for j := 0; j < 4; j++ { // 4 allows the space before the keyword (and/the), as we back up
 		loc = regAnd.FindStringIndex(a)
 		if len(loc) < 1 {
 			break
@@ -72,7 +75,7 @@ var commaExp = regexp.MustCompile(",\\s")
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "Song" object.
 func parseFilename(pathArg, p string) *Song {
-	// fmt.Printf("sf: %s\n", p)
+	//fmt.Printf("pf: %s\n", p)
 	var rval = new(Song)
 	rval.inPath = path.Join(pathArg, p)
 	rval.outPath = pathArg
@@ -184,6 +187,7 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	}
 	aSong := new(Song)
 	if GetFlags().JsonOutput {
+		fmt.Printf("p: %s\n", p)
 		aSong = GetMetaData(pathArg, p)
 		key, _ := GetEncoder().Encode(JustLetter(aSong.Title))
 		aSong.titleH = key
@@ -222,8 +226,8 @@ func WalkFiles(pathArg string) map[string]Song {
 	return songMap
 }
 
-// go thru the map, sort by key
-// then create new ordering that makes sense to human
+// this is the output routine. it goes thru the map and produces output
+// appropriate for the specified flag
 func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 	if GetFlags().JsonOutput {
 		PrintJson(m)
@@ -286,6 +290,8 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 	}
 	return m
 }
+
+// specialized function, dumps the Artist map
 func DumpGptree() {
 	if GetFlags().ZDumpArtist {
 		gptree.Each(func(key string, v string) {
