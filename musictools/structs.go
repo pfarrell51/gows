@@ -3,7 +3,6 @@
 package musictools
 
 import (
-	"fmt"
 	"github.com/dlclark/metaphone3"
 	g "github.com/zyedidia/generic"
 	"github.com/zyedidia/generic/btree"
