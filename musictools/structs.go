@@ -15,8 +15,10 @@ type Song struct {
 	albumH            string
 	Title             string
 	titleH            string
-	Track             int `json:",omitempty"`
-	Year              int `json:",omitempty"`
+	Track             int    `json:",omitempty"`
+	Year              int    `json:",omitempty"`
+	ISRC              string `json:",omitempty"` // International Standard Recording Code
+	MBID              string `json:",omitempty"` // musicbrainz ID
 	alreadyNew        bool
 	artistHasThe      bool
 	artistInDirectory bool
