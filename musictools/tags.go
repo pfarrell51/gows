@@ -10,9 +10,13 @@ import (
 	"strings"
 
 	"github.com/dhowden/tag"
+	"github.com/dhowden/tag/mbz"
 )
 
 func GetMetaData(pathArg, p string) *Song {
+	if GetFlags().Debug {
+		fmt.Printf("in GMD %s\n", p)
+	}
 	rval := new(Song)
 	rval.inPath = path.Join(pathArg, p)
 	rval.outPath = pathArg
@@ -40,6 +44,13 @@ func GetMetaData(pathArg, p string) *Song {
 	rval.Album = m.Album()
 	rval.Year = m.Year()
 	rval.Track, _ = m.Track()
+	info := mbz.Extract(m)
+	t, ok := info["musicbrainz_trackid"]
+	if !ok {
+		fmt.Printf("not OK no id in %s\n", rval.inPath)
+	}
+	rval.MBID = t
+
 	if GetFlags().Debug {
 		fmt.Printf("Format %s Type %s\n", m.Format(), m.FileType())
 		if m.Title() != "" {
