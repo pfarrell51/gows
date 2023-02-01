@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/dhowden/tag v0.0.0-20220618230019-adf36e896086
 	github.com/dlclark/metaphone3 v0.0.0-20190903202417-5fe87fcdd547
-	github.com/zyedidia/generic v1.2.0
+	github.com/zyedidia/generic v1.2.1
 	golang.org/x/text v0.6.0
 )
 
