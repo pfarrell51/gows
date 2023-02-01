@@ -38,6 +38,8 @@ func GetMetaData(pathArg, p string) *Song {
 	rval.titleH, _ = GetEncoder().Encode(JustLetter(rval.Title))
 	rval.Artist = m.Artist()
 	rval.Album = m.Album()
+	rval.Year = m.Year()
+	rval.Track, _ = m.Track()
 	if GetFlags().Debug {
 		fmt.Printf("Format %s Type %s\n", m.Format(), m.FileType())
 		if m.Title() != "" {
