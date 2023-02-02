@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/dhowden/tag"
@@ -56,6 +57,16 @@ func GetMetaData(pathArg, p string) *Song {
 	info := mbz.Extract(m)
 	rval.MBID, _ = info["musicbrainz_trackid"]
 	rval.AcoustID, _ = info["acoustid_id"]
+	if rval.Year == 0 {
+		rw := m.Raw() // look in raw map.
+		yy := rw["TORY"]
+		if yy != nil {
+			y, err := strconv.ParseInt(yy.(string), 10, 64)
+			if err == nil {
+				rval.Year = int(y)
+			}
+		}
+	}
 
 	if GetFlags().Debug {
 		for k, _ := range info {
