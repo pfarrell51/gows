@@ -13,6 +13,11 @@ import (
 	"github.com/dhowden/tag/mbz"
 )
 
+var knownIds map[string]bool
+
+func init() {
+	knownIds = make(map[string]bool)
+}
 func GetMetaData(pathArg, p string) *Song {
 	if GetFlags().Debug {
 		fmt.Printf("in GMD %s\n", p)
@@ -45,11 +50,17 @@ func GetMetaData(pathArg, p string) *Song {
 	rval.Year = m.Year()
 	rval.Track, _ = m.Track()
 	info := mbz.Extract(m)
-	t, ok := info["musicbrainz_trackid"]
-	if !ok {
-		fmt.Printf("not OK no id in %s\n", rval.inPath)
+	rval.MBID, _ = info["musicbrainz_trackid"]
+	rval.AcoustID, _ = info["acoustid_id"]
+
+	if GetFlags().Debug {
+		for k, _ := range info {
+			found := knownIds[k]
+			if !found {
+				knownIds[k] = true
+			}
+		}
 	}
-	rval.MBID = t
 
 	if GetFlags().Debug {
 		fmt.Printf("Format %s Type %s\n", m.Format(), m.FileType())
@@ -74,8 +85,13 @@ func GetMetaData(pathArg, p string) *Song {
 			fmt.Printf("Track %d \n", t)
 		}
 		if rval.MBID != "" {
-			fmt.Printf("Musicbrainz track id %s\n", rval.MBID)
+			fmt.Printf("Musicbrainz track id %s\n\n", rval.MBID)
 		}
 	}
 	return rval
+}
+func DumpKnowIDnames() {
+	for k, _ := range knownIds {
+		fmt.Printf("%s\n", k)
+	}
 }
