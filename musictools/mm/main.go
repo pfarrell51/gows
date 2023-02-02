@@ -57,6 +57,10 @@ func main() {
 	}
 	pathArg := path.Clean(flag.Arg(0))
 	ProcessFiles(pathArg)
+	if flags.JsonOutput && flags.Debug {
+		fmt.Printf("\n\n\n Dumping known ID names\n\n")
+		musictools.DumpKnowIDnames()
+	}
 	duration := time.Since(start)
 	fmt.Printf("# %v\n", duration)
 }
