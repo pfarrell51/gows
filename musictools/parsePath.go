@@ -205,8 +205,10 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 		return nil // not interesting extension
 	}
 	aSong := new(Song)
-	if GetFlags().JsonOutput {
+	if GetFlags().JsonOutput || GetFlags().DoRenameMetadata {
 		aSong = GetMetaData(pathArg, p)
+		ext := path.Ext(p) // file stuff not pulled from metadata
+		aSong.ext = ext
 		key, _ := GetEncoder().Encode(JustLetter(aSong.Title))
 		aSong.titleH = key
 		sMap[key] = *aSong
@@ -255,33 +257,8 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 
 	for _, aSong := range m {
 		switch {
-		case GetFlags().DoRename:
-			cmd := "mv"
-			if runtime.GOOS == "windows" {
-				cmd = "ren "
-			}
-			switch {
-			case aSong.alreadyNew:
-				continue
-				//fmt.Printf("pM aNew %s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
-				//	pathArg, aSong.title, aSong.artist, aSong.ext)
-			case aSong.Artist == "":
-				fmt.Printf("#rename artist is blank %s\n", aSong.inPath)
-				cmd = "#" + cmd
-				continue
-			case aSong.artistInDirectory:
-				cmd = "#" + cmd
-				fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
-					aSong.outPath, aSong.Title, aSong.ext)
-				continue
-			}
-			if aSong.Artist == "" {
-				fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
-					aSong.outPath, aSong.Title, aSong.ext)
-			} else {
-				fmt.Printf("%s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
-					aSong.outPath, aSong.Title, aSong.Artist, aSong.ext)
-			}
+		case GetFlags().DoRenameFilename || GetFlags().DoRenameMetadata:
+			outputRenameCommand(aSong)
 		case GetFlags().JustList:
 			the := ""
 			if aSong.artistHasThe {
@@ -308,6 +285,45 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 		}
 	}
 	return m
+}
+func outputRenameCommand(aSong Song) {
+	cmd := "mv"
+	if runtime.GOOS == "windows" {
+		cmd = "ren "
+	}
+	var outputPath = path.Join(aSong.outPath, aSong.Title)
+	if aSong.Artist != "" {
+		outputPath += "; "
+	}
+	outputPath += aSong.Artist + aSong.ext
+	if outputPath == aSong.inPath {
+		if GetFlags().Debug {
+			fmt.Printf("#no change for %s\n", aSong.inPath)
+		}
+		return
+	}
+	switch {
+	case aSong.alreadyNew:
+		return
+		//fmt.Printf("pM aNew %s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
+		//	pathArg, aSong.title, aSong.artist, aSong.ext)
+	case aSong.Artist == "":
+		fmt.Printf("#rename artist is blank %s\n", aSong.inPath)
+		cmd = "#" + cmd
+		return
+	case aSong.artistInDirectory:
+		cmd = "#" + cmd
+		fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
+			aSong.outPath, aSong.Title, aSong.ext)
+		return
+	}
+	if aSong.Artist == "" {
+		fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
+			aSong.outPath, aSong.Title, aSong.ext)
+	} else {
+		fmt.Printf("%s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
+			aSong.outPath, aSong.Title, aSong.Artist, aSong.ext)
+	}
 }
 
 // specialized function, dumps the Artist map
