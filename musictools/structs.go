@@ -19,6 +19,7 @@ type Song struct {
 	Year              int    `json:",omitempty"`
 	ISRC              string `json:",omitempty"` // International Standard Recording Code
 	MBID              string `json:",omitempty"` // musicbrainz ID
+	AcoustID          string `json:",omitempty"` // Acoust ID
 	alreadyNew        bool
 	artistHasThe      bool
 	artistInDirectory bool
