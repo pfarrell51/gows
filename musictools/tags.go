@@ -73,6 +73,9 @@ func GetMetaData(pathArg, p string) *Song {
 		if t, _ := m.Track(); t > 0 {
 			fmt.Printf("Track %d \n", t)
 		}
+		if rval.MBID != "" {
+			fmt.Printf("Musicbrainz track id %s\n", rval.MBID)
+		}
 	}
 	return rval
 }
