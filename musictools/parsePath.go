@@ -270,6 +270,7 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 				cmd = "#" + cmd
 				continue
 			case aSong.artistInDirectory:
+				cmd = "#" + cmd
 				fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
 					aSong.outPath, aSong.Title, aSong.ext)
 				continue
