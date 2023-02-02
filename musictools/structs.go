@@ -31,7 +31,8 @@ type Song struct {
 
 type FlagST struct {
 	ShowArtistNotInMap bool
-	DoRename           bool
+	DoRenameFilename   bool
+	DoRenameMetadata   bool
 	JustList           bool
 	NoGroup            bool
 	ZDumpArtist        bool
@@ -44,7 +45,8 @@ var localFlags = new(FlagST)
 // copy user set flags to a local store
 func SetFlagArgs(f FlagST) {
 	localFlags.ShowArtistNotInMap = f.ShowArtistNotInMap
-	localFlags.DoRename = f.DoRename
+	localFlags.DoRenameFilename = f.DoRenameFilename
+	localFlags.DoRenameMetadata = f.DoRenameMetadata
 	localFlags.JustList = f.JustList
 	localFlags.NoGroup = f.NoGroup
 	localFlags.ZDumpArtist = f.ZDumpArtist
