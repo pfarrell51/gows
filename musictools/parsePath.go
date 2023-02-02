@@ -70,12 +70,30 @@ var underToSpace = regexp.MustCompile("_")
 var cReg = regexp.MustCompile(",\\s")
 var dReg = regexp.MustCompile("-\\s")
 var commaExp = regexp.MustCompile(",\\s")
+var slashReg = regexp.MustCompile("/")
+
+func pathLastTwo(s string) (artist, album string) {
+	parts := slashReg.FindAllStringIndex(s, -1)
+	switch len(parts) {
+	case 1:
+		artist = s[:parts[0][0]]
+		album = ""
+	case 2:
+		artist = s[:parts[0][0]]
+		album = s[parts[0][1]:parts[1][0]]
+	default:
+		fmt.Printf("PIB, no directory found in %s\n", s)
+	}
+	return artist, album
+}
 
 // parse the file info to find artist and Song title
 // most of my music files have file names with the artist name, a hyphen and then the track title
 // so this pulls out the information and fills in the "Song" object.
 func parseFilename(pathArg, p string) *Song {
-	//fmt.Printf("pf: %s\n", p)
+	if GetFlags().Debug {
+		fmt.Printf("pf: %s\n", p)
+	}
 	var rval = new(Song)
 	rval.inPath = path.Join(pathArg, p)
 	rval.outPath = pathArg
@@ -96,10 +114,11 @@ func parseFilename(pathArg, p string) *Song {
 	ps, _ := path.Split(string(nameB))
 	if len(ps) > 0 {
 		rval.artistInDirectory = true
+		rval.Artist, rval.Album = pathLastTwo(ps)
 		rval.outPath = path.Join(rval.outPath, ps)
+
 		nameB = nameB[len(ps):]
 		SongN = string(nameB)
-		groupN = ps[0 : len(ps)-1] // cut off trailing slash
 	}
 	words := cReg.FindAllIndex(nameB, -1)
 	dash := dReg.FindIndex(nameB)
