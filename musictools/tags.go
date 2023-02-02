@@ -38,6 +38,7 @@ func GetMetaData(pathArg, p string) *Song {
 	}
 	rval.Title = m.Title() // The title of the track (see Metadata interface for more details).
 	if rval.Title == "" {
+		fmt.Printf("weird, no title for %s\n", rval.inPath)
 		_, filename := path.Split(rval.inPath)
 		punchIdx := dashRegex.FindStringIndex(filename)
 		if punchIdx != nil {
@@ -46,6 +47,9 @@ func GetMetaData(pathArg, p string) *Song {
 	}
 	rval.titleH, _ = GetEncoder().Encode(JustLetter(rval.Title))
 	rval.Artist = m.Artist()
+	if strings.HasPrefix(rval.Artist, "The ") {
+		rval.Artist = rval.Artist[4:]
+	}
 	rval.Album = m.Album()
 	rval.Year = m.Year()
 	rval.Track, _ = m.Track()
