@@ -285,14 +285,11 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 }
 func outputRenameCommand(aSong *Song) {
 	cmd := "mv"
-	fmt.Printf("oRC1 %t \n%s\n%s\n", aSong.outPath == aSong.inPath, aSong.outPath, aSong.inPath)
 	aSong.FixupOutputPath()
 	if runtime.GOOS == "windows" {
 		cmd = "ren "
 	}
-	fmt.Printf("oRC2 %t \n%s\n%s\n", aSong.outPath == aSong.inPath, aSong.outPath, aSong.inPath)
 	if aSong.outPath == aSong.inPath {
-		fmt.Println("must be equal")
 		if GetFlags().Debug {
 			fmt.Printf("#parseP no change for %s\n", aSong.inPath)
 		}
@@ -309,17 +306,10 @@ func outputRenameCommand(aSong *Song) {
 		return
 	case aSong.artistInDirectory:
 		cmd = "#" + cmd
-		fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
-			aSong.outPath, aSong.Title, aSong.ext)
+		fmt.Printf("%s \"%s\" \"%s\"\n", cmd, aSong.inPath, aSong.outPath)
 		return
 	}
-	if aSong.Artist == "" {
-		fmt.Printf("%s \"%s\" \"%s/%s%s\"\n", cmd, aSong.inPath,
-			aSong.outPath, aSong.Title, aSong.ext)
-	} else {
-		fmt.Printf("%s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
-			aSong.outPath, aSong.Title, aSong.Artist, aSong.ext)
-	}
+	fmt.Printf("%s \"%s\" \"%s\"\n", cmd, aSong.inPath, aSong.outPath)
 }
 
 // specialized function, dumps the Artist map
