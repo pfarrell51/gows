@@ -25,7 +25,9 @@ type Song struct {
 	artistInDirectory bool
 	artistKnown       bool
 	inPath            string
+	inPathDescent     string // any descent below the pathArg aka outPathBase
 	outPath           string
+	outPathBase       string // copied from pathArg entered by the user
 	ext               string
 }
 
