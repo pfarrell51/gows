@@ -19,23 +19,33 @@ var knownIds map[string]bool
 func init() {
 	knownIds = make(map[string]bool)
 }
-func GetMetaData(pathArg, p string) *Song {
+
+// pull meta data from music file. Full file path is pathArg + p
+func GetMetaData(pathArg, p string) (*Song, error) {
 	if GetFlags().Debug {
 		fmt.Printf("in GMD %s\n", p)
 	}
 	rval := new(Song)
-	rval.inPath = path.Join(pathArg, p)
-	rval.outPath = pathArg
+	rval.BasicPathSetup(pathArg, p)
+	if foundExt := ExtRegex.FindString(p); len(foundExt) > 0 { // redundant check to prevent Bozo programmers
+		if GetFlags().Debug {
+			fmt.Printf("gmd:foundExt %s\n", foundExt)
+		}
+	}
+	if rval.inPath == "" {
+		panic("PIB, input path empty")
+	}
 	file, err := os.Open(rval.inPath)
 	defer file.Close()
 	if err != nil {
-		fmt.Println(err)
-		return rval
+		fmt.Printf("err : %v\n", err)
+		fmt.Println(rval.inPath)
+		return nil, err
 	}
 	m, err := tag.ReadFrom(file)
 	if err != nil {
 		fmt.Printf("%v %s", err, rval.Title)
-		return rval
+		return nil, err
 	}
 	rval.Title = m.Title() // The title of the track (see Metadata interface for more details).
 	if rval.Title == "" {
@@ -67,7 +77,7 @@ func GetMetaData(pathArg, p string) *Song {
 			}
 		}
 	}
-
+	rval.FixupOutputPath()
 	if GetFlags().Debug {
 		for k, _ := range info {
 			found := knownIds[k]
@@ -76,7 +86,6 @@ func GetMetaData(pathArg, p string) *Song {
 			}
 		}
 	}
-
 	if GetFlags().Debug {
 		fmt.Printf("Format %s Type %s\n", m.Format(), m.FileType())
 		if m.Title() != "" {
@@ -103,7 +112,7 @@ func GetMetaData(pathArg, p string) *Song {
 			fmt.Printf("Musicbrainz track id %s\n\n", rval.MBID)
 		}
 	}
-	return rval
+	return rval, nil
 }
 func DumpKnowIDnames() {
 	for k, _ := range knownIds {
