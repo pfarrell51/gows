@@ -37,8 +37,8 @@ func main() {
 	flag.BoolVar(&flags.JsonOutput, "j", false, "output metadata as json")
 	flag.BoolVar(&flags.JustList, "l", false, "list - list files")
 	flag.BoolVar(&flags.NoGroup, "n", false, "nogroup - list files that do not have an artist/group in the title")
-	flag.BoolVar(&flags.DoRenameFilename, "fr", false, "rename - output command to perform rename from parsed file name")
-	flag.BoolVar(&flags.DoRenameMetadata, "mr", false, "renameMetadata - output command to perform rename from internal metadata")
+	flag.BoolVar(&flags.DoRenameFilename, "fr", false, "rename - output rename from parsed file name")
+	flag.BoolVar(&flags.DoRenameMetadata, "mr", false, "rename - output rename from internal metadata")
 	flag.BoolVar(&flags.ZDumpArtist, "z", false, "list artist names one per line")
 	flag.Parse()
 	if helpflag {
