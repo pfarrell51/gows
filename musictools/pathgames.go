@@ -29,26 +29,28 @@ func (s *Song) BasicPathSetup(pathArg, p string) {
 }
 
 // build up output path in case we want to rename the file
-func (s Song) FixupOutputPath() {
+func (s *Song) FixupOutputPath() {
+	if GetFlags().Debug {
+		fmt.Printf("FOP %s\n", s.outPath)
+	}
 	if s.outPath == s.inPath {
 		return
-	}
-	if strings.Contains(s.outPath, s.Title) {
-		panic(fmt.Sprintf("PIB, title aleady in output path %s\n%s\n", s.outPath, s.inPath))
 	}
 	if s.ext == "" {
 		panic(fmt.Sprintf("PIB, extension is empty %s\n", s.outPath))
 	}
-	if s.ext != "" && strings.Contains(s.outPath, s.ext) {
-		panic(fmt.Sprintf("PIB, extension >%s< aleady in output path %s\n", s.ext, s.outPath))
+	if !strings.Contains(s.outPath, s.Title) {
+		s.outPath = path.Join(s.outPath, s.Title)
 	}
-	var outputPath = path.Join(s.outPath, s.Title)
-	if !s.artistInDirectory {
-		if s.Artist != "" {
-			outputPath += "; " + s.Artist
-		}
+	if !s.artistInDirectory && s.Artist != "" && !strings.Contains(s.outPath, s.Artist) {
+		s.outPath += "; " + s.Artist
 	}
-	s.outPath = outputPath + s.ext
+	if !strings.Contains(s.outPath, s.ext) {
+		s.outPath = s.outPath + s.ext
+	}
+	if GetFlags().Debug {
+		fmt.Printf("leaving FOP %s\n", s.outPath)
+	}
 	if s.outPath == s.inPath {
 		if GetFlags().Debug {
 			fmt.Printf("#structs/fxop: no change for %s\n", s.inPath)
