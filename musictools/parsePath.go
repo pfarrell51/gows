@@ -1,9 +1,6 @@
-// this program helps clean up the mp3 and flac files in my hits playlist
-// its main task is to normalize the file names to relect the artist and Song title
+// parsePath section parses artist/album/song title from filename
 //
 // this is not multi-processing safe
-
-// Bugs
 
 package musictools
 
@@ -64,7 +61,7 @@ func JustLetter(a string) string {
 }
 
 var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
-var extRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
+var ExtRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 var underToSpace = regexp.MustCompile("_")
 
 var cReg = regexp.MustCompile(",\\s")
@@ -95,14 +92,13 @@ func parseFilename(pathArg, p string) *Song {
 		fmt.Printf("pf: %s\n", p)
 	}
 	var rval = new(Song)
-	rval.inPath = path.Join(pathArg, p)
-	rval.outPath = pathArg
+	rval.BasicPathSetup(pathArg, p)
 	nameB := []byte(strings.TrimSpace(p))
 	if sortKeyExp.Match(nameB) {
 		nameB = nameB[2:]
 	}
 	nameB = underToSpace.ReplaceAll(nameB, []byte(" "))
-	extR := extRegex.FindIndex(nameB)
+	extR := ExtRegex.FindIndex(nameB)
 	if extR == nil || len(extR) == 0 {
 		return rval
 	}
@@ -174,7 +170,6 @@ func parseFilename(pathArg, p string) *Song {
 	rval.Title = strings.TrimSpace(SongN)
 	rval.titleH, _ = GetEncoder().Encode(JustLetter(SongN))
 	rval.Artist = strings.TrimSpace(groupN)
-	//fmt.Printf("main %s by %s\n", rval.title, rval.artist)
 	if strings.HasPrefix(rval.Artist, "The ") {
 		rval.artistHasThe = true
 		rval.Artist = rval.Artist[4:]
@@ -200,17 +195,19 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	if d == nil || d.IsDir() || strings.HasPrefix(p, ".") {
 		return nil
 	}
-	extR := extRegex.FindStringIndex(p)
+	extR := ExtRegex.FindStringIndex(p)
 	if extR == nil {
 		return nil // not interesting extension
 	}
-	aSong := new(Song)
+	var aSong *Song
 	if GetFlags().JsonOutput || GetFlags().DoRenameMetadata {
-		aSong = GetMetaData(pathArg, p)
-		ext := path.Ext(p) // file stuff not pulled from metadata
-		aSong.ext = ext
+		aSong, err = GetMetaData(pathArg, p)
+		if err != nil {
+			return err
+		}
 		key, _ := GetEncoder().Encode(JustLetter(aSong.Title))
 		aSong.titleH = key
+		aSong.FixupOutputPath()
 		sMap[key] = *aSong
 		return nil
 	}
@@ -258,13 +255,13 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 	for _, aSong := range m {
 		switch {
 		case GetFlags().DoRenameFilename || GetFlags().DoRenameMetadata:
-			outputRenameCommand(aSong)
+			outputRenameCommand(&aSong)
 		case GetFlags().JustList:
 			the := ""
 			if aSong.artistHasThe {
 				the = "The "
+				aSong.Artist = the + aSong.Artist
 			}
-			fmt.Printf("%s by %s%s\n", aSong.Title, the, aSong.Artist)
 		case GetFlags().ShowArtistNotInMap && !aSong.artistKnown:
 			prim, _ := GetEncoder().Encode(JustLetter(aSong.Artist))
 			if len(prim) == 0 && len(aSong.Artist) == 0 {
@@ -286,19 +283,18 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 	}
 	return m
 }
-func outputRenameCommand(aSong Song) {
+func outputRenameCommand(aSong *Song) {
 	cmd := "mv"
+	fmt.Printf("oRC1 %t \n%s\n%s\n", aSong.outPath == aSong.inPath, aSong.outPath, aSong.inPath)
+	aSong.FixupOutputPath()
 	if runtime.GOOS == "windows" {
 		cmd = "ren "
 	}
-	var outputPath = path.Join(aSong.outPath, aSong.Title)
-	if aSong.Artist != "" {
-		outputPath += "; "
-	}
-	outputPath += aSong.Artist + aSong.ext
-	if outputPath == aSong.inPath {
+	fmt.Printf("oRC2 %t \n%s\n%s\n", aSong.outPath == aSong.inPath, aSong.outPath, aSong.inPath)
+	if aSong.outPath == aSong.inPath {
+		fmt.Println("must be equal")
 		if GetFlags().Debug {
-			fmt.Printf("#no change for %s\n", aSong.inPath)
+			fmt.Printf("#parseP no change for %s\n", aSong.inPath)
 		}
 		return
 	}
@@ -306,7 +302,7 @@ func outputRenameCommand(aSong Song) {
 	case aSong.alreadyNew:
 		return
 		//fmt.Printf("pM aNew %s \"%s\" \"%s/%s; %s%s\"\n", cmd, aSong.inPath,
-		//	pathArg, aSong.title, aSong.artist, aSong.ext)
+		//	aSong.title, aSong.artist, aSong.ext)
 	case aSong.Artist == "":
 		fmt.Printf("#rename artist is blank %s\n", aSong.inPath)
 		cmd = "#" + cmd
