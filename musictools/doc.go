@@ -7,17 +7,17 @@
 //
 // Usage of mm/mm: [flags] directory-spec
 //
-//	-a    artist map -  list artist not in source code (gpmap)
-//	-d    debug on
-//  -dup  try to identify duplicate songs. Note, the same song title by two different
-//        artists does not count as a duplicate
-//  -fr   rename - output command to perform rename function on needed files, the -mr is
-//          much more reliable, use Musicbrainz' Picard utility to set the metadata
-//	-j    output metadata as json
-//	-l    list - list files
-//	-mr   rename based on Metadata. output commands to rename files based on mp3 metadata 
-//	-n    nogroup - list files that do not have an artist/group in the title
-//	-z    list artist names one per line
+//		-a    artist map -  list artist not in source code (gpmap)
+//		-de    debug on
+//	 	-dup  try to identify duplicate songs. Note, the same song title by two different
+//	       artists does not count as a duplicate
+//	 	-fr   rename - output command to perform rename function on needed files, the -mr is
+//	         much more reliable, use Musicbrainz' Picard utility to set the metadata
+//		-j    output metadata as json
+//		-l    list - list files
+//		-mr   rename based on Metadata. output commands to rename files based on mp3 metadata
+//		-n    nogroup - list files that do not have an artist/group in the title
+//		-z    list artist names one per line
 //
 // default is to list files that need love.
 //
