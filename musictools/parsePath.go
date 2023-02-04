@@ -1,4 +1,4 @@
-// parsePath section parses artist/album/song title from filename
+// parsePath
 //
 // this is not multi-processing safe
 
@@ -36,6 +36,8 @@ var underToSpace = regexp.MustCompile("_")
 var dReg = regexp.MustCompile("-\\s")
 var commaExp = regexp.MustCompile(",\\s")
 var slashReg = regexp.MustCompile("/")
+var sortKeyDashExp = regexp.MustCompile("^[A-Z] - ")
+var sortKeyUnderExp = regexp.MustCompile("^[A-Z]_")
 
 func pathLastTwo(s string) (artist, album string) {
 	if matched, _ := regexp.MatchString("^[A-Z]( |-|_)", s); matched {
@@ -54,7 +56,7 @@ func pathLastTwo(s string) (artist, album string) {
 	}
 	return StandardizeArtist(artist), album
 }
-func identifyArtistFromPair(a, b string) (artist, title string) {
+func identifyArtistFromPair(a, b string, songpath string) (artist, title string) {
 	prim, sec := EncodeArtist(a)
 	_, ok := Gptree.Get(prim)
 	if ok {
@@ -73,7 +75,7 @@ func identifyArtistFromPair(a, b string) (artist, title string) {
 	if ok {
 		return StandardizeArtist(b), a
 	}
-	fmt.Printf("did not match group name with either argument, %s, %S\n", a, b)
+	fmt.Printf("did not match group name with either argument, %s, %s for %s\n", a, b, songpath)
 	switch {
 	case a == "" && b != "":
 		return a, b // assume b is title with no group
@@ -84,7 +86,7 @@ func identifyArtistFromPair(a, b string) (artist, title string) {
 	case a != "" && b != "":
 		return a, b // just a guess
 	}
-	panic("PIB, in identifyArtistFromPair")
+	panic("PIB, in identify.ArtistFromPair")
 }
 
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
@@ -100,6 +102,12 @@ func parseFilename(pathArg, p string) *Song {
 	var rval = new(Song)
 	rval.BasicPathSetup(pathArg, p)
 	nameB := []byte(strings.TrimSpace(p))
+	if sortKeyDashExp.Match(nameB) {
+		nameB = nameB[4:]
+	}
+	if sortKeyUnderExp.Match(nameB) {
+		nameB = nameB[2:]
+	}
 	nameB = underToSpace.ReplaceAll(nameB, []byte(" "))
 	extR := ExtRegex.FindIndex(nameB)
 	if extR == nil || len(extR) == 0 {
@@ -108,14 +116,22 @@ func parseFilename(pathArg, p string) *Song {
 	ext := path.Ext(p)
 	rval.ext = ext
 	nameB = nameB[0 : extR[0]-1]
-
+	rval.processInPathDirs()
 	var groupN, SongN string
 	groupN = rval.Artist // default to using the name from the subdirectory
 	ps, _ := path.Split(string(nameB))
 	if len(ps) > 0 {
 		rval.outPath = path.Join(rval.outPath, ps)
-		rval.artistInDirectory = true
-		rval.Artist, rval.Album = pathLastTwo(ps)
+		if !rval.artistInDirectory && !rval.artistKnown {
+			rval.artistInDirectory = true
+			tArtist, tAlbum := pathLastTwo(ps)
+			if tArtist == rval.Artist {
+				rval.Artist = tArtist
+				rval.Album = tAlbum
+			} else {
+				fmt.Printf("artist names not same two ways %s != %s in %s\n", tArtist, rval.Artist, p)
+			}
+		}
 		nameB = nameB[len(ps):]
 		SongN = StandardizeTitle(string(nameB))
 	}
@@ -131,10 +147,17 @@ func parseFilename(pathArg, p string) *Song {
 		if dash != nil {
 			sa := string(nameB[:dash[0]]) // have a dash, so split by it
 			sb := string(nameB[dash[1]:])
-			groupN, SongN = identifyArtistFromPair(sa, sb)
+			groupN, SongN = identifyArtistFromPair(sa, sb, p)
 		} else {
-			groupN = ""
-			SongN = string(nameB)
+			commaLoc := commaExp.FindIndex(nameB)
+			if len(commaLoc) > 0 {
+				sa := string(nameB[:commaLoc[0]]) // have a comma, so split by it
+				sb := string(nameB[commaLoc[1]:])
+				groupN, SongN = identifyArtistFromPair(sa, sb, p)
+			} else {
+				groupN = ""
+				SongN = string(nameB)
+			}
 		}
 	}
 	groupN = cases.Title(language.English, cases.NoLower).String(StandardizeArtist(groupN))
