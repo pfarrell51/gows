@@ -101,6 +101,9 @@ func StandardizeArtist(art string) string {
 	if matched, _ := regexp.MatchString("^[A-Z]( |-|_)", rval); matched {
 		rval = rval[2:]
 	}
+	if strings.HasPrefix(rval, "The ") {
+		rval = rval[4:]
+	}
 	for j := 0; j < 4; j++ { // 4 allows the space before the keyword (and/the), as we back up
 		loc := regAndThe.FindStringIndex(rval)
 		if len(loc) < 1 {
