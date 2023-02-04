@@ -4,7 +4,7 @@ package musictools
 
 import (
 	"bytes"
-	"fmt"
+	//	"fmt"
 	"regexp"
 	"strings"
 	"unicode"
@@ -182,7 +182,7 @@ func LoadArtistMap() {
 			Gptree.Put(sec, n)
 		}
 		if GetFlags().Debug {
-			fmt.Printf("%s, %s, %s\n", prim, sec, n)
+			//		fmt.Printf("%s, %s, %s\n", prim, sec, n)
 		}
 	}
 }
