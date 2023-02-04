@@ -32,7 +32,8 @@ func main() {
 	var helpflag bool
 	var flags = new(musictools.FlagST)
 	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (gpmap)")
-	flag.BoolVar(&flags.Debug, "d", false, "debug on")
+	flag.BoolVar(&flags.Debug, "de", false, "debug on")
+	flag.BoolVar(&flags.DuplicateDetect, "dup", false, "duplicate song attempts on")
 	flag.BoolVar(&helpflag, "h", false, "help")
 	flag.BoolVar(&flags.JsonOutput, "j", false, "output metadata as json")
 	flag.BoolVar(&flags.JustList, "l", false, "list - list files")
