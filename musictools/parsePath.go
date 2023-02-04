@@ -115,10 +115,13 @@ func parseFilename(pathArg, p string) *Song {
 	}
 	ext := path.Ext(p)
 	rval.ext = ext
+	if rval.artistInDirectory && rval.artistKnown && rval.Title != "" {
+		return rval
+	}
 	nameB = nameB[0 : extR[0]-1]
-	rval.processInPathDirs()
 	var groupN, SongN string
 	groupN = rval.Artist // default to using the name from the subdirectory
+
 	ps, _ := path.Split(string(nameB))
 	if len(ps) > 0 {
 		rval.outPath = path.Join(rval.outPath, ps)
