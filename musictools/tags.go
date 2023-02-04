@@ -47,7 +47,7 @@ func GetMetaData(pathArg, p string) (*Song, error) {
 		fmt.Printf("%v %s", err, rval.Title)
 		return nil, err
 	}
-	rval.Title = m.Title() // The title of the track (see Metadata interface for more details).
+	rval.Title = StandardizeTitle(m.Title()) // The title of the track (see Metadata interface for more details).
 	if strings.Contains(rval.Title, "/") {
 		rval.Title = strings.ReplaceAll(rval.Title, "/", " ")
 	}
@@ -59,11 +59,8 @@ func GetMetaData(pathArg, p string) (*Song, error) {
 			rval.Title = strings.TrimSpace(filename[punchIdx[1]:])
 		}
 	}
-	rval.titleH, _ = GetEncoder().Encode(JustLetter(rval.Title))
-	rval.Artist = m.Artist()
-	if strings.HasPrefix(rval.Artist, "The ") {
-		rval.Artist = rval.Artist[4:]
-	}
+	rval.titleH, _ = EncodeTitle(rval.Title)
+	rval.Artist = StandardizeArtist(m.Artist())
 	rval.Album = m.Album()
 	rval.Year = m.Year()
 	rval.Track, _ = m.Track()
