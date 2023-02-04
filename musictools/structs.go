@@ -43,6 +43,7 @@ type FlagST struct {
 	ZDumpArtist        bool
 	JsonOutput         bool
 	Debug              bool
+	DuplicateDetect    bool
 }
 
 var localFlags = new(FlagST)
@@ -57,6 +58,7 @@ func SetFlagArgs(f FlagST) {
 	localFlags.ZDumpArtist = f.ZDumpArtist
 	localFlags.JsonOutput = f.JsonOutput
 	localFlags.Debug = f.Debug
+	localFlags.DuplicateDetect = f.DuplicateDetect
 }
 func GetFlags() *FlagST {
 	return localFlags
