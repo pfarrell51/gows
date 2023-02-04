@@ -20,7 +20,6 @@ import (
 )
 
 func init() {
-	GetEncoder().MaxLength = 24
 	LoadArtistMap()
 }
 
@@ -70,6 +69,9 @@ var commaExp = regexp.MustCompile(",\\s")
 var slashReg = regexp.MustCompile("/")
 
 func pathLastTwo(s string) (artist, album string) {
+	if matched, _ := regexp.MatchString("^[A-Z]( |-|_)", s); matched {
+		s = s[2:]
+	}
 	parts := slashReg.FindAllStringIndex(s, -1)
 	switch len(parts) {
 	case 1:
@@ -81,7 +83,11 @@ func pathLastTwo(s string) (artist, album string) {
 	default:
 		fmt.Printf("PIB, no directory found in %s\n", s)
 	}
-	return artist, album
+	if sortKeyExp.MatchString(artist) {
+		fmt.Printf("removing sort key from %s\n", artist)
+		artist = artist[2:]
+	}
+	return StandardizeArtist(artist), album
 }
 
 // parse the file info to find artist and Song title
@@ -89,7 +95,7 @@ func pathLastTwo(s string) (artist, album string) {
 // so this pulls out the information and fills in the "Song" object.
 func parseFilename(pathArg, p string) *Song {
 	if GetFlags().Debug {
-		fmt.Printf("pf: %s\n", p)
+		fmt.Printf("\npf: %s\n", p)
 	}
 	var rval = new(Song)
 	rval.BasicPathSetup(pathArg, p)
@@ -107,56 +113,52 @@ func parseFilename(pathArg, p string) *Song {
 	nameB = nameB[0 : extR[0]-1]
 
 	var groupN, SongN string
+	groupN = rval.Artist // default to using the name from the subdirectory
 	ps, _ := path.Split(string(nameB))
 	if len(ps) > 0 {
+		rval.outPath = path.Join(rval.outPath, ps)
 		rval.artistInDirectory = true
 		rval.Artist, rval.Album = pathLastTwo(ps)
-		rval.outPath = path.Join(rval.outPath, ps)
-
 		nameB = nameB[len(ps):]
-		SongN = string(nameB)
+		SongN = StandardizeTitle(string(nameB))
 	}
 	words := cReg.FindAllIndex(nameB, -1)
 	dash := dReg.FindIndex(nameB)
-
 	var semiExp = regexp.MustCompile("; ")
 	if semiExp.Match(nameB) {
 		semiLoc := semiExp.FindIndex(nameB)
-		SongN = strings.TrimSpace(string(nameB[:semiLoc[0]]))
-		groupN = strings.TrimSpace(string(nameB[semiLoc[1]:]))
+		SongN = StandardizeTitle(string(nameB[:semiLoc[0]]))
+		groupN = StandardizeArtist(string(nameB[semiLoc[1]:]))
 		rval.alreadyNew = true
 	} else {
 		//  no ;
 		if dash != nil {
-			sa := string(nameB[:dash[0]])
+			sa := string(nameB[:dash[0]]) // have a dash, so split by it
 			sb := string(nameB[dash[1]:])
 			if len(words) == 0 {
-				groupN = sa
-				SongN = sb
+				groupN = StandardizeArtist(sa)
+				SongN = StandardizeTitle(sb)
 			} else {
-				sa := sa
-				sb := sb
-				if strings.HasPrefix(sa, "The ") {
-					sa = sa[4:]
+				ta, ta2 := EncodeTitle(sa)
+				_, OKa := Gptree.Get(ta)
+				_, OKa2 := Gptree.Get(ta2)
+				if OKa || OKa2 {
+					SongN = StandardizeTitle(sb)
+					groupN = StandardizeArtist(sa)
 				}
-				if strings.HasPrefix(sb, "The ") {
-					sb = sb[4:]
+				tb, tb2 := EncodeArtist(sb)
+				_, OKb := Gptree.Get(tb)
+				_, OKb2 := Gptree.Get(tb2)
+				if OKb || OKb2 {
+					groupN = StandardizeArtist(sb)
+					SongN = StandardizeTitle(sa)
 				}
-				ta, _ := GetEncoder().Encode(JustLetter(sa))
-				tb, _ := GetEncoder().Encode(JustLetter(sb))
-				_, OKa := gptree.Get(ta)
-				if OKa {
-					SongN = sb
-					groupN = sa
-				}
-				_, OKb := gptree.Get(tb)
-				if OKb {
-					groupN = sb
-					SongN = sa
+				if !OKa && !OKa2 && !OKb && !OKb2 {
+					fmt.Printf("not OK in hash %s\n", string(nameB))
+					fmt.Printf("ta %s ta2 %s, tb %s Tb2 %s\n", ta, ta2, tb, tb2)
 				}
 			}
 		} else {
-			// fmt.Println("no dash and no ; try , ")
 			commasS := commaExp.FindIndex(nameB)
 			if commasS == nil || len(commasS) == 0 {
 				SongN = string(nameB)
@@ -166,16 +168,12 @@ func parseFilename(pathArg, p string) *Song {
 			}
 		}
 	}
-	groupN = cases.Title(language.English, cases.NoLower).String(strings.TrimSpace(groupN))
-	rval.Title = strings.TrimSpace(SongN)
-	rval.titleH, _ = GetEncoder().Encode(JustLetter(SongN))
-	rval.Artist = strings.TrimSpace(groupN)
-	if strings.HasPrefix(rval.Artist, "The ") {
-		rval.artistHasThe = true
-		rval.Artist = rval.Artist[4:]
-	}
-	rval.artistH, _ = GetEncoder().Encode(JustLetter(rval.Artist))
-	_, ok := gptree.Get(rval.artistH)
+	groupN = cases.Title(language.English, cases.NoLower).String(StandardizeArtist(groupN))
+	rval.Title = StandardizeTitle(SongN)
+	rval.titleH, _ = EncodeTitle(SongN)
+	rval.Artist = StandardizeArtist(groupN)
+	rval.artistH, _ = EncodeArtist(rval.Artist)
+	_, ok := Gptree.Get(rval.artistH)
 	rval.artistKnown = ok
 	return rval
 }
@@ -205,7 +203,7 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 		if err != nil {
 			return err
 		}
-		key, _ := GetEncoder().Encode(JustLetter(aSong.Title))
+		key, _ := EncodeTitle(aSong.Title)
 		aSong.titleH = key
 		aSong.FixupOutputPath()
 		sMap[key] = *aSong
@@ -220,13 +218,12 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 		if aSong.artistH == v.artistH {
 			fmt.Printf("#existing duplicate Song for %s %s == %s\n", aSong.inPath, aSong.Title, v.Title)
 		} else {
-			fmt.Printf("#possible dup Song for %s %s == %s %s\n", aSong.inPath, aSong.Title,
-				v.Title, v.Artist)
+			fmt.Printf("#possible dup Song for %s %s == %s %s %s\n", aSong.inPath, aSong.Title,
+				v.Title, v.Artist, v.inPath)
 			aSong.titleH += "1"
 		}
 		return nil
 	}
-
 	sMap[aSong.titleH] = *aSong
 	return nil
 }
@@ -250,25 +247,36 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 		PrintJson(m)
 		return m
 	}
-	uniqueArtists := make(map[string]string) // we just need a set, but use a map
+	uniqueArtists := make(map[string]Song)
 
 	for _, aSong := range m {
 		switch {
 		case GetFlags().DoRenameFilename || GetFlags().DoRenameMetadata:
 			outputRenameCommand(&aSong)
 		case GetFlags().JustList:
-			the := ""
-			if aSong.artistHasThe {
-				the = "The "
-				aSong.Artist = the + aSong.Artist
-			}
+			continue
 		case GetFlags().ShowArtistNotInMap && !aSong.artistKnown:
-			prim, _ := GetEncoder().Encode(JustLetter(aSong.Artist))
-			if len(prim) == 0 && len(aSong.Artist) == 0 {
-				// fmt.Printf("prim: %s, a: %v\n", prim, aSong)
+			if aSong.Artist == "" {
 				continue
 			}
-			uniqueArtists[prim] = aSong.Artist
+			prim, sec := EncodeArtist(aSong.Artist)
+			_, ok := Gptree.Get(prim)
+			if ok {
+				fmt.Printf("primary found %s %s\n", prim, aSong.Artist)
+				continue
+			}
+			if len(sec) > 0 {
+				_, ok = Gptree.Get(sec)
+				if ok {
+					fmt.Printf("sec found %s %s\n", prim, aSong.Artist)
+					continue
+				}
+			}
+			fmt.Printf("not found %s %s\n%s\n", prim, aSong.Artist, aSong.inPath)
+			uniqueArtists[prim] = aSong
+			if len(sec) > 0 {
+				uniqueArtists[sec] = aSong
+			}
 		case GetFlags().NoGroup:
 			if aSong.Artist == "" {
 				fmt.Printf("nogroup %s\n", aSong.inPath)
@@ -278,7 +286,7 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 	}
 	if GetFlags().ShowArtistNotInMap {
 		for k, v := range uniqueArtists {
-			fmt.Printf("addto map k: %s v: %s\n", k, v)
+			fmt.Printf("addto map k: %s v: %s %s\n", k, v.Artist, v.inPath)
 		}
 	}
 	return m
@@ -315,7 +323,7 @@ func outputRenameCommand(aSong *Song) {
 // specialized function, dumps the Artist map
 func DumpGptree() {
 	if GetFlags().ZDumpArtist {
-		gptree.Each(func(key string, v string) {
+		Gptree.Each(func(key string, v string) {
 			fmt.Printf("\"%s\", \n", v)
 		})
 	}
