@@ -46,6 +46,7 @@ func main() {
 		return
 	}
 	musictools.SetFlagArgs(*flags)
+	musictools.LoadArtistMap()
 
 	if false {
 		ch := make(chan musictools.Song)
