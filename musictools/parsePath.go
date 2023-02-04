@@ -5,7 +5,6 @@
 package musictools
 
 import (
-	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
-	"unicode"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -33,37 +31,8 @@ func ProcessFiles(pathArg string) {
 	ProcessMap(pathArg, rmap)
 }
 
-var regAnd = regexp.MustCompile("(?i) (and|the) ")
-
-// takes a string and returns just the letters. Also removes the words "and" and "the" from the string
-// since they are essentially noise words.
-func JustLetter(a string) string {
-	buff := bytes.Buffer{}
-	loc := []int{0, 0}
-	for j := 0; j < 4; j++ { // 4 allows the space before the keyword (and/the), as we back up
-		loc = regAnd.FindStringIndex(a)
-		if len(loc) < 1 {
-			break
-		}
-		a = a[:loc[0]] + a[loc[1]-1:]
-	}
-	for _, c := range a {
-		if unicode.IsLetter(c) {
-			buff.WriteRune(c)
-		} else if c == '_' || c == '&' || unicode.IsSpace(c) {
-			// ignore it
-		} else if c == '-' {
-			break
-		}
-	}
-	return buff.String()
-}
-
-var sortKeyExp = regexp.MustCompile("^[A-Z](-|_)")
 var ExtRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 var underToSpace = regexp.MustCompile("_")
-
-var cReg = regexp.MustCompile(",\\s")
 var dReg = regexp.MustCompile("-\\s")
 var commaExp = regexp.MustCompile(",\\s")
 var slashReg = regexp.MustCompile("/")
@@ -83,12 +52,43 @@ func pathLastTwo(s string) (artist, album string) {
 	default:
 		fmt.Printf("PIB, no directory found in %s\n", s)
 	}
-	if sortKeyExp.MatchString(artist) {
-		fmt.Printf("removing sort key from %s\n", artist)
-		artist = artist[2:]
-	}
 	return StandardizeArtist(artist), album
 }
+func identifyArtistFromPair(a, b string) (artist, title string) {
+	prim, sec := EncodeArtist(a)
+	_, ok := Gptree.Get(prim)
+	if ok {
+		return StandardizeArtist(a), b
+	}
+	_, ok = Gptree.Get(sec)
+	if ok {
+		return StandardizeArtist(a), b
+	}
+	prim, sec = EncodeArtist(b)
+	_, ok = Gptree.Get(prim)
+	if ok {
+		return StandardizeArtist(b), a
+	}
+	_, ok = Gptree.Get(sec)
+	if ok {
+		return StandardizeArtist(b), a
+	}
+	fmt.Printf("did not match group name with either argument, %s, %S\n", a, b)
+	switch {
+	case a == "" && b != "":
+		return a, b // assume b is title with no group
+	case a != "" && b == "":
+		return b, a // assume a is title with no group
+	case a == "" && b == "":
+		return a, b // makes no difference
+	case a != "" && b != "":
+		return a, b // just a guess
+	}
+	panic("PIB, in identifyArtistFromPair")
+}
+
+const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
+var dashRegex = regexp.MustCompile(divP)
 
 // parse the file info to find artist and Song title
 // most of my music files have file names with the artist name, a hyphen and then the track title
@@ -100,9 +100,6 @@ func parseFilename(pathArg, p string) *Song {
 	var rval = new(Song)
 	rval.BasicPathSetup(pathArg, p)
 	nameB := []byte(strings.TrimSpace(p))
-	if sortKeyExp.Match(nameB) {
-		nameB = nameB[2:]
-	}
 	nameB = underToSpace.ReplaceAll(nameB, []byte(" "))
 	extR := ExtRegex.FindIndex(nameB)
 	if extR == nil || len(extR) == 0 {
@@ -122,7 +119,6 @@ func parseFilename(pathArg, p string) *Song {
 		nameB = nameB[len(ps):]
 		SongN = StandardizeTitle(string(nameB))
 	}
-	words := cReg.FindAllIndex(nameB, -1)
 	dash := dReg.FindIndex(nameB)
 	var semiExp = regexp.MustCompile("; ")
 	if semiExp.Match(nameB) {
@@ -135,37 +131,10 @@ func parseFilename(pathArg, p string) *Song {
 		if dash != nil {
 			sa := string(nameB[:dash[0]]) // have a dash, so split by it
 			sb := string(nameB[dash[1]:])
-			if len(words) == 0 {
-				groupN = StandardizeArtist(sa)
-				SongN = StandardizeTitle(sb)
-			} else {
-				ta, ta2 := EncodeTitle(sa)
-				_, OKa := Gptree.Get(ta)
-				_, OKa2 := Gptree.Get(ta2)
-				if OKa || OKa2 {
-					SongN = StandardizeTitle(sb)
-					groupN = StandardizeArtist(sa)
-				}
-				tb, tb2 := EncodeArtist(sb)
-				_, OKb := Gptree.Get(tb)
-				_, OKb2 := Gptree.Get(tb2)
-				if OKb || OKb2 {
-					groupN = StandardizeArtist(sb)
-					SongN = StandardizeTitle(sa)
-				}
-				if !OKa && !OKa2 && !OKb && !OKb2 {
-					fmt.Printf("not OK in hash %s\n", string(nameB))
-					fmt.Printf("ta %s ta2 %s, tb %s Tb2 %s\n", ta, ta2, tb, tb2)
-				}
-			}
+			groupN, SongN = identifyArtistFromPair(sa, sb)
 		} else {
-			commasS := commaExp.FindIndex(nameB)
-			if commasS == nil || len(commasS) == 0 {
-				SongN = string(nameB)
-			} else {
-				SongN = string(nameB[:commasS[0]])
-				groupN = string(nameB[commasS[1]:])
-			}
+			groupN = ""
+			SongN = string(nameB)
 		}
 	}
 	groupN = cases.Title(language.English, cases.NoLower).String(StandardizeArtist(groupN))
@@ -177,9 +146,6 @@ func parseFilename(pathArg, p string) *Song {
 	rval.artistKnown = ok
 	return rval
 }
-
-const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
-var dashRegex = regexp.MustCompile(divP)
 
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
@@ -213,16 +179,17 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	if aSong == nil {
 		return nil
 	}
-	v := sMap[aSong.titleH]
-	if len(v.titleH) > 0 {
-		if aSong.artistH == v.artistH {
-			fmt.Printf("#existing duplicate Song for %s %s == %s\n", aSong.inPath, aSong.Title, v.Title)
-		} else {
-			fmt.Printf("#possible dup Song for %s %s == %s %s %s\n", aSong.inPath, aSong.Title,
-				v.Title, v.Artist, v.inPath)
-			aSong.titleH += "1"
+	if GetFlags().DuplicateDetect {
+		v := sMap[aSong.titleH]
+		if len(v.titleH) > 0 {
+			if aSong.artistH == v.artistH {
+				fmt.Printf("#existing duplicate Song for %s %s == %s\n", aSong.inPath, v.inPath)
+			} else {
+				fmt.Printf("#possible dup Song or cover for %s %s == %s %s %s\n", aSong.inPath, v.inPath)
+				aSong.titleH += "1"
+			}
+			return nil
 		}
-		return nil
 	}
 	sMap[aSong.titleH] = *aSong
 	return nil
