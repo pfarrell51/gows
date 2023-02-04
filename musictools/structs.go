@@ -3,6 +3,10 @@
 package musictools
 
 import (
+	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/dlclark/metaphone3"
 	g "github.com/zyedidia/generic"
 	"github.com/zyedidia/generic/btree"
@@ -21,7 +25,6 @@ type Song struct {
 	MBID              string `json:",omitempty"` // musicbrainz ID
 	AcoustID          string `json:",omitempty"` // Acoust ID
 	alreadyNew        bool
-	artistHasThe      bool
 	artistInDirectory bool
 	artistKnown       bool
 	inPath            string
@@ -61,54 +64,99 @@ func GetFlags() *FlagST {
 
 var enc metaphone3.Encoder
 
-func GetEncoder() *metaphone3.Encoder {
-	return &enc
+func init() {
+	enc.Encode("ignore this")
+	enc.MaxLength = 20
+}
+func StandardizeArtist(art string) string {
+	if len(art) == 0 {
+		return art
+	}
+	rval := strings.TrimSpace(art)
+	if rval == "The The" {
+		return rval
+	}
+	if matched, _ := regexp.MatchString("^[A-Z]( |-|_)", rval); matched {
+		rval = rval[2:]
+	}
+	if strings.HasPrefix(rval, "The ") {
+		rval = rval[4:]
+	}
+	return rval
+}
+func StandardizeTitle(title string) string {
+	if len(title) == 0 {
+		return title
+	}
+	rval := strings.TrimSpace(title)
+	if matched, _ := regexp.MatchString("^[A-Z]( |-|_)", rval); matched {
+		rval = rval[2:]
+	}
+	if strings.HasPrefix(rval, "The ") {
+		rval = rval[4:]
+	}
+	rval = strings.ReplaceAll(rval, "/", " ")
+	rval = strings.ReplaceAll(rval, "_", " ")
+	return rval
+}
+func EncodeTitle(s string) (string, string) {
+	prim, sec := enc.Encode(StandardizeTitle(s))
+	return prim, sec
+}
+func EncodeArtist(s string) (string, string) {
+	prim, sec := enc.Encode(StandardizeArtist(s))
+	return prim, sec
 }
 
-var gptree = btree.New[string, string](g.Less[string])
+var Gptree = btree.New[string, string](g.Less[string])
 
 func GetArtistMap() *btree.Tree[string, string] {
-	return gptree
+	return Gptree
 }
 func LoadArtistMap() {
 	groupNames := [...]string{
-		"5th_Dimension", "ABBA", "Alice Cooper", "Alison_Krauss", "AllmanBrothers", "Almanac_Singers",
-		"Animals", "Aquarius", "Aretha Franklin", "Arlo_Guthrie", "Association", "Average White Band",
-		"Band", "Basia", "BeachBoys", "Beatles", "Bee Gees", "Billy Joel", "BlindFaith",
-		"BloodSweatTears", "Blue Oyster Cult", "Blues Brothers", "Bob Dylan", "Boston", "Box Tops", "Bread",
-		"Brewer and Shipley", "Brewer & Shipley", "BuffaloSpringfield", "Byrds",
+		"5th_Dimension", "ABBA", "Alice Cooper", "Alison Krauss", "Alison Krauss Union Station",
+		"Allman Brothers", "Allman Brothers Band", "Almanac Singers",
+		"Animals", "Aquarius", "Aretha Franklin", "Arlo Guthrie", "Association", "Average White Band",
+		"Band", "Basia", "Beach Boys", "Beatles", "Bee Gees", "Billy Joel", "Blind Faith",
+		"Blood Sweat Tears", "Blue Oyster Cult", "Blues Brothers", "Bob Dylan", "Boston", "Box Tops", "Bread",
+		"Brewer and Shipley", "Brewer & Shipley", "Buffalo Springfield", "Byrds",
 		"Carole King", "Carpenters", "Cheap Trick", "Chesapeake", "Cream", "Crosby & Nash",
 		"Crosby and Nash", "Crosby Stills & Nash", "Crosby Stills And Nash", "CSN&Y",
 		"Crosby Stills Nash Young", "Crosby Stills Nash & Young", "David Allan Coe",
-		"David Bowie", "David_Bromberg", "Deep Purple", "Derek and the Dominos",
+		"David Bowie", "David Bromberg", "Deep Purple", "Derek and the Dominos",
 		"Derek_Dominos", "Detroit Wheels",
-		"Dire_Straits", "Doc Watson", "Don McLean", "Doobie_Brothers", "Doors", "Dylan",
+		"Dire_Straits", "Doc Watson", "Don McLean", "Doobie Brothers", "Doors", "Dylan",
 		"Elton_John", "Emerson, Lake & Palmer", "Emmylou_Harris", "Fifth Dimension",
 		"Fleetwood_Mac", "Genesis",
-		"George Harrison", "Graham Nash", "Gram Parsons", "Hall and Oates", "Hall & Oates",
+		"George Harrison", "Gillian Welch", "Gillian Welch Alison Krauss", "Graham Nash",
+		"Gram Parsons", "Hall and Oates", "Hall & Oates",
 		"Heart", "Isley Brothers", "Jackie Wilson", "Jackson Browne",
 		"James_Taylor", "Jefferson_Airplane", "Jethro_Tull", "Jimmy Buffett", "John_Denver",
 		"John_Hartford", "John_Starling", "Joni_Mitchell", "Judy_Collins", "Kansas",
-		"KC The Sunshine Band", "Kingston_Trio", "Led_Zepplin", "Linda_Ronstadt",
+		"KC The Sunshine Band", "Kingston_Trio", "Led_Zeppelin", "Linda_Ronstadt",
 		"Lovin Spoonful", "Lynyrd_Skynyrd",
 		"Mamas And Papas", "Mamas & The Papas", "Maria Muldaur",
 		"Meatloaf", "Mike_Auldridge", "Mith Ryder & Detroit Wheels", "Moody Blues",
-		"Neal Young", "Neil Diamond",
-		"New Riders of the Purple Sage", "New_Riders_Purple_Sage",
-		"Nitty Gritty Dirt Band", "Oates", "Otis Redding", "Pablo_Cruise", "Palmer",
-		"Paul_Simon", "Peter_Paul_Mary", "Rascals", "Ringo Starr", "Roberta Flack", "Rolling_Stones",
-		"Roy_Orbison", "Sam And Dave", "Santana", "Seals and Crofts", "Seals_Croft", "Seldom_Scene",
-		"Shadows Of Knight", "Simon and Garfunkel", "Simon_Garfunkel", "Sonny And Cher",
-		"Spoonful", "Seals & Crofts", "Steely_Dan", "Steppenwolf", "Steven_Stills",
+		"Neal Young", "Neil Diamond", "New Riders of the Purple Sage", 
+		"Nitty Gritty Dirt Band", "Oates", "Original Soundtrack", "Otis Redding", "Pablo Cruise",
+		"Paul_Simon", "Pete Seeger", "Peter Paul Mary", "Rascals", "Ringo Starr",
+		"Robert Plant Alison Kraus", "Roberta Flack", "Rolling_Stones",
+		"Roy _Orbison", "Sam And Dave", "Santana", "Seals and Crofts", "Seals Croft", "Seldom Scene",
+		"Shadows Of Knight", "Simon and Garfunkel", "Simon Garfunkel", "Soggy Mountain Boys", "Sonny And Cher",
+		"Spoonful", "Seals Crofts", "Steely_Dan", "Steppenwolf", "Steven_Stills",
 		"Stevie Ray Vaughan and Double Trouble", "Sting", "Sunshine Band",
-		"Three Dog Night", "TonyRice", "Traveling_Wilburys", "Turtles", "Warren Zevon",
+		"Three Dog Night", "TonyRice", "Traveling Wilburys", "Turtles", "Warren Zevon",
 		"Who", "Wilson Pickett", "Yes",
 	}
 	for _, n := range groupNames {
-		prim, sec := enc.Encode(JustLetter(n))
-		gptree.Put(prim, n)
+		prim, sec := EncodeArtist(n)
+		Gptree.Put(prim, n)
 		if len(sec) > 0 {
-			gptree.Put(sec, n)
+			Gptree.Put(sec, n)
+		}
+		if GetFlags().Debug {
+			fmt.Printf("%s, %s, %s\n", prim, sec, n)
 		}
 	}
 }
