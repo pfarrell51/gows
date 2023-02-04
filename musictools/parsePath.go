@@ -247,6 +247,7 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 		case GetFlags().DoRenameFilename || GetFlags().DoRenameMetadata:
 			outputRenameCommand(&aSong)
 		case GetFlags().JustList:
+			fmt.Printf("%s by %s\n", aSong.Title, aSong.Artist)
 			continue
 		case GetFlags().ShowArtistNotInMap && !aSong.artistKnown:
 			if aSong.Artist == "" {
