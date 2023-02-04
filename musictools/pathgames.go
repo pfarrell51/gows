@@ -33,29 +33,37 @@ func (s *Song) processInPathDirs() {
 			j--
 			k--
 			p2 = s.inPath[parts[j][1]:parts[k][0]]
-			fmt.Printf("p1 %s  p2 %s\n", p1, p2)
-
-			t1, t2 := EncodeArtist(p1)
-			_, OKa := Gptree.Get(t1)
+			p3 := s.inPath[parts[lp][1]:]
+			var prim string
+			s.Title = StandardizeTitle(p3)
+			s.titleH, _ = EncodeTitle(p3)
+			prim, t2 := EncodeArtist(p1)
+			_, OKa := Gptree.Get(prim)
 			_, OKb := Gptree.Get(t2)
 			if OKa || OKb {
-				s.Artist = p1
+				s.Artist = StandardizeArtist(p1)
+				s.artistH = prim
 				s.Album = p2
 				s.artistInDirectory = true
 				s.artistKnown = true
 				break
 			} else {
-				t1, t2 = EncodeArtist(p2)
-				_, OKa = Gptree.Get(t1)
+				prim, t2 = EncodeArtist(p2)
+				_, OKa = Gptree.Get(prim)
 				_, OKb = Gptree.Get(t2)
 				if OKa || OKb {
-					s.Artist = p2
+					s.Artist = StandardizeArtist(p2)
+					s.artistH = prim
 					s.Album = p1
 					s.artistInDirectory = true
 					s.artistKnown = true
 					break
 				}
 			}
+		}
+		if GetFlags().Debug {
+			fmt.Printf("art: %s, album: %s, t: %s %t %t\n", s.Artist, s.Album, s.Title, 
+						s.artistInDirectory, s.artistKnown)
 		}
 	}
 }
