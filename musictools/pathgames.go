@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var slashFind = regexp.MustCompile("/")
+var slashFind = regexp.MustCompile("\\/")
 
 // try to extract artist/group from diretory structure
 func (s *Song) processInPathDirs() {
@@ -17,33 +17,45 @@ func (s *Song) processInPathDirs() {
 		return
 	}
 	var p1, p2 string
-	parts := slashFind.FindAllStringIndex(s.inPathDescent, -1)
+	parts := slashFind.FindAllStringIndex(s.inPath, -1)
 	switch {
 	case len(parts) == 1:
-		p1 = s.inPathDescent[:parts[0][0]]
-		p2 = ""
+		panic(fmt.Sprintf("PIB, not enough slashes in %s", s.inPath))
+	case len(parts) == 2:
+		p1 = s.inPath[parts[0][1]:parts[1][0]]
+		p2 = s.inPath[parts[1][1]:]
 	case len(parts) >= 2:
-		p1 = s.inPathDescent[:parts[0][0]]
-		p2 = s.inPathDescent[parts[0][1]:parts[1][0]]
-	}
+		lp := len(parts) - 1
+		for i := 0; i < 3; i++ {
+			j := lp - (i + 1)
+			k := lp - i
+			p1 = s.inPath[parts[j][1]:parts[k][0]]
+			j--
+			k--
+			p2 = s.inPath[parts[j][1]:parts[k][0]]
+			fmt.Printf("p1 %s  p2 %s\n", p1, p2)
 
-	t1, t2 := EncodeArtist(p1)
-	_, OKa := Gptree.Get(t1)
-	_, OKb := Gptree.Get(t2)
-	if OKa || OKb {
-		s.Artist = p1
-		s.Album = p2
-		s.artistInDirectory = true
-		s.artistKnown = true
-	} else {
-		t1, t2 = EncodeArtist(p2)
-		_, OKa = Gptree.Get(t1)
-		_, OKb = Gptree.Get(t2)
-		if OKa || OKb {
-			s.Artist = p2
-			s.Album = p1
-			s.artistInDirectory = true
-			s.artistKnown = true
+			t1, t2 := EncodeArtist(p1)
+			_, OKa := Gptree.Get(t1)
+			_, OKb := Gptree.Get(t2)
+			if OKa || OKb {
+				s.Artist = p1
+				s.Album = p2
+				s.artistInDirectory = true
+				s.artistKnown = true
+				break
+			} else {
+				t1, t2 = EncodeArtist(p2)
+				_, OKa = Gptree.Get(t1)
+				_, OKb = Gptree.Get(t2)
+				if OKa || OKb {
+					s.Artist = p2
+					s.Album = p1
+					s.artistInDirectory = true
+					s.artistKnown = true
+					break
+				}
+			}
 		}
 	}
 }
