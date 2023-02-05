@@ -62,8 +62,8 @@ func (s *Song) processInPathDirs() {
 			}
 		}
 		if GetFlags().Debug {
-			fmt.Printf("art: %s, album: %s, t: %s %t %t\n", s.Artist, s.Album, s.Title, 
-						s.artistInDirectory, s.artistKnown)
+			fmt.Printf("art: %s, album: %s, t: %s %t %t\n", s.Artist, s.Album, s.Title,
+				s.artistInDirectory, s.artistKnown)
 		}
 	}
 }
