@@ -4,9 +4,10 @@ package musictools
 
 import (
 	"bytes"
-	//	"fmt"
+	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/dlclark/metaphone3"
@@ -139,6 +140,9 @@ var Gptree = btree.New[string, string](g.Less[string])
 func GetArtistMap() *btree.Tree[string, string] {
 	return Gptree
 }
+
+var onlyOnce sync.Once
+
 func LoadArtistMap() {
 	groupNames := [...]string{
 		"5th Dimension", "ABBA", "Alice Cooper", "Alison Krauss", "Alison Krauss Union Station",
@@ -175,14 +179,20 @@ func LoadArtistMap() {
 		"Three Dog Night", "TonyRice", "Traveling Wilburys", "Turtles", "Warren Zevon",
 		"Who", "Wilson Pickett", "Yes",
 	}
-	for _, n := range groupNames {
-		prim, sec := EncodeArtist(n)
-		Gptree.Put(prim, n)
-		if len(sec) > 0 {
-			Gptree.Put(sec, n)
+
+	onlyOnce.Do(func() {
+		fmt.Println("Load run-time configuration first and the only time. ")
+
+		for _, n := range groupNames {
+			prim, sec := EncodeArtist(n)
+			Gptree.Put(prim, n)
+			if len(sec) > 0 {
+				Gptree.Put(sec, n)
+			}
+			if GetFlags().Debug {
+				//		fmt.Printf("%s, %s, %s\n", prim, sec, n)
+			}
 		}
-		if GetFlags().Debug {
-			//		fmt.Printf("%s, %s, %s\n", prim, sec, n)
-		}
-	}
+	})
+
 }
