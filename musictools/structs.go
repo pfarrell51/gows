@@ -4,7 +4,6 @@ package musictools
 
 import (
 	"bytes"
-	"fmt"
 	"regexp"
 	"strings"
 	"sync"
@@ -181,8 +180,6 @@ func LoadArtistMap() {
 	}
 
 	onlyOnce.Do(func() {
-		fmt.Println("Load run-time configuration first and the only time. ")
-
 		for _, n := range groupNames {
 			prim, sec := EncodeArtist(n)
 			Gptree.Put(prim, n)
