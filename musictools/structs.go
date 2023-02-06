@@ -37,15 +37,16 @@ type Song struct {
 }
 
 type FlagST struct {
-	ShowArtistNotInMap bool
-	DoRenameFilename   bool
-	DoRenameMetadata   bool
-	JustList           bool
-	NoGroup            bool
-	ZDumpArtist        bool
-	JsonOutput         bool
-	Debug              bool
-	DuplicateDetect    bool
+	ShowArtistNotInMap    bool
+	DoRenameFilename      bool
+	DoRenameMetadata      bool
+	JustList              bool
+	NoGroup               bool
+	ZDumpArtist           bool
+	JsonOutput            bool
+	Debug                 bool
+	DuplicateDetect       bool
+	CopyAlbumInTrackOrder bool
 }
 
 var localFlags = new(FlagST)
@@ -61,6 +62,7 @@ func SetFlagArgs(f FlagST) {
 	localFlags.JsonOutput = f.JsonOutput
 	localFlags.Debug = f.Debug
 	localFlags.DuplicateDetect = f.DuplicateDetect
+	localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
 }
 func GetFlags() *FlagST {
 	return localFlags
