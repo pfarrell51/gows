@@ -190,7 +190,7 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 		return nil // not interesting extension
 	}
 	var aSong *Song
-	if GetFlags().JsonOutput || GetFlags().DoRenameMetadata {
+	if GetFlags().JsonOutput || GetFlags().DoRenameMetadata || GetFlags().CopyAlbumInTrackOrder {
 		aSong, err = GetMetaData(pathArg, p)
 		if err != nil {
 			return err
@@ -199,8 +199,12 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 		aSong.titleH = key
 		aSong.FixupOutputPath()
 		sMap[key] = *aSong
+		if GetFlags().CopyAlbumInTrackOrder {
+			AddSongForSort(*aSong)
+		}
 		return nil
 	}
+
 	aSong = parseFilename(pathArg, p)
 	if aSong == nil {
 		return nil
@@ -238,6 +242,10 @@ func WalkFiles(pathArg string) map[string]Song {
 func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 	if GetFlags().JsonOutput {
 		PrintJson(m)
+		return m
+	}
+	if GetFlags().CopyAlbumInTrackOrder {
+		PrintTrackSortedSongs()
 		return m
 	}
 	uniqueArtists := make(map[string]Song)
