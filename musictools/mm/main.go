@@ -32,6 +32,7 @@ func main() {
 	var helpflag bool
 	var flags = new(musictools.FlagST)
 	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (gpmap)")
+	flag.BoolVar(&flags.CopyAlbumInTrackOrder, "c", false, "Album track order - output cp command in track order")
 	flag.BoolVar(&flags.Debug, "de", false, "debug on")
 	flag.BoolVar(&flags.DuplicateDetect, "dup", false, "duplicate song attempts on")
 	flag.BoolVar(&helpflag, "h", false, "help")
