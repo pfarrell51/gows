@@ -3,7 +3,6 @@
 //
 // not multi-thread safe, uses package data store
 
-
 package musictools
 
 import (
@@ -38,6 +37,7 @@ func AddSongForSort(a Song) error {
 	songs = append(songs, TrackSong{a.Track, a.inPath})
 	return nil
 }
+
 // print out shell commands to copy the sorted and renamed fies
 func PrintTrackSortedSongs() {
 	cmd := "cp"
