@@ -301,8 +301,8 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 // prints out a suitable rename/mv/ren command to put the file name
 // in the format I like
 func outputRenameCommand(aSong *Song) {
-	cmd := "mv"
 	aSong.FixupOutputPath()
+	cmd := "mv"
 	if runtime.GOOS == "windows" {
 		cmd = "ren "
 	}
