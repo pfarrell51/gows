@@ -35,11 +35,15 @@ func AddSongForSort(a Song) error {
 	return nil
 }
 func PrintTrackSortedSongs() {
+	cmd := "cp"
+	if runtime.GOOS == "windows" {
+		cmd = "copy "
+	}
 	// First, one can define a set of methods for the slice type, as with ByTrack, and
 	// call sort.Sort.
 	sort.Sort(ByTrack(songs))
 	for _, s := range songs {
 		sp, sf := path.Split(s.Path)
-		fmt.Printf("cp \"%s\"  \"%s%03d-%s\"\n", s.Path, sp, s.Track, sf)
+		fmt.Printf("%s \"%s\"  \"%s%03d-%s\"\n", cmd, s.Path, sp, s.Track, sf)
 	}
 }
