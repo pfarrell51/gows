@@ -39,6 +39,7 @@ var slashReg = regexp.MustCompile("/")
 var sortKeyDashExp = regexp.MustCompile("^[A-Z] - ")
 var sortKeyUnderExp = regexp.MustCompile("^[A-Z]_")
 
+// parse the last two directories of a song's path, trying to find which is the artist
 func pathLastTwo(s string) (artist, album string) {
 	if matched, _ := regexp.MatchString("^[A-Z]( |-|_)", s); matched {
 		s = s[2:]
@@ -56,6 +57,9 @@ func pathLastTwo(s string) (artist, album string) {
 	}
 	return StandardizeArtist(artist), album
 }
+
+// identify the artist from two strings, a & b which were split from the file name
+// looks up possilbe artists from the GroupTree hash map
 func identifyArtistFromPair(a, b string, songpath string) (artist, title string) {
 	prim, sec := EncodeArtist(a)
 	_, ok := Gptree.Get(prim)
@@ -213,9 +217,9 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 		v := sMap[aSong.titleH]
 		if len(v.titleH) > 0 {
 			if aSong.artistH == v.artistH {
-				fmt.Printf("#existing duplicate Song for %s %s == %s\n", aSong.inPath, v.inPath)
+				fmt.Printf("#existing duplicate Song for %s == %s\n", aSong.inPath, v.inPath)
 			} else {
-				fmt.Printf("#possible dup Song or cover for %s %s == %s %s %s\n", aSong.inPath, v.inPath)
+				fmt.Printf("#possible dup Song or cover for %s == %s\n", aSong.inPath, v.inPath)
 				aSong.titleH += "1"
 			}
 			return nil
@@ -293,6 +297,9 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 	}
 	return m
 }
+
+// prints out a suitable rename/mv/ren command to put the file name
+// in the format I like
 func outputRenameCommand(aSong *Song) {
 	cmd := "mv"
 	aSong.FixupOutputPath()
