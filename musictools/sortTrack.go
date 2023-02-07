@@ -1,18 +1,21 @@
 // sortTrack
 // sort a song by the track field, so we can replicate the order of the original album
+//
+// not multi-thread safe, uses package data store
+
 
 package musictools
 
 import (
 	"fmt"
 	"path"
+	"runtime"
 	"sort"
 )
 
 type TrackSong struct {
 	Track int
 	Path  string
-	Ext   string
 }
 
 func (p TrackSong) String() string {
@@ -27,13 +30,15 @@ func (a ByTrack) Len() int           { return len(a) }
 func (a ByTrack) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByTrack) Less(i, j int) bool { return a[i].Track < a[j].Track }
 
-var songs []TrackSong = make([]TrackSong, 0)
+// package datastore since Add.Song.For.Sort is called a lot
+var songs []TrackSong = make([]TrackSong, 0, 50)
 
 func AddSongForSort(a Song) error {
 	//fmt.Println(a.inPath)
-	songs = append(songs, TrackSong{a.Track, a.inPath, a.ext})
+	songs = append(songs, TrackSong{a.Track, a.inPath})
 	return nil
 }
+// print out shell commands to copy the sorted and renamed fies
 func PrintTrackSortedSongs() {
 	cmd := "cp"
 	if runtime.GOOS == "windows" {
