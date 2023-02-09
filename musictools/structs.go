@@ -182,6 +182,8 @@ func LoadArtistMap() {
 	}
 
 	onlyOnce.Do(func() {
+		enc.Encode("ignore this")
+		enc.MaxLength = 20
 		for _, n := range groupNames {
 			prim, sec := EncodeArtist(n)
 			Gptree.Put(prim, n)
