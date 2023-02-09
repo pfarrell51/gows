@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -35,7 +36,7 @@ var ExtRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 var underToSpace = regexp.MustCompile("_")
 var dReg = regexp.MustCompile("-\\s")
 var commaExp = regexp.MustCompile(",\\s")
-var slashReg = regexp.MustCompile("/")
+var slashReg = regexp.MustCompile("\\" + string(os.PathSeparator))
 var sortKeyDashExp = regexp.MustCompile("^[A-Z] - ")
 var sortKeyUnderExp = regexp.MustCompile("^[A-Z]_")
 
@@ -53,7 +54,7 @@ func pathLastTwo(s string) (artist, album string) {
 		artist = s[:parts[0][0]]
 		album = s[parts[0][1]:parts[1][0]]
 	default:
-		fmt.Printf("PIB, no directory found in %s\n", s)
+		fmt.Printf("PIB, no directory found in %s %v\n", s, parts)
 	}
 	return StandardizeArtist(artist), album
 }
@@ -136,7 +137,8 @@ func parseFilename(pathArg, p string) *Song {
 				rval.Artist = tArtist
 				rval.Album = tAlbum
 			} else {
-				fmt.Printf("artist names not same two ways %s != %s in %s\n", tArtist, rval.Artist, p)
+				fmt.Printf("artist names not same two ways %s != %s in %s\n",
+					tArtist, filepath.Join(rval.Artist, pathArg, p))
 			}
 		}
 		nameB = nameB[len(ps):]
@@ -333,7 +335,11 @@ func outputRenameCommand(aSong *Song) {
 func DumpGptree() {
 	if GetFlags().ZDumpArtist {
 		Gptree.Each(func(key string, v string) {
-			fmt.Printf("\"%s\", \n", v)
+			if GetFlags().Debug {
+				fmt.Printf("%s  %s, \n", key, v)
+			} else {
+				fmt.Printf("\"%s\", \n", v)
+			}
 		})
 	}
 }
