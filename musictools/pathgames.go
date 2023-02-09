@@ -4,27 +4,35 @@ package musictools
 
 import (
 	"fmt"
+	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
 
-var slashFind = regexp.MustCompile("\\/")
+const slashPathSep = "\\" + string(os.PathSeparator)
 
-// try to extract artist/group from diretory structure
+var slashFind = regexp.MustCompile(slashPathSep)
+
+// try to extract artist/group from directory structure
 func (s *Song) processInPathDirs() {
 	if len(s.inPathDescent) == 0 {
 		return
 	}
 	var p1, p2 string
+	if GetFlags().Debug {
+		fmt.Printf("s.inPD: %s, all: %s\n", s.inPathDescent, s.inPath)
+	}
 	parts := slashFind.FindAllStringIndex(s.inPath, -1)
-	switch {
-	case len(parts) == 1:
+
+	switch len(parts) {
+	case 1:
 		panic(fmt.Sprintf("PIB, not enough slashes in %s", s.inPath))
-	case len(parts) == 2:
+	case 2:
 		p1 = s.inPath[parts[0][1]:parts[1][0]]
 		p2 = s.inPath[parts[1][1]:]
-	case len(parts) >= 2:
+	default:
 		lp := len(parts) - 1
 		for i := 0; i < 3; i++ {
 			j := lp - (i + 1)
@@ -32,6 +40,11 @@ func (s *Song) processInPathDirs() {
 			p1 = s.inPath[parts[j][1]:parts[k][0]]
 			j--
 			k--
+			if j < 0 || k < 0 {
+				fmt.Printf("Panic coming soon i: %d, j: %d, k: %d, %s\n", i, j, k, s.inPath)
+				panic(fmt.Sprintf("negative j %d or k %d ", j, k))
+				return
+			}
 			p2 = s.inPath[parts[j][1]:parts[k][0]]
 			p3 := s.inPath[parts[lp][1]:]
 			var prim string
@@ -71,11 +84,11 @@ func (s *Song) processInPathDirs() {
 // prepopulate song structure with what we can know from the little we get from the user entered pathArg
 // and the p lower path/filename.ext that we are walking through
 func (s *Song) BasicPathSetup(pathArg, p string) {
-	joined := path.Join(pathArg, p)
+	joined := filepath.FromSlash(path.Join(pathArg, p))
 	s.inPath = joined
 	s.inPathDescent, _ = path.Split(p) // ignore file name for now
 	s.outPathBase = pathArg
-	s.outPath = path.Join(pathArg, s.inPathDescent) // start to build from here
+	s.outPath = filepath.FromSlash(path.Join(pathArg, s.inPathDescent)) // start to build from here
 	s.processInPathDirs()
 	s.ext = path.Ext(p)
 	if GetFlags().Debug {
@@ -109,6 +122,7 @@ func (s *Song) FixupOutputPath() {
 	if !strings.Contains(s.outPath, s.ext) {
 		s.outPath = s.outPath + s.ext
 	}
+	s.outPath = filepath.FromSlash(s.outPath)
 	if GetFlags().Debug {
 		fmt.Printf("leaving FOP %s\n", s.outPath)
 	}
