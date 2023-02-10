@@ -4,7 +4,12 @@ package musicfntool
 
 import (
 	"bytes"
+	_ "embed"
+	"fmt"
+	"go/scanner"
+	"go/token"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"unicode"
@@ -21,8 +26,8 @@ type Song struct {
 	albumH            string
 	Title             string
 	titleH            string
-	Track             int    `json:",omitempty"`
-	Year              int    `json:",omitempty"`
+	Track             int `json:",omitempty"`
+	Year              int `json:",omitempty"`
 	alreadyNew        bool
 	artistInDirectory bool
 	artistKnown       bool
@@ -34,14 +39,14 @@ type Song struct {
 }
 
 type FlagST struct {
-	ShowArtistNotInMap    bool
-	DoRename			  bool
-	JustList              bool
-	NoGroup               bool
-	ZDumpArtist           bool
-	JsonOutput            bool
-	Debug                 bool
-	DuplicateDetect       bool
+	ShowArtistNotInMap bool
+	DoRename           bool
+	JustList           bool
+	NoGroup            bool
+	ZDumpArtist        bool
+	JsonOutput         bool
+	Debug              bool
+	DuplicateDetect    bool
 }
 
 var localFlags = new(FlagST)
@@ -62,11 +67,18 @@ func GetFlags() *FlagST {
 }
 
 var enc metaphone3.Encoder
+
 const maxEncode = 20
+
 func init() {
 	enc.Encode("ignore this")
-	enc.MaxLength = maxEncode 
+	enc.MaxLength = maxEncode
 }
+
+var (
+	//go:embed data/artist.txt
+	artistnames []byte
+)
 
 // takes a string and returns just the letters.
 func justLetter(a string) string {
@@ -138,53 +150,44 @@ func GetArtistMap() *btree.Tree[string, string] {
 var onlyOnce sync.Once
 
 func LoadArtistMap() {
-	groupNames := [...]string{
-		"5th Dimension", "ABBA", "Alice Cooper", "Alison Krauss", "Alison Krauss Union Station",
-		"Allman Brothers", "Allman Brothers Band", "Almanac Singers",
-		"Animals", "Aquarius", "Aretha Franklin", "Arlo Guthrie", "Association", "Average White Band",
-		"Band", "Basia", "Beach Boys", "Beatles", "Bee Gees", "Billy Joel", "Blind Faith",
-		"Blood Sweat Tears", "Blue Oyster Cult", "Blues Brothers", "Bob Dylan", "Boston", "Box Tops", "Bread",
-		"Brewer and Shipley", "Brewer & Shipley", "Buffalo Springfield", "Byrds",
-		"Carole King", "Carpenters", "Cheap Trick", "Chesapeake", "Cream", "Crosby & Nash",
-		"Crosby and Nash", "Crosby Stills & Nash", "Crosby Stills And Nash", "CSN&Y",
-		"Crosby Stills Nash Young", "Crosby Stills Nash & Young", "David Allan Coe",
-		"David Bowie", "David Bromberg", "Deep Purple", "Derek and the Dominos",
-		"Derek Dominos", "Detroit Wheels",
-		"Dire Straits", "Doc Watson", "Don McLean", "Doobie Brothers", "Doors", "Dylan",
-		"Elton John", "Emerson, Lake & Palmer", "Emmylou Harris", "Fifth Dimension",
-		"Fleetwood Mac", "Genesis",
-		"George Harrison", "Gillian Welch", "Gillian Welch Alison Krauss", "Graham Nash",
-		"Gram Parsons", "Hall and Oates", "Hall & Oates",
-		"Heart", "Isley Brothers", "Jackie Wilson", "Jackson Browne",
-		"James Taylor", "Jefferson Airplane", "Jethro Tull", "Jimmy Buffett", "John Denver",
-		"John Hartford", "John Starling", "Joni Mitchell", "Judy Collins", "Kansas",
-		"KC The Sunshine Band", "Kingston Trio", "Led Zeppelin", "Linda Ronstadt",
-		"Lovin Spoonful", "Lynyrd Skynyrd",
-		"Mamas And Papas", "Mamas & The Papas", "Maria Muldaur",
-		"Meatloaf", "Mike Auldridge", "Mith Ryder & Detroit Wheels", "Moody Blues",
-		"Neal Young", "Neil Diamond", "New Riders of the Purple Sage",
-		"Nitty Gritty Dirt Band", "Oates", "Original Soundtrack", "Otis Redding", "Pablo Cruise",
-		"Paul Simon", "Pete Seeger", "Peter Paul Mary", "Rascals", "Ringo Starr",
-		"Robert Plant Alison Kraus", "Roberta Flack", "Rolling Stones",
-		"Roy Orbison", "Sam And Dave", "Santana", "Seals and Crofts", "Seals Croft", "Seldom Scene",
-		"Shadows Of Knight", "Simon and Garfunkel", "Simon Garfunkel", "Soggy Mountain Boys", "Sonny And Cher",
-		"Spoonful", "Seals Crofts", "Steely Dan", "Steppenwolf", "Steven Stills",
-		"Stevie Ray Vaughan and Double Trouble", "Sting", "Sunshine Band",
-		"Three Dog Night", "TonyRice", "Traveling Wilburys", "Turtles", "Warren Zevon",
-		"Who", "Wilson Pickett", "Yes",
-	}
 
 	onlyOnce.Do(func() {
 		enc.Encode("ignore this")
-		enc.MaxLength = maxEncode 
-		for _, n := range groupNames {
+		enc.MaxLength = maxEncode
+
+		var artists []string
+		// Initialize the scanner.
+		var s scanner.Scanner
+		fset := token.NewFileSet()                              // positions are relative to fset
+		file := fset.AddFile("", fset.Base(), len(artistnames)) // register input "file"
+		s.Init(file, artistnames, nil /* no error handler */, scanner.ScanComments)
+
+		// Repeated calls to Scan yield the token sequence found in the input.
+		for {
+			_, tok, lit := s.Scan()
+			if tok == token.EOF {
+				break
+			}
+			if tok == token.STRING {
+				if strings.HasPrefix(lit, "\"") {
+					lit = lit[1:]
+				}
+				if strings.HasSuffix(lit, "\"") {
+					lit = lit[:len(lit)-1]
+				}
+				artists = append(artists, lit)
+			}
+		}
+		sort.Strings(artists)
+
+		for _, n := range artists {
 			prim, sec := EncodeArtist(n)
 			Gptree.Put(prim, n)
 			if len(sec) > 0 {
 				Gptree.Put(sec, n)
 			}
 			if GetFlags().Debug {
-				//		fmt.Printf("%s, %s, %s\n", prim, sec, n)
+				fmt.Printf("%s, %s, %s\n", prim, sec, n)
 			}
 		}
 	})
