@@ -196,7 +196,7 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 		return nil // not interesting extension
 	}
 	var aSong *Song
-	if GetFlags().JsonOutput || GetFlags().DoRenameMetadata || GetFlags().CopyAlbumInTrackOrder {
+	if GetFlags().JsonOutput || GetFlags().DoRename || GetFlags().CopyAlbumInTrackOrder {
 		aSong, err = GetMetaData(pathArg, p)
 		if err != nil {
 			return err
@@ -258,7 +258,7 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 
 	for _, aSong := range m {
 		switch {
-		case GetFlags().DoRenameFilename || GetFlags().DoRenameMetadata:
+		case  GetFlags().DoRename:
 			outputRenameCommand(&aSong)
 		case GetFlags().JustList:
 			fmt.Printf("%s by %s\n", aSong.Title, aSong.Artist)
