@@ -39,7 +39,7 @@ func main() {
 	flag.BoolVar(&flags.JsonOutput, "j", false, "output metadata as json")
 	flag.BoolVar(&flags.JustList, "l", false, "list - list files")
 	flag.BoolVar(&flags.NoGroup, "n", false, "nogroup - list files that do not have an artist/group in the title")
-	flag.BoolVar(&flags.DoRenameMetadata, "mr", false, "rename - output rename from internal metadata")
+	flag.BoolVar(&flags.DoRename, "re", false, "rename - output rename from internal metadata")
 	flag.BoolVar(&flags.ZDumpArtist, "z", false, "list artist names one per line")
 	flag.Parse()
 	if helpflag {
@@ -70,10 +70,11 @@ func main() {
 }
 
 func ProcessFiles(pathArg string) {
-	if !musictagtool.GetFlags().ZDumpArtist {
-		rmap := musictagtool.WalkFiles(pathArg)
-		musictagtool.ProcessMap(pathArg, rmap)
-	} else {
+	if musictagtool.GetFlags().ZDumpArtist {
 		musictagtool.DumpGptree()
+		return
 	}
+	rmap := musictagtool.WalkFiles(pathArg)
+	musictagtool.ProcessMap(pathArg, rmap)
+
 }
