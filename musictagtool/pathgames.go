@@ -43,7 +43,6 @@ func (s *Song) processInPathDirs() {
 			if j < 0 || k < 0 {
 				fmt.Printf("Panic coming soon i: %d, j: %d, k: %d, %s\n", i, j, k, s.inPath)
 				panic(fmt.Sprintf("negative j %d or k %d ", j, k))
-				return
 			}
 			p2 = s.inPath[parts[j][1]:parts[k][0]]
 			p3 := s.inPath[parts[lp][1]:]
