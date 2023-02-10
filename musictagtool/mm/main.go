@@ -10,7 +10,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/pfarrell51/gows/musictagtool`"
+	"github.com/pfarrell51/gows/musictagtool"
 	"os"
 	"path"
 	"time"
