@@ -258,7 +258,7 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 
 	for _, aSong := range m {
 		switch {
-		case  GetFlags().DoRename:
+		case GetFlags().DoRename:
 			outputRenameCommand(&aSong)
 		case GetFlags().JustList:
 			fmt.Printf("%s by %s\n", aSong.Title, aSong.Artist)
