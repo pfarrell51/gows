@@ -137,7 +137,7 @@ func parseFilename(pathArg, p string) *Song {
 				rval.Artist = tArtist
 				rval.Album = tAlbum
 			} else {
-				fmt.Printf("artist names not same two ways %s != %s in %s\n",
+				fmt.Printf("artist names not same two ways %s != %s\n",
 					tArtist, filepath.Join(rval.Artist, pathArg, p))
 			}
 		}
