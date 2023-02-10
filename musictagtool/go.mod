@@ -1,4 +1,4 @@
-module github.com/pfarrell51/gows/musictools
+module github.com/pfarrell51/gows/musictagtool
 
 go 1.19
 
