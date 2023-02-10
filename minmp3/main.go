@@ -60,8 +60,8 @@ func processFile(pathArg string, fsys fs.FS, p string, d fs.DirEntry, err error)
 		return fmt.Errorf("%v %s", err, path)
 
 	}
-	if len(m.Title()) > 0 {
-		// do nothing
+	if len(m.Title()) == 0 {
+		fmt.Printf("No title for %s in %s\n", p, path)
 	}
 	return nil
 }
