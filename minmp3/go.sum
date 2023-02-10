@@ -1,0 +1,4 @@
+github.com/dhowden/tag v0.0.0-20220618230019-adf36e896086 h1:ORubSQoKnncsBnR4zD9CuYFJCPOCuSNEpWEZrDdBXkc=
+github.com/dhowden/tag v0.0.0-20220618230019-adf36e896086/go.mod h1:Z3Lomva4pyMWYezjMAU5QWRh0p1VvO4199OHlFnyKkM=
+github.com/dlclark/metaphone3 v0.0.0-20190903202417-5fe87fcdd547 h1:OORe7CarEOHLaNLEGqaCthCiNCkdE1ONQq8bykPwWmc=
+github.com/dlclark/metaphone3 v0.0.0-20190903202417-5fe87fcdd547/go.mod h1:qDxEB58K1Kb5fD+Rk8joPpQTiGWobSxPFCyc79M2a1o=
