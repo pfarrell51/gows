@@ -31,9 +31,10 @@ func main() {
 	}
 	var helpflag bool
 	var flags = new(filenametool.FlagST)
-	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (gpmap)")
+	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (data/artists.txt)")
 	flag.BoolVar(&flags.Debug, "de", false, "debug on")
-	flag.BoolVar(&flags.DuplicateDetect, "dup", false, "duplicate song attempts on")
+	flag.BoolVar(&flags.DuplicateDetect, "dup", false, "duplicate song -" +
+			" attempts to identify duplicate songs, very buggy")
 	flag.BoolVar(&helpflag, "h", false, "help")
 	flag.BoolVar(&flags.JustList, "l", false, "list - list files")
 	flag.BoolVar(&flags.NoGroup, "ng", false, "nogroup - list files that do not have an artist/group in the title")
