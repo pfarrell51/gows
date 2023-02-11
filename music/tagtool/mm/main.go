@@ -76,5 +76,4 @@ func ProcessFiles(pathArg string) {
 	}
 	rmap := tagtool.WalkFiles(pathArg)
 	tagtool.ProcessMap(pathArg, rmap)
-
 }
