@@ -158,7 +158,6 @@ func LoadArtistMap() {
 	onlyOnce.Do(func() {
 		enc.Encode("ignore this")
 		enc.MaxLength = maxEncode
-
 		var artists []string
 		// Initialize the scanner.
 		var s scanner.Scanner
