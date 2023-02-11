@@ -18,6 +18,9 @@ func init() {
 	LoadArtistMap()
 }
 
+var songsProcessed int
+var numNoAcoustId, numNoTitle, numNoMBID int
+
 // top level entry point, takes the path to the directory to walk/process
 func ProcessFiles(pathArg string) {
 	if GetFlags().ZDumpArtist {
@@ -29,36 +32,9 @@ func ProcessFiles(pathArg string) {
 }
 
 var ExtRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
-var underToSpace = regexp.MustCompile("_")
-var dReg = regexp.MustCompile("-\\s")
-var commaExp = regexp.MustCompile(",\\s")
-var slashReg = regexp.MustCompile("\\" + string(os.PathSeparator))
-var sortKeyDashExp = regexp.MustCompile("^[A-Z] - ")
-var sortKeyUnderExp = regexp.MustCompile("^[A-Z]_")
-
-// parse the last two directories of a song's path, trying to find which is the artist
-func pathLastTwo(s string) (artist, album string) {
-	panic("pathLastTwo called")
-}
-
-// identify the artist from two strings, a & b which were split from the file name
-// looks up possilbe artists from the GroupTree hash map
-func identifyArtistFromPair(a, b string, songpath string) (artist, title string) {
-	panic("identifyArtistFromParts called")
-}
 
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
 var dashRegex = regexp.MustCompile(divP)
-
-// parse the file info to find artist and Song title
-// most of my music files have file names with the artist name, a hyphen and then the track title
-// so this pulls out the information and fills in the "Song" object.
-func parseFilename(pathArg, p string) *Song {
-	if GetFlags().Debug {
-		fmt.Printf("\npf: %s\n", p)
-	}
-	panic("parseFilename called")
-}
 
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
@@ -76,6 +52,7 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	if extR == nil {
 		return nil // not interesting extension
 	}
+	songsProcessed++
 	var aSong *Song
 	aSong, err = GetMetaData(pathArg, p)
 	if err != nil {
@@ -85,6 +62,20 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	aSong.titleH = key
 	aSong.FixupOutputPath()
 	sMap[key] = *aSong
+	if GetFlags().NoTags {
+		if aSong.AcoustID == "" {
+			numNoAcoustId++
+		}
+		if aSong.Title == "" {
+			numNoTitle++
+		}
+		if aSong.MBID == "" {
+			numNoMBID++
+		}
+		if aSong.AcoustID == "" && aSong.Title == "" && aSong.MBID == "" {
+			fmt.Printf("#No tags found for %s\n", aSong.inPath)
+		}
+	}
 	if GetFlags().CopyAlbumInTrackOrder {
 		AddSongForSort(*aSong)
 	}
@@ -118,8 +109,9 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 		return m
 	}
 	uniqueArtists := make(map[string]Song)
-
+	var countSongs, countNoGroup int
 	for _, aSong := range m {
+		countSongs++
 		switch {
 		case GetFlags().DoRename:
 			outputRenameCommand(&aSong)
@@ -128,6 +120,7 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 			continue
 		case GetFlags().ShowArtistNotInMap && !aSong.artistKnown:
 			if aSong.Artist == "" {
+				countNoGroup++
 				continue
 			}
 			prim, sec := EncodeArtist(aSong.Artist)
@@ -150,10 +143,19 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 			}
 		case GetFlags().NoGroup:
 			if aSong.Artist == "" {
+				countNoGroup++
 				fmt.Printf("nogroup %s\n", aSong.inPath)
 			}
 		default:
 		}
+	}
+
+	if GetFlags().NoGroup {
+		fmt.Printf("#scanned %d songs, %d had no artist/group\n", countSongs, countNoGroup)
+	}
+	if GetFlags().NoTags {
+		fmt.Printf("#scanned %d songs, %d had no artist, %d no AcoustId, %d no title, %d no MBID\n",
+				countSongs, countNoGroup, numNoAcoustId, numNoTitle, numNoMBID)
 	}
 	if GetFlags().ShowArtistNotInMap {
 		for k, v := range uniqueArtists {
