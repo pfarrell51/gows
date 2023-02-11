@@ -46,6 +46,7 @@ type FlagST struct {
 	DoRename              bool
 	JustList              bool
 	NoGroup               bool
+	NoTags                bool
 	ZDumpArtist           bool
 	JsonOutput            bool
 	Debug                 bool
@@ -61,6 +62,7 @@ func SetFlagArgs(f FlagST) {
 	localFlags.DoRename = f.DoRename
 	localFlags.JustList = f.JustList
 	localFlags.NoGroup = f.NoGroup
+	localFlags.NoTags = f.NoTags
 	localFlags.ZDumpArtist = f.ZDumpArtist
 	localFlags.JsonOutput = f.JsonOutput
 	localFlags.Debug = f.Debug
