@@ -8,14 +8,10 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path"
-	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
-
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 func init() {
@@ -42,56 +38,13 @@ var sortKeyUnderExp = regexp.MustCompile("^[A-Z]_")
 
 // parse the last two directories of a song's path, trying to find which is the artist
 func pathLastTwo(s string) (artist, album string) {
-	if matched, _ := regexp.MatchString("^[A-Z]( |-|_)", s); matched {
-		s = s[2:]
-	}
-	parts := slashReg.FindAllStringIndex(s, -1)
-	switch len(parts) {
-	case 1:
-		artist = s[:parts[0][0]]
-		album = ""
-	case 2:
-		artist = s[:parts[0][0]]
-		album = s[parts[0][1]:parts[1][0]]
-	default:
-		fmt.Printf("PIB, no directory found in %s %v\n", s, parts)
-	}
-	return StandardizeArtist(artist), album
+	panic("pathLastTwo called")
 }
 
 // identify the artist from two strings, a & b which were split from the file name
 // looks up possilbe artists from the GroupTree hash map
 func identifyArtistFromPair(a, b string, songpath string) (artist, title string) {
-	prim, sec := EncodeArtist(a)
-	_, ok := Gptree.Get(prim)
-	if ok {
-		return StandardizeArtist(a), b
-	}
-	_, ok = Gptree.Get(sec)
-	if ok {
-		return StandardizeArtist(a), b
-	}
-	prim, sec = EncodeArtist(b)
-	_, ok = Gptree.Get(prim)
-	if ok {
-		return StandardizeArtist(b), a
-	}
-	_, ok = Gptree.Get(sec)
-	if ok {
-		return StandardizeArtist(b), a
-	}
-	fmt.Printf("did not match group name with either argument, %s, %s for %s\n", a, b, songpath)
-	switch {
-	case a == "" && b != "":
-		return a, b // assume b is title with no group
-	case a != "" && b == "":
-		return b, a // assume a is title with no group
-	case a == "" && b == "":
-		return a, b // makes no difference
-	case a != "" && b != "":
-		return a, b // just a guess
-	}
-	panic("PIB, in identify.ArtistFromPair")
+	panic("identifyArtistFromParts called")
 }
 
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
@@ -104,79 +57,7 @@ func parseFilename(pathArg, p string) *Song {
 	if GetFlags().Debug {
 		fmt.Printf("\npf: %s\n", p)
 	}
-	var rval = new(Song)
-	rval.BasicPathSetup(pathArg, p)
-	nameB := []byte(strings.TrimSpace(p))
-	if sortKeyDashExp.Match(nameB) {
-		nameB = nameB[4:]
-	}
-	if sortKeyUnderExp.Match(nameB) {
-		nameB = nameB[2:]
-	}
-	nameB = underToSpace.ReplaceAll(nameB, []byte(" "))
-	extR := ExtRegex.FindIndex(nameB)
-	if extR == nil || len(extR) == 0 {
-		return rval
-	}
-	ext := path.Ext(p)
-	rval.ext = ext
-	if rval.artistInDirectory && rval.artistKnown && rval.Title != "" {
-		return rval
-	}
-	nameB = nameB[0 : extR[0]-1]
-	var groupN, SongN string
-	groupN = rval.Artist // default to using the name from the subdirectory
-
-	ps, _ := path.Split(string(nameB))
-	if len(ps) > 0 {
-		rval.outPath = path.Join(rval.outPath, ps)
-		if !rval.artistInDirectory && !rval.artistKnown {
-			rval.artistInDirectory = true
-			tArtist, tAlbum := pathLastTwo(ps)
-			if tArtist == rval.Artist {
-				rval.Artist = tArtist
-				rval.Album = tAlbum
-			} else {
-				fmt.Printf("artist names not same two ways %s != %s\n",
-					tArtist, filepath.Join(rval.Artist, pathArg, p))
-			}
-		}
-		nameB = nameB[len(ps):]
-		SongN = StandardizeTitle(string(nameB))
-	}
-	dash := dReg.FindIndex(nameB)
-	var semiExp = regexp.MustCompile("; ")
-	if semiExp.Match(nameB) {
-		semiLoc := semiExp.FindIndex(nameB)
-		SongN = StandardizeTitle(string(nameB[:semiLoc[0]]))
-		groupN = StandardizeArtist(string(nameB[semiLoc[1]:]))
-		rval.alreadyNew = true
-	} else {
-		//  no ;
-		if dash != nil {
-			sa := string(nameB[:dash[0]]) // have a dash, so split by it
-			sb := string(nameB[dash[1]:])
-			groupN, SongN = identifyArtistFromPair(sa, sb, p)
-		} else {
-			commaLoc := commaExp.FindIndex(nameB)
-			if len(commaLoc) > 0 {
-				sa := string(nameB[:commaLoc[0]]) // have a comma, so split by it
-				sb := string(nameB[commaLoc[1]:])
-				groupN, SongN = identifyArtistFromPair(sa, sb, p)
-			} else {
-				groupN = ""
-				SongN = string(nameB)
-			}
-		}
-	}
-	groupN = cases.Title(language.English, cases.NoLower).String(StandardizeArtist(groupN))
-	rval.Title = StandardizeTitle(SongN)
-	rval.titleH, _ = EncodeTitle(SongN)
-	rval.Artist = StandardizeArtist(groupN)
-	rval.artistH, _ = EncodeArtist(rval.Artist)
-	_, ok := Gptree.Get(rval.artistH)
-	rval.artistKnown = ok
-	return rval
+	panic("parseFilename called")
 }
 
 // this is the local  WalkDirFunc called by WalkDir for each file
@@ -196,38 +77,20 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 		return nil // not interesting extension
 	}
 	var aSong *Song
-	if GetFlags().JsonOutput || GetFlags().DoRename || GetFlags().CopyAlbumInTrackOrder {
-		aSong, err = GetMetaData(pathArg, p)
-		if err != nil {
-			return err
-		}
-		key, _ := EncodeTitle(aSong.Title)
-		aSong.titleH = key
-		aSong.FixupOutputPath()
-		sMap[key] = *aSong
-		if GetFlags().CopyAlbumInTrackOrder {
-			AddSongForSort(*aSong)
-		}
-		return nil
+	aSong, err = GetMetaData(pathArg, p)
+	if err != nil {
+		return err
 	}
-
-	aSong = parseFilename(pathArg, p)
-	if aSong == nil {
-		return nil
+	key, _ := EncodeTitle(aSong.Title)
+	aSong.titleH = key
+	aSong.FixupOutputPath()
+	sMap[key] = *aSong
+	if GetFlags().CopyAlbumInTrackOrder {
+		AddSongForSort(*aSong)
 	}
 	if GetFlags().DuplicateDetect {
-		v := sMap[aSong.titleH]
-		if len(v.titleH) > 0 {
-			if aSong.artistH == v.artistH {
-				fmt.Printf("#existing duplicate Song for %s == %s\n", aSong.inPath, v.inPath)
-			} else {
-				fmt.Printf("#possible dup Song or cover for %s == %s\n", aSong.inPath, v.inPath)
-				aSong.titleH += "1"
-			}
-			return nil
-		}
+		fmt.Printf("#dupDetect Not Yet Implemented\n")
 	}
-	sMap[aSong.titleH] = *aSong
 	return nil
 }
 
@@ -333,13 +196,21 @@ func outputRenameCommand(aSong *Song) {
 
 // specialized function, dumps the Artist map
 func DumpGptree() {
-	if GetFlags().ZDumpArtist {
-		Gptree.Each(func(key string, v string) {
-			if GetFlags().Debug {
-				fmt.Printf("%s  %s, \n", key, v)
-			} else {
-				fmt.Printf("\"%s\", \n", v)
-			}
-		})
+	if !GetFlags().ZDumpArtist {
+		return
+	}
+	var arts []string
+	Gptree.Each(func(key string, v string) {
+		var t string
+		if GetFlags().Debug {
+			t = fmt.Sprintf("%s  \"%s\"", v, key)
+		} else {
+			t = fmt.Sprintf("%s", v)
+		}
+		arts = append(arts, t)
+	})
+	sort.Strings(arts)
+	for _, v := range arts {
+		fmt.Printf("%s\n", v)
 	}
 }
