@@ -155,7 +155,7 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 	}
 	if GetFlags().NoTags {
 		fmt.Printf("#scanned %d songs, %d had no artist, %d no AcoustId, %d no title, %d no MBID\n",
-				countSongs, countNoGroup, numNoAcoustId, numNoTitle, numNoMBID)
+			countSongs, countNoGroup, numNoAcoustId, numNoTitle, numNoMBID)
 	}
 	if GetFlags().ShowArtistNotInMap {
 		for k, v := range uniqueArtists {
