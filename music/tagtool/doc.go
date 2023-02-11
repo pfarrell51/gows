@@ -5,7 +5,7 @@
 //
 // The basic operation is to run the executable, give it a switch/flag to say what
 // you want to do, and specify a folder/directory that will be processed.
-// 
+//
 // as usual, there is a package "tagtool" of software that performs the operations
 // and a subdirectory that contains the main.go file that is the executable.
 // the subdirectory for tagtools is named "mm" so the executable that is built
@@ -14,7 +14,7 @@
 // Usage of mm/mm: [flags] directory-spec
 //
 //  -a    artist map -  list artist not known in source code. The known artists are
-//			kept in a text file in the data subdirectory, named artists.txt 
+//			kept in a text file in the data subdirectory, named artists.txt
 //  -c    Album track order - output cp command to copy songs in track order so that
 //			you can play the songs in the same order as they were in an album.
 //			Many albums in the late 60s and 70s had a specific flow for the songs,
@@ -22,13 +22,15 @@
 //  -de   debug on, turns on all sorts of debugging messages
 //  -dup  duplicate attempts to identify duplicate songs
 //  -h    help
+//  -i    inventory - basic inventory
 //  -j    output metadata as json
 //  -l    list - list files
 //  -ng   nogroup - list files that do not have an artist/group in the title
 //  -nt   notags - list files that do not have any meta tags
-//  -re   rename - output rename from internal metadata. This will generate 
+//  -r    rename - output rename from internal metadata. This will generate
 //			rename commands for the files so that the file name reflects the song title and artist
 //			from the metadata tags
+//  -s    summary - print summary statistics
 //  -z    list artist names one per line
 //
 
