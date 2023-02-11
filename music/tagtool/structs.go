@@ -40,10 +40,11 @@ type Song struct {
 	outPathBase       string // copied from pathArg entered by the user
 	ext               string
 }
-
 type FlagST struct {
 	ShowArtistNotInMap    bool
 	DoRename              bool
+	DoInventory           bool
+	DoSummary             bool
 	JustList              bool
 	NoGroup               bool
 	NoTags                bool
@@ -60,6 +61,8 @@ var localFlags = new(FlagST)
 func SetFlagArgs(f FlagST) {
 	localFlags.ShowArtistNotInMap = f.ShowArtistNotInMap
 	localFlags.DoRename = f.DoRename
+	localFlags.DoInventory = f.DoInventory
+	localFlags.DoSummary = f.DoSummary
 	localFlags.JustList = f.JustList
 	localFlags.NoGroup = f.NoGroup
 	localFlags.NoTags = f.NoTags
