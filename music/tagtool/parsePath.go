@@ -14,6 +14,9 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+
+	g "github.com/zyedidia/generic"
+	"github.com/zyedidia/generic/avl"
 )
 
 func init() {
@@ -22,6 +25,10 @@ func init() {
 
 var songsProcessed int
 var numNoAcoustId, numNoTitle, numNoMBID int
+var numAlbums, numArtists int
+var artistTree = avl.New[string, int](g.Less[string])
+var albumTree = avl.New[string, int](g.Less[string])
+var songTree = avl.New[string, int](g.Less[string])
 
 // top level entry point, takes the path to the directory to walk/process
 func ProcessFiles(pathArg string) {
@@ -51,12 +58,13 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	if extR == nil {
 		return nil // not interesting extension
 	}
-	songsProcessed++
+
 	var aSong *Song
 	aSong, err = GetMetaData(pathArg, p)
 	if err != nil {
 		return err
 	}
+	songsProcessed++
 	key, _ := EncodeTitle(aSong.Title)
 	aSong.titleH = key
 	aSong.FixupOutputPath()
@@ -74,6 +82,10 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 		if aSong.AcoustID == "" && aSong.Title == "" && aSong.MBID == "" {
 			fmt.Printf("#No tags found for %s\n", aSong.inPath)
 		}
+	}
+
+	if GetFlags().DoSummary {
+		updateUniqueCounts(*aSong)
 	}
 	if GetFlags().CopyAlbumInTrackOrder {
 		AddSongForSort(*aSong)
@@ -95,66 +107,97 @@ func WalkFiles(pathArg string) map[string]Song {
 	})
 	return songMap
 }
+
 // prepopulate song structure with what we can know from the little we get from the user entered pathArg
 // and the p lower path/filename.ext that we are walking through
 func (s *Song) BasicPathSetup(pathArg, p string) {
-    joined := filepath.FromSlash(path.Join(pathArg, p))
-    s.inPath = joined
-    s.inPathDescent, _ = path.Split(p) // ignore file name for now
-    s.outPathBase = pathArg
-    s.outPath = filepath.FromSlash(path.Join(pathArg, s.inPathDescent)) // start to build from here
-    s.ext = path.Ext(p)
-    if GetFlags().Debug {
-        fmt.Printf("inpath %s\n", s.inPath)
-        if s.inPathDescent != "" {
-            fmt.Printf("inpath.descent %s\n", s.inPathDescent)
-        }
-        fmt.Printf("outpath %s\n", s.outPath)
-        fmt.Printf("outpath.base %s\n", s.outPathBase)
-        fmt.Printf("ext: %s\n", s.ext)
-    }
+	joined := filepath.FromSlash(path.Join(pathArg, p))
+	s.inPath = joined
+	s.inPathDescent, _ = path.Split(p) // ignore file name for now
+	s.outPathBase = pathArg
+	s.outPath = filepath.FromSlash(path.Join(pathArg, s.inPathDescent)) // start to build from here
+	s.ext = path.Ext(p)
+	if GetFlags().Debug {
+		fmt.Printf("inpath %s\n", s.inPath)
+		if s.inPathDescent != "" {
+			fmt.Printf("inpath.descent %s\n", s.inPathDescent)
+		}
+		fmt.Printf("outpath %s\n", s.outPath)
+		fmt.Printf("outpath.base %s\n", s.outPathBase)
+		fmt.Printf("ext: %s\n", s.ext)
+	}
 }
 
 // build up output path in case we want to rename the file
 func (s *Song) FixupOutputPath() {
-    if GetFlags().Debug {
-        fmt.Printf("FOP %s\n", s.outPath)
-    }
-    if s.outPath == s.inPath {
-        return
-    }
-    if s.ext == "" {
-        panic(fmt.Sprintf("PIB, extension is empty %s\n", s.outPath))
-    }
-    if !strings.Contains(s.outPath, s.Title) {
-        s.outPath = path.Join(s.outPath, s.Title)
-    }
-    if !s.artistInDirectory && s.Artist != "" && !strings.Contains(s.outPath, s.Artist) {
-        s.outPath += "; " + s.Artist
-    }
-    if !strings.Contains(s.outPath, s.ext) {
-        s.outPath = s.outPath + s.ext
-    }
-    s.outPath = filepath.FromSlash(s.outPath)
-    if GetFlags().Debug {
-        fmt.Printf("leaving FOP %s\n", s.outPath)
-    }
-    if s.outPath == s.inPath {
-        if GetFlags().Debug {
-            fmt.Printf("#structs/fxop: no change for %s\n", s.inPath)
-        }
-    }
+	if GetFlags().Debug {
+		fmt.Printf("FOP %s\n", s.outPath)
+	}
+	if s.outPath == s.inPath {
+		return
+	}
+	if s.ext == "" {
+		panic(fmt.Sprintf("PIB, extension is empty %s\n", s.outPath))
+	}
+	if !strings.Contains(s.outPath, s.Title) {
+		s.outPath = path.Join(s.outPath, s.Title)
+	}
+	if !s.artistInDirectory && s.Artist != "" && !strings.Contains(s.outPath, s.Artist) {
+		s.outPath += "; " + s.Artist
+	}
+	if !strings.Contains(s.outPath, s.ext) {
+		s.outPath = s.outPath + s.ext
+	}
+	s.outPath = filepath.FromSlash(s.outPath)
+	if GetFlags().Debug {
+		fmt.Printf("leaving FOP %s\n", s.outPath)
+	}
+	if s.outPath == s.inPath {
+		if GetFlags().Debug {
+			fmt.Printf("#structs/fxop: no change for %s\n", s.inPath)
+		}
+	}
 }
+
+func updateUniqueCounts(s Song) {
+	v, ok := artistTree.Get(s.Artist)
+	if ok {
+		v++
+	} else {
+		v = 1
+	}
+	artistTree.Put(s.Artist, v)
+	v, ok = artistTree.Get(s.Artist)
+
+	key := s.Artist + s.Album
+	v, ok = albumTree.Get(key)
+	if ok {
+		v++
+	} else {
+		v = 1
+	}
+	albumTree.Put(key, v)
+
+	key = s.Title + s.Artist
+	v, ok = songTree.Get(key)
+	if ok {
+		v++
+	} else {
+		v = 1
+	}
+	songTree.Put(key, v)
+}
+
 // this is the output routine. it goes thru the map and produces output
 // appropriate for the specified flag
-func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
+func ProcessMap(pathArg string, m map[string]Song) {
 	if GetFlags().JsonOutput {
 		PrintJson(m)
-		return m
+		return
 	}
 	if GetFlags().CopyAlbumInTrackOrder {
 		PrintTrackSortedSongs()
-		return m
+		return
 	}
 	uniqueArtists := make(map[string]Song)
 	var countSongs, countNoGroup int
@@ -174,7 +217,7 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 			prim, sec := EncodeArtist(aSong.Artist)
 			_, ok := Gptree.Get(prim)
 			if ok {
-				fmt.Printf("primary found %s %s\n", prim, aSong.Artist)
+				// fmt.Printf("primary found %s %s\n", prim, aSong.Artist)
 				continue
 			}
 			if len(sec) > 0 {
@@ -210,7 +253,14 @@ func ProcessMap(pathArg string, m map[string]Song) map[string]Song {
 			fmt.Printf("addto map k: %s v: %s %s\n", k, v.Artist, v.inPath)
 		}
 	}
-	return m
+	if GetFlags().DoSummary {
+		fmt.Printf("found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
+		fmt.Println("artists")
+		artistTree.Each(func(k string, v int) {
+			fmt.Printf("%d %s\n", v, k)
+		})
+	}
+	return
 }
 
 // prints out a suitable rename/mv/ren command to put the file name
