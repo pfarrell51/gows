@@ -6,7 +6,6 @@ package tagtool
 import (
 	"fmt"
 	"os"
-	"path"
 	"strconv"
 	"strings"
 
@@ -50,14 +49,6 @@ func GetMetaData(pathArg, p string) (*Song, error) {
 	rval.Title = StandardizeTitle(m.Title()) // The title of the track (see Metadata interface for more details).
 	if strings.Contains(rval.Title, "/") {
 		rval.Title = strings.ReplaceAll(rval.Title, "/", " ")
-	}
-	if rval.Title == "" {
-		fmt.Printf("weird, no title for %s\n", rval.inPath)
-		_, filename := path.Split(rval.inPath)
-		punchIdx := dashRegex.FindStringIndex(filename)
-		if punchIdx != nil {
-			rval.Title = strings.TrimSpace(filename[punchIdx[1]:])
-		}
 	}
 	rval.titleH, _ = EncodeTitle(rval.Title)
 	rval.Artist = StandardizeArtist(m.Artist())
