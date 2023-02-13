@@ -70,7 +70,7 @@ func GetMetaData(pathArg, p string) (*Song, error) {
 	}
 	rval.FixupOutputPath()
 	if GetFlags().Debug {
-		for k, _ := range info {		// loop thru extra meta data, musicbrainz, etc
+		for k, _ := range info { // loop thru extra meta data, musicbrainz, etc
 			found := knownIds[k]
 			if !found {
 				knownIds[k] = true
