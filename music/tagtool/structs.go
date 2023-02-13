@@ -10,6 +10,7 @@ import (
 	"go/token"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"unicode"
@@ -130,6 +131,8 @@ func StandardizeArtist(art string) string {
 	}
 	return rval
 }
+
+var digLetters = []byte {'B','C','D','F','G', 'J', 'K', 'L', 'M', 'R'}
 func StandardizeTitle(title string) string {
 	if len(title) == 0 {
 		return title
@@ -140,6 +143,13 @@ func StandardizeTitle(title string) string {
 	}
 	rval = strings.ReplaceAll(rval, "/", " ")
 	rval = strings.ReplaceAll(rval, "_", " ")
+	if strings.HasPrefix(rval, "Track") {
+		if n, err := strconv.Atoi(rval[5:]); err == nil {
+			tens := n / 10
+			ones := n % 10
+			rval = fmt.Sprintf("%s%s%c%c", rval[:4], Convert1to1000(n), digLetters[tens], digLetters[ones])
+		}
+	}
 	return rval
 }
 func EncodeTitle(s string) (string, string) {
