@@ -1,4 +1,4 @@
-// this module deals the meta tags in mp3, flac, ogg and other neat mustic formates.
+// tags  this module deals the meta tags in mp3, flac, ogg and other neat mustic formates.
 // nearly all of the work is done by  David Howden wonderful library
 
 package tagtool
@@ -70,7 +70,7 @@ func GetMetaData(pathArg, p string) (*Song, error) {
 	}
 	rval.FixupOutputPath()
 	if GetFlags().Debug {
-		for k, _ := range info {
+		for k, _ := range info {		// loop thru extra meta data, musicbrainz, etc
 			found := knownIds[k]
 			if !found {
 				knownIds[k] = true
