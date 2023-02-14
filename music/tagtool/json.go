@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 )
 
 func PrintJson(m map[string]Song) {
@@ -15,5 +16,5 @@ func PrintJson(m map[string]Song) {
 	if err != nil {
 		log.Fatalf("JSON marshalling failed: %s", err)
 	}
-	fmt.Printf("%s\n", string(data))
+	fmt.Println(strings.ReplaceAll(string(data), "}", string("}\n")))
 }
