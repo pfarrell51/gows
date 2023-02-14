@@ -166,7 +166,7 @@ func updateUniqueCounts(s Song) {
 	artistTree.Put(s.Artist, v)
 	v, ok = artistTree.Get(s.Artist)
 
-	key := s.Artist + s.Album
+	key := s.Artist + " " + s.Album
 	v, ok = albumTree.Get(key)
 	if ok {
 		v++
@@ -175,7 +175,7 @@ func updateUniqueCounts(s Song) {
 	}
 	albumTree.Put(key, v)
 
-	key = s.Title + s.Artist
+	key = s.Title + " " + s.Artist
 	v, ok = songTree.Get(key)
 	if ok {
 		v++
@@ -251,22 +251,22 @@ func ProcessMap(pathArg string, m map[string]Song) {
 		}
 	}
 	if GetFlags().DoSummary {
-		fmt.Printf("found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
-		fmt.Println("artists")
+		fmt.Printf(">#1 found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
+		fmt.Println("artists. Count is number of songs across all albums for this artist")
 		artistTree.Each(func(k string, v int) {
 			fmt.Printf("%d %s\n", v, k)
 		})
-		fmt.Printf("found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
-		fmt.Println("albums")
+		fmt.Printf(">#2 found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
+		fmt.Println("albums. Count is number of songs in the given artist/album")
 		albumTree.Each(func(k string, v int) {
 			fmt.Printf("%d %s\n", v, k)
 		})
-		fmt.Printf("found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
+		fmt.Printf(">#3 found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
 		fmt.Println("songs")
 		songTree.Each(func(k string, v int) {
 			fmt.Printf("%d %s\n", v, k)
 		})
-		fmt.Printf("found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
+		fmt.Printf(">#4found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
 	}
 	return
 }
@@ -279,8 +279,8 @@ func outputRenameCommand(aSong *Song) {
 	if runtime.GOOS == "windows" {
 		cmd = "ren "
 	}
-	fmt.Printf("oRC start  %s \"%s\" \"%s-/%s; %s\"\n", cmd, aSong.inPath,
-		aSong.Title, aSong.Artist, aSong.ext)
+	// fmt.Printf("#oRC start  %s \"%s\" \"%s-/%s; %s\"\n", cmd, aSong.inPath,
+	// 	aSong.Title, aSong.Artist, aSong.ext)
 	if aSong.outPath == aSong.inPath {
 		if GetFlags().Debug {
 			fmt.Printf("#parseP no change for %s\n", aSong.inPath)
@@ -289,7 +289,7 @@ func outputRenameCommand(aSong *Song) {
 	}
 	switch {
 	case aSong.alreadyNew:
-		fmt.Printf("oRC  aNew %s \"%s\" \"%s - /%s; %s\"\n", cmd, aSong.inPath,
+		fmt.Printf("#oRC  aNew %s \"%s\" \"%s - /%s; %s\"\n", cmd, aSong.inPath,
 			aSong.Title, aSong.Artist, aSong.ext)
 		return
 	case aSong.Artist == "":
