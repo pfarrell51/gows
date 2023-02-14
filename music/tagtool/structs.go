@@ -139,7 +139,7 @@ func StandardizeTitle(title string) string {
 		return title
 	}
 	rval := strings.TrimSpace(title)
-	if matched, _ := regexp.MatchString("^[A-Z]( |-|_)", rval); matched {
+	if matched, _ := regexp.MatchString("^[A-Z](-|_)", rval); matched {
 		rval = rval[2:]
 	}
 	rval = strings.ReplaceAll(rval, "/", " ")
