@@ -53,8 +53,12 @@ func GetMetaData(pathArg, p string) (*Song, error) {
 	rval.titleH, _ = EncodeTitle(rval.Title)
 	rval.Artist = StandardizeArtist(m.Artist())
 	rval.Album = m.Album()
+	rval.Genre = m.Genre()
 	rval.Year = m.Year()
 	rval.Track, _ = m.Track()
+	disc, discCount := m.Disc()
+	rval.Disc = disc
+	rval.DiscCount = discCount
 	info := mbz.Extract(m)
 	rval.MBID, _ = info["musicbrainz_trackid"]
 	rval.AcoustID, _ = info["acoustid_id"]

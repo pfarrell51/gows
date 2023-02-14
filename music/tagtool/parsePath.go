@@ -2,6 +2,9 @@
 //
 // this is not multi-processing safe
 
+// bugs
+// do not remove level if album name is same as song title
+
 package tagtool
 
 import (
@@ -40,7 +43,7 @@ func ProcessFiles(pathArg string) {
 	ProcessMap(pathArg, rmap)
 }
 
-var ExtRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
+var ExtRegex = regexp.MustCompile(`[Mm][Pp][34]|[Ff][Ll][Aa][Cc]$`) //"((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
@@ -251,21 +254,30 @@ func ProcessMap(pathArg string, m map[string]Song) {
 		}
 	}
 	if GetFlags().DoSummary {
-		fmt.Printf(">#1 found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
-		fmt.Println("artists. Count is number of songs across all albums for this artist")
-		artistTree.Each(func(k string, v int) {
-			fmt.Printf("%d %s\n", v, k)
-		})
-		fmt.Printf(">#2 found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
-		fmt.Println("albums. Count is number of songs in the given artist/album")
-		albumTree.Each(func(k string, v int) {
-			fmt.Printf("%d %s\n", v, k)
-		})
-		fmt.Printf(">#3 found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
-		fmt.Println("songs")
-		songTree.Each(func(k string, v int) {
-			fmt.Printf("%d %s\n", v, k)
-		})
+		fmt.Printf(">#1 found %d artists, %d albums and %d songs\n",
+			artistTree.Size(), albumTree.Size(), songTree.Size())
+		if GetFlags().Debug {
+			fmt.Println("artists. Count is number of songs across all albums for this artist")
+			artistTree.Each(func(k string, v int) {
+				fmt.Printf("%d %s\n", v, k)
+			})
+			fmt.Printf(">#2 found %d artists, %d albums and %d songs\n",
+				artistTree.Size(), albumTree.Size(), songTree.Size())
+		}
+		if GetFlags().Debug {
+			fmt.Println("albums. Count is number of songs in the given artist/album")
+			albumTree.Each(func(k string, v int) {
+				fmt.Printf("%d %s\n", v, k)
+			})
+			fmt.Printf(">#3 found %d artists, %d albums and %d songs\n",
+				artistTree.Size(), albumTree.Size(), songTree.Size())
+		}
+		if GetFlags().Debug {
+			fmt.Println("songs")
+			songTree.Each(func(k string, v int) {
+				fmt.Printf("%d %s\n", v, k)
+			})
+		}
 		fmt.Printf(">#4found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
 	}
 	return

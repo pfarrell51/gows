@@ -27,6 +27,8 @@ type Song struct {
 	albumH            string
 	Title             string
 	titleH            string
+	Genre             string
+	Disc, DiscCount   int
 	Track             int    `json:",omitempty"`
 	Year              int    `json:",omitempty"`
 	ISRC              string `json:",omitempty"` // International Standard Recording Code
