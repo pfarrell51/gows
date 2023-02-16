@@ -4,6 +4,7 @@
 
 // bugs
 // do not remove level if album name is same as song title
+// count physical albums
 
 package tagtool
 
@@ -139,7 +140,9 @@ func (s *Song) FixupOutputPath() {
 	if s.ext == "" {
 		panic(fmt.Sprintf("PIB, extension is empty %s\n", s.outPath))
 	}
-	if !strings.Contains(s.outPath, s.Title) {
+	if s.Album == s.Title {
+		s.outPath = path.Join(s.outPath, s.Title)
+	} else if !strings.Contains(s.outPath, s.Title) {
 		s.outPath = path.Join(s.outPath, s.Title)
 	}
 	if !s.artistInDirectory && s.Artist != "" && !strings.Contains(s.outPath, s.Artist) {
@@ -159,6 +162,8 @@ func (s *Song) FixupOutputPath() {
 	}
 }
 
+// called for each song, we see if we have this artist/album/song in the appropriate
+// tree, and either increment it or insert it with 1 (seen once)
 func updateUniqueCounts(s Song) {
 	v, ok := artistTree.Get(s.Artist)
 	if ok {
@@ -189,7 +194,9 @@ func updateUniqueCounts(s Song) {
 }
 
 // this is the output routine. it goes thru the map and produces output
-// appropriate for the specified flag
+// appropriate for the specified flag, unless -r was specified, there
+// is a separate routine to output the rename command
+
 func ProcessMap(pathArg string, m map[string]Song) {
 	if GetFlags().JsonOutput {
 		PrintJson(m)
@@ -254,8 +261,6 @@ func ProcessMap(pathArg string, m map[string]Song) {
 		}
 	}
 	if GetFlags().DoSummary {
-		fmt.Printf(">#1 found %d artists, %d albums and %d songs\n",
-			artistTree.Size(), albumTree.Size(), songTree.Size())
 		if GetFlags().Debug {
 			fmt.Println("artists. Count is number of songs across all albums for this artist")
 			artistTree.Each(func(k string, v int) {
@@ -278,7 +283,7 @@ func ProcessMap(pathArg string, m map[string]Song) {
 				fmt.Printf("%d %s\n", v, k)
 			})
 		}
-		fmt.Printf(">#4found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
+		fmt.Printf("found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
 	}
 	return
 }
