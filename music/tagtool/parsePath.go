@@ -285,28 +285,24 @@ func ProcessMap(pathArg string, m map[string]Song) {
 	return
 }
 func doInventory(m map[string]Song) {
-
 	for _, aSong := range m {
 		fmt.Printf("%s, %s, %s\n", aSong.Artist, aSong.Album, aSong.Title)
 	}
 }
 func doSummary() {
-	if GetFlags().Debug {
-		fmt.Println("artists. Count is number of songs across all albums for this artist")
-		artistTree.Each(func(k string, v int) {
-			fmt.Printf("%d %s\n", v, k)
-		})
-		fmt.Printf(">#2 found %d artists, %d albums and %d songs\n",
-			artistTree.Size(), albumTree.Size(), songTree.Size())
-	}
-	if GetFlags().Debug {
-		fmt.Println("albums. Count is number of songs in the given artist/album")
-		albumTree.Each(func(k string, v int) {
-			fmt.Printf("%d %s\n", v, k)
-		})
-		fmt.Printf(">#3 found %d artists, %d albums and %d songs\n",
-			artistTree.Size(), albumTree.Size(), songTree.Size())
-	}
+	fmt.Println("artists. Count is number of songs across all albums for this artist")
+	artistTree.Each(func(k string, v int) {
+		fmt.Printf("%d %s\n", v, k)
+	})
+	fmt.Printf(">#2 found %d artists, %d albums and %d songs\n",
+		artistTree.Size(), albumTree.Size(), songTree.Size())
+	fmt.Println("albums. Count is number of songs in the given artist/album")
+	albumTree.Each(func(k string, v int) {
+		fmt.Printf("%d %s\n", v, k)
+	})
+	fmt.Printf(">#3 found %d artists, %d albums and %d songs\n",
+		artistTree.Size(), albumTree.Size(), songTree.Size())
+
 	if GetFlags().Debug {
 		fmt.Println("songs")
 		songTree.Each(func(k string, v int) {
