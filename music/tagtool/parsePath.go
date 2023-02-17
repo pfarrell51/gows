@@ -3,7 +3,7 @@
 // this is not multi-processing safe
 
 // bugs
-// do not remove level if album name is same as song title
+// better hash/technique to identify and handle duplicate songs
 // count physical albums
 
 package tagtool
@@ -70,6 +70,11 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	}
 	songsProcessed++
 	key, _ := EncodeTitle(aSong.Title)
+	tmp, ok := sMap[key]
+	if ok {
+		fmt.Printf("#very bad, PIB \n#%s looks like we have a duplicate song: \n#%s\n", tmp.inPath, aSong.inPath)
+		return nil
+	}
 	aSong.titleH = key
 	aSong.FixupOutputPath()
 	sMap[key] = *aSong
@@ -165,6 +170,9 @@ func (s *Song) FixupOutputPath() {
 // called for each song, we see if we have this artist/album/song in the appropriate
 // tree, and either increment it or insert it with 1 (seen once)
 func updateUniqueCounts(s Song) {
+	if songsProcessed < songTree.Size() {
+		fmt.Printf("PIB42, how can SP be < ST.size? %d < %d %s\n", songsProcessed, songTree.Size(), s.inPath)
+	}
 	v, ok := artistTree.Get(s.Artist)
 	if ok {
 		v++
@@ -198,18 +206,26 @@ func updateUniqueCounts(s Song) {
 // is a separate routine to output the rename command
 
 func ProcessMap(pathArg string, m map[string]Song) {
-	if GetFlags().JsonOutput {
+	switch {
+	case GetFlags().JsonOutput:
 		PrintJson(m)
 		return
-	}
-	if GetFlags().CopyAlbumInTrackOrder {
+
+	case GetFlags().CopyAlbumInTrackOrder:
 		PrintTrackSortedSongs()
+		return
+
+	case GetFlags().DoInventory:
+		doInventory(m)
 		return
 	}
 	uniqueArtists := make(map[string]Song)
 	var countSongs, countNoGroup int
 	for _, aSong := range m {
 		countSongs++
+		if countSongs > songsProcessed {
+			fmt.Printf("PIB, countsongs too big %d > %d for %s\n", countSongs, songsProcessed, aSong.inPath)
+		}
 		switch {
 		case GetFlags().DoRename:
 			outputRenameCommand(&aSong)
@@ -252,6 +268,9 @@ func ProcessMap(pathArg string, m map[string]Song) {
 		fmt.Printf("#scanned %d songs, %d had no artist/group\n", countSongs, countNoGroup)
 	}
 	if GetFlags().NoTags {
+		if countSongs > songsProcessed {
+			fmt.Printf("PIB 3, cS %d > sp %d\n", countSongs, songsProcessed)
+		}
 		fmt.Printf("#scanned %d songs, %d had no artist, %d no AcoustId, %d no title, %d no MBID\n",
 			countSongs, countNoGroup, numNoAcoustId, numNoTitle, numNoMBID)
 	}
@@ -261,30 +280,41 @@ func ProcessMap(pathArg string, m map[string]Song) {
 		}
 	}
 	if GetFlags().DoSummary {
-		if GetFlags().Debug {
-			fmt.Println("artists. Count is number of songs across all albums for this artist")
-			artistTree.Each(func(k string, v int) {
-				fmt.Printf("%d %s\n", v, k)
-			})
-			fmt.Printf(">#2 found %d artists, %d albums and %d songs\n",
-				artistTree.Size(), albumTree.Size(), songTree.Size())
-		}
-		if GetFlags().Debug {
-			fmt.Println("albums. Count is number of songs in the given artist/album")
-			albumTree.Each(func(k string, v int) {
-				fmt.Printf("%d %s\n", v, k)
-			})
-			fmt.Printf(">#3 found %d artists, %d albums and %d songs\n",
-				artistTree.Size(), albumTree.Size(), songTree.Size())
-		}
-		if GetFlags().Debug {
-			fmt.Println("songs")
-			songTree.Each(func(k string, v int) {
-				fmt.Printf("%d %s\n", v, k)
-			})
-		}
-		fmt.Printf("found %d artists, %d albums and %d songs\n", artistTree.Size(), albumTree.Size(), songTree.Size())
+		doSummary()
 	}
+	return
+}
+func doInventory(m map[string]Song) {
+
+	for _, aSong := range m {
+		fmt.Printf("%s, %s, %s\n", aSong.Artist, aSong.Album, aSong.Title)
+	}
+}
+func doSummary() {
+	if GetFlags().Debug {
+		fmt.Println("artists. Count is number of songs across all albums for this artist")
+		artistTree.Each(func(k string, v int) {
+			fmt.Printf("%d %s\n", v, k)
+		})
+		fmt.Printf(">#2 found %d artists, %d albums and %d songs\n",
+			artistTree.Size(), albumTree.Size(), songTree.Size())
+	}
+	if GetFlags().Debug {
+		fmt.Println("albums. Count is number of songs in the given artist/album")
+		albumTree.Each(func(k string, v int) {
+			fmt.Printf("%d %s\n", v, k)
+		})
+		fmt.Printf(">#3 found %d artists, %d albums and %d songs\n",
+			artistTree.Size(), albumTree.Size(), songTree.Size())
+	}
+	if GetFlags().Debug {
+		fmt.Println("songs")
+		songTree.Each(func(k string, v int) {
+			fmt.Printf("%d %s\n", v, k)
+		})
+	}
+	fmt.Printf("found %d artists, %d albums and %d songs or sP %d\n", artistTree.Size(), albumTree.Size(),
+		songTree.Size(), songsProcessed)
 	return
 }
 
