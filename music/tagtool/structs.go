@@ -54,9 +54,25 @@ type FlagST struct {
 	ZDumpArtist           bool
 	JsonOutput            bool
 	Debug                 bool
-	DuplicateDetect       bool
+	DupJustTitle          bool
+	DupTitleAlbumArtist   bool
 	CopyAlbumInTrackOrder bool
 }
+
+/*
+// type GlobalVars struct {
+// localFlags = new(FlagST)
+// artistTree = avl.New[string, int](g.Less[string])
+// albumTree = avl.New[string, int](g.Less[string])
+// songTree = avl.New[string, int](g.Less[string])
+var localFlags FlagST
+var songsProcessed int
+var numNoAcoustId, numNoTitle, numNoMBID int
+var numAlbums, numArtists int
+var artistTree = avl.New[string, int](g.Less[string])
+var albumTree = avl.New[string, int](g.Less[string])
+var songTree = avl.New[string, int](g.Less[string])
+*/
 
 var localFlags = new(FlagST)
 
@@ -72,7 +88,8 @@ func SetFlagArgs(f FlagST) {
 	localFlags.ZDumpArtist = f.ZDumpArtist
 	localFlags.JsonOutput = f.JsonOutput
 	localFlags.Debug = f.Debug
-	localFlags.DuplicateDetect = f.DuplicateDetect
+	localFlags.DupJustTitle = f.DupJustTitle
+	localFlags.DupTitleAlbumArtist = f.DupTitleAlbumArtist
 	localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
 }
 func GetFlags() *FlagST {

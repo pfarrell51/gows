@@ -70,10 +70,9 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	}
 	songsProcessed++
 	key, _ := EncodeTitle(aSong.Title)
-	tmp, ok := sMap[key]
+	_, ok := sMap[key]
 	if ok {
-		fmt.Printf("#very bad, PIB \n#%s looks like we have a duplicate song: \n#%s\n", tmp.inPath, aSong.inPath)
-		return nil
+		return nil // hit, not unique, fix this with better hash
 	}
 	aSong.titleH = key
 	aSong.FixupOutputPath()
@@ -99,8 +98,11 @@ func processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d f
 	if GetFlags().CopyAlbumInTrackOrder {
 		AddSongForSort(*aSong)
 	}
-	if GetFlags().DuplicateDetect {
-		fmt.Printf("#dupDetect Not Yet Implemented\n")
+	if GetFlags().DupJustTitle {
+		fmt.Printf("#dupJustTitleDetect Not Yet Implemented\n")
+	}
+	if GetFlags().DupTitleAlbumArtist {
+		fmt.Printf("#dupTitleAlbumArtist Not Yet Implemented\n")
 	}
 	return nil
 }
