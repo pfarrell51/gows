@@ -23,10 +23,6 @@ import (
 	"github.com/zyedidia/generic/avl"
 )
 
-func init() {
-	LoadArtistMap()
-}
-
 var songsProcessed int
 var numNoAcoustId, numNoTitle, numNoMBID int
 var numAlbums, numArtists int
@@ -292,24 +288,28 @@ func doInventory(m map[string]Song) {
 	}
 }
 func doSummary() {
-	fmt.Println("artists. Count is number of songs across all albums for this artist")
-	artistTree.Each(func(k string, v int) {
-		fmt.Printf("%d %s\n", v, k)
-	})
-	fmt.Printf(">#2 found %d artists, %d albums and %d songs\n",
-		artistTree.Size(), albumTree.Size(), songTree.Size())
-	fmt.Println("albums. Count is number of songs in the given artist/album")
-	albumTree.Each(func(k string, v int) {
-		fmt.Printf("%d %s\n", v, k)
-	})
-	fmt.Printf(">#3 found %d artists, %d albums and %d songs\n",
-		artistTree.Size(), albumTree.Size(), songTree.Size())
 
 	if GetFlags().Debug {
-		fmt.Println("songs")
-		songTree.Each(func(k string, v int) {
+		fmt.Println("artists. Count is number of songs across all albums for this artist")
+		artistTree.Each(func(k string, v int) {
 			fmt.Printf("%d %s\n", v, k)
 		})
+
+		fmt.Printf(">#2 found %d artists, %d albums and %d songs\n",
+			artistTree.Size(), albumTree.Size(), songTree.Size())
+		fmt.Println("albums. Count is number of songs in the given artist/album")
+		albumTree.Each(func(k string, v int) {
+			fmt.Printf("%d %s\n", v, k)
+		})
+		fmt.Printf(">#3 found %d artists, %d albums and %d songs\n",
+			artistTree.Size(), albumTree.Size(), songTree.Size())
+
+		if GetFlags().Debug {
+			fmt.Println("songs")
+			songTree.Each(func(k string, v int) {
+				fmt.Printf("%d %s\n", v, k)
+			})
+		}
 	}
 	fmt.Printf("found %d artists, %d albums and %d songs or sP %d\n", artistTree.Size(), albumTree.Size(),
 		songTree.Size(), songsProcessed)
