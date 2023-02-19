@@ -10,10 +10,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/pfarrell51/gows/music/tagtool"
 	"os"
 	"path"
 	"time"
+
+	"github.com/pfarrell51/gows/music/tagtool"
 )
 
 func main() {
@@ -29,12 +30,18 @@ func main() {
 		fmt.Fprintf(w, "default is to list files that need love.\n")
 
 	}
+	var globals *tagtool.GlobalVars
+	globals = tagtool.AllocateData()
+	fmt.Printf("initialized globalVars: %v\n", globals)
+
 	var helpflag bool
+
 	var flags = new(tagtool.FlagST)
 	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (gpmap)")
 	flag.BoolVar(&flags.CopyAlbumInTrackOrder, "c", false, "Album track order - output cp command in track order")
 	flag.BoolVar(&flags.Debug, "de", false, "debug on")
-	flag.BoolVar(&flags.DuplicateDetect, "dup", false, "duplicate song attempts on")
+	flag.BoolVar(&flags.DupJustTitle, "duptitle", false, "duplicate song based on just the title on")
+	flag.BoolVar(&flags.DupTitleAlbumArtist, "dup", false, "duplicate song based on title, album & Artist on")
 	flag.BoolVar(&helpflag, "h", false, "help")
 	flag.BoolVar(&flags.DoInventory, "i", false, "inventory - basic inventory")
 	flag.BoolVar(&flags.JsonOutput, "j", false, "output metadata as json")
@@ -51,7 +58,6 @@ func main() {
 	}
 
 	tagtool.SetFlagArgs(*flags)
-	tagtool.LoadArtistMap()
 
 	if false {
 		ch := make(chan tagtool.Song)
