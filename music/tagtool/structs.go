@@ -61,16 +61,17 @@ type FlagST struct {
 }
 
 type GlobalVars struct {
+	pathArg                              string
 	localFlags                           *FlagST
 	songsProcessed                       int
 	numNoAcoustId, numNoTitle, numNoMBID int
 	numAlbums, numArtists                int
-	artistTree                           *avl.Tree[string, int]
-	albumTree                            *avl.Tree[string, int]
-	songTree                             *avl.Tree[string, int]
+	artistCountTree                      *avl.Tree[string, int]
+	albumCountTree                       *avl.Tree[string, int]
+	songCountTree                        *avl.Tree[string, int]
 	gptree                               *btree.Tree[string, string]
-	// -var songs []TrackSong = make([]TrackSong, 0, 50)
-	tracksongs []TrackSong
+	songTree                             map[string]Song
+	tracksongs                           []TrackSong // for sorting by track number within an album
 }
 
 // copy user set flags to a local store
@@ -93,6 +94,9 @@ func (g *GlobalVars) SetFlagArgs(f FlagST) {
 }
 func (g *GlobalVars) GetFlags() *FlagST {
 	return g.localFlags
+}
+func (g *GlobalVars) GetSongTree() map[string]Song {
+	return g.songTree
 }
 
 var enc metaphone3.Encoder
@@ -180,22 +184,23 @@ func AllocateData() *GlobalVars {
 	enc.MaxLength = maxEncode
 	rval := new(GlobalVars)
 	rval.localFlags = new(FlagST)
-	rval.artistTree = avl.New[string, int](generic.Less[string])
-	rval.albumTree = avl.New[string, int](generic.Less[string])
-	rval.songTree = avl.New[string, int](generic.Less[string])
+	rval.artistCountTree = avl.New[string, int](generic.Less[string])
+	rval.albumCountTree = avl.New[string, int](generic.Less[string])
+	rval.songCountTree = avl.New[string, int](generic.Less[string])
 	rval.gptree = btree.New[string, string](generic.Less[string])
+	rval.songTree = make(map[string]Song)
+	rval.tracksongs = make([]TrackSong, 0, 50)
 	if rval.localFlags == nil {
 		fmt.Println("PIB in allocate Data, localflags is nil")
 	}
-	// -var songs []TrackSong = make([]TrackSong, 0, 50)
-	rval.tracksongs = make([]TrackSong, 0, 50)
+	if rval.songTree == nil {
+		panic("Allocate Data post setup songTree is nil")
+	}
 	rval.loadArtistMap()
 	return rval
 }
 
 func (g *GlobalVars) loadArtistMap() {
-	enc.Encode("ignore this")
-	enc.MaxLength = maxEncode
 	if g.gptree.Size() > 0 {
 		panic("PIB group/artist array already populated")
 	}
