@@ -32,10 +32,6 @@ func main() {
 	}
 	var globals *tagtool.GlobalVars
 	globals = tagtool.AllocateData()
-	fmt.Printf("initialized globalVars: %v\n", globals)
-	if globals.GetFlags() == nil {
-		fmt.Println("in main, PIB, GetFlags() is nil")
-	}
 	var helpflag bool
 
 	var flags = new(tagtool.FlagST)
@@ -61,9 +57,6 @@ func main() {
 
 	globals.SetFlagArgs(*flags)
 
-	if globals.GetFlags() == nil {
-		fmt.Println("in main, PIB, after SetFlags(), GetFlags() is nil")
-	}
 	if false {
 		ch := make(chan tagtool.Song)
 		v := <-ch
