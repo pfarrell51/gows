@@ -21,7 +21,7 @@ import (
 )
 
 // top level entry point, takes the path to the directory to walk/process
-func (g GlobalVars) ProcessFiles(pathArg string) {
+func (g *GlobalVars) ProcessFiles(pathArg string) {
 	if g.GetFlags() == nil {
 		fmt.Println("PIB, g.GetFlags() is nil")
 	}
@@ -38,7 +38,7 @@ var ExtRegex = regexp.MustCompile(`[Mm][Pp][34]|[Ff][Ll][Aa][Cc]$`) //"((M|m)(p|
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
 // p is the current path/name
-func (g GlobalVars) processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d fs.DirEntry, err error) error {
+func (g *GlobalVars) processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	if err != nil {
 		fmt.Println("Error processing", p, " in ", d)
 		fmt.Println("error is ", err)
@@ -85,7 +85,7 @@ func (g GlobalVars) processFile(pathArg string, sMap map[string]Song, fsys fs.FS
 		g.updateUniqueCounts(*aSong)
 	}
 	if g.GetFlags().CopyAlbumInTrackOrder {
-		AddSongForSort(*aSong)
+		g.AddSongForSort(*aSong)
 	}
 	if g.GetFlags().DupJustTitle {
 		fmt.Printf("#dupJustTitleDetect Not Yet Implemented\n")
@@ -98,7 +98,7 @@ func (g GlobalVars) processFile(pathArg string, sMap map[string]Song, fsys fs.FS
 
 // walk all files, looking for nice GoPro created video files.
 // fill in a map keyed by the desired new name order
-func (g GlobalVars) WalkFiles(pathArg string) map[string]Song {
+func (g *GlobalVars) WalkFiles(pathArg string) map[string]Song {
 	songMap := make(map[string]Song)
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
@@ -110,7 +110,7 @@ func (g GlobalVars) WalkFiles(pathArg string) map[string]Song {
 
 // prepopulate song structure with what we can know from the little we get from the user entered pathArg
 // and the p lower path/filename.ext that we are walking through
-func (s *Song) BasicPathSetup(g GlobalVars, pathArg, p string) {
+func (s *Song) BasicPathSetup(g *GlobalVars, pathArg, p string) {
 	joined := filepath.FromSlash(path.Join(pathArg, p))
 	s.inPath = joined
 	s.inPathDescent, _ = path.Split(p) // ignore file name for now
@@ -129,7 +129,7 @@ func (s *Song) BasicPathSetup(g GlobalVars, pathArg, p string) {
 }
 
 // build up output path in case we want to rename the file
-func (s *Song) FixupOutputPath(g GlobalVars) {
+func (s *Song) FixupOutputPath(g *GlobalVars) {
 	if g.GetFlags().Debug {
 		fmt.Printf("FOP %s\n", s.outPath)
 	}
@@ -160,7 +160,7 @@ func (s *Song) FixupOutputPath(g GlobalVars) {
 
 // called for each song, we see if we have this artist/album/song in the appropriate
 // tree, and either increment it or insert it with 1 (seen once)
-func (g GlobalVars) updateUniqueCounts(s Song) {
+func (g *GlobalVars) updateUniqueCounts(s Song) {
 	if g.songsProcessed < g.songTree.Size() {
 		fmt.Printf("PIB42, how can SP be < ST.size? %d < %d %s\n", g.songsProcessed, g.songTree.Size(), s.inPath)
 	}
@@ -196,14 +196,14 @@ func (g GlobalVars) updateUniqueCounts(s Song) {
 // appropriate for the specified flag, unless -r was specified, there
 // is a separate routine to output the rename command
 
-func (g GlobalVars) ProcessMap(pathArg string, m map[string]Song) {
+func (g *GlobalVars) ProcessMap(pathArg string, m map[string]Song) {
 	switch {
 	case g.GetFlags().JsonOutput:
 		PrintJson(m)
 		return
 
 	case g.GetFlags().CopyAlbumInTrackOrder:
-		PrintTrackSortedSongs()
+		g.PrintTrackSortedSongs()
 		return
 
 	case g.GetFlags().DoInventory:
@@ -275,12 +275,12 @@ func (g GlobalVars) ProcessMap(pathArg string, m map[string]Song) {
 	}
 	return
 }
-func (g GlobalVars) doInventory(m map[string]Song) {
+func (g *GlobalVars) doInventory(m map[string]Song) {
 	for _, aSong := range m {
 		fmt.Printf("%s, %s, %s\n", aSong.Artist, aSong.Album, aSong.Title)
 	}
 }
-func (g GlobalVars) doSummary() {
+func (g *GlobalVars) doSummary() {
 	if g.GetFlags().Debug {
 		fmt.Println("artists. Count is number of songs across all albums for this artist")
 		g.artistTree.Each(func(k string, v int) {
@@ -310,7 +310,7 @@ func (g GlobalVars) doSummary() {
 
 // prints out a suitable rename/mv/ren command to put the file name
 // in the format I like
-func (g GlobalVars) outputRenameCommand(aSong *Song) {
+func (g *GlobalVars) outputRenameCommand(aSong *Song) {
 	aSong.FixupOutputPath(g)
 	cmd := "mv"
 	if runtime.GOOS == "windows" {
@@ -342,7 +342,7 @@ func (g GlobalVars) outputRenameCommand(aSong *Song) {
 }
 
 // specialized function, dumps the Artist map
-func (g GlobalVars) DumpGptree() {
+func (g *GlobalVars) DumpGptree() {
 	if !g.GetFlags().ZDumpArtist {
 		return
 	}

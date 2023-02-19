@@ -20,7 +20,7 @@ func init() {
 }
 
 // pull meta data from music file. Full file path is pathArg + p
-func (g GlobalVars) GetMetaData(pathArg, p string) (*Song, error) {
+func (g *GlobalVars) GetMetaData(pathArg, p string) (*Song, error) {
 	if g.GetFlags().Debug {
 		fmt.Printf("in GMD %s\n", p)
 	}
@@ -108,7 +108,7 @@ func (g GlobalVars) GetMetaData(pathArg, p string) (*Song, error) {
 	}
 	return rval, nil
 }
-func (g GlobalVars) DumpKnowIDnames() {
+func (g *GlobalVars) DumpKnowIDnames() {
 	for k, _ := range knownIds {
 		fmt.Printf("%s\n", k)
 	}

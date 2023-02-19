@@ -68,6 +68,8 @@ type GlobalVars struct {
 	albumTree                            *avl.Tree[string, int]
 	songTree                             *avl.Tree[string, int]
 	gptree                               *btree.Tree[string, string]
+	// -var songs []TrackSong = make([]TrackSong, 0, 50)
+	tracksongs []TrackSong
 }
 
 // copy user set flags to a local store
@@ -87,7 +89,7 @@ func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags.DupTitleAlbumArtist = f.DupTitleAlbumArtist
 	g.localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
 }
-func (g GlobalVars) GetFlags() *FlagST {
+func (g *GlobalVars) GetFlags() *FlagST {
 	return g.localFlags
 }
 
@@ -183,6 +185,8 @@ func AllocateData() *GlobalVars {
 	if rval.localFlags == nil {
 		fmt.Println("PIB in allocate Data, localflags is nil")
 	}
+	// -var songs []TrackSong = make([]TrackSong, 0, 50)
+	rval.tracksongs = make([]TrackSong, 0, 50)
 	rval.loadArtistMap()
 	return rval
 }
@@ -190,7 +194,9 @@ func AllocateData() *GlobalVars {
 func (g *GlobalVars) loadArtistMap() {
 	enc.Encode("ignore this")
 	enc.MaxLength = maxEncode
-
+	if g.gptree.Size() > 0 {
+		panic("PIB group/artist array already populated")
+	}
 	var artists []string
 	// Initialize the scanner.
 	var s scanner.Scanner
