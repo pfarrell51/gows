@@ -12,11 +12,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"unicode"
 
 	"github.com/dlclark/metaphone3"
-	g "github.com/zyedidia/generic"
+	"github.com/zyedidia/generic"
 	"github.com/zyedidia/generic/avl"
 	"github.com/zyedidia/generic/btree"
 )
@@ -61,40 +60,35 @@ type FlagST struct {
 }
 
 type GlobalVars struct {
-	// localFlags = new(FlagST)
-	// artistTree = avl.New[string, int](g.Less[string])
-	// albumTree = avl.New[string, int](g.Less[string])
-	// songTree = avl.New[string, int](g.Less[string])
-	// var localFlags FlagST
+	localFlags                           *FlagST
 	songsProcessed                       int
 	numNoAcoustId, numNoTitle, numNoMBID int
 	numAlbums, numArtists                int
-	artistTree                           avl.Tree[string, int]
-	albumTree                            avl.Tree[string, int]
-	songTree                             avl.Tree[string, int]
-	gptree                               btree.Tree[string, string]
+	artistTree                           *avl.Tree[string, int]
+	albumTree                            *avl.Tree[string, int]
+	songTree                             *avl.Tree[string, int]
+	gptree                               *btree.Tree[string, string]
 }
-
-var localFlags = new(FlagST)
 
 // copy user set flags to a local store
-func SetFlagArgs(f FlagST) {
-	localFlags.ShowArtistNotInMap = f.ShowArtistNotInMap
-	localFlags.DoRename = f.DoRename
-	localFlags.DoInventory = f.DoInventory
-	localFlags.DoSummary = f.DoSummary
-	localFlags.JustList = f.JustList
-	localFlags.NoGroup = f.NoGroup
-	localFlags.NoTags = f.NoTags
-	localFlags.ZDumpArtist = f.ZDumpArtist
-	localFlags.JsonOutput = f.JsonOutput
-	localFlags.Debug = f.Debug
-	localFlags.DupJustTitle = f.DupJustTitle
-	localFlags.DupTitleAlbumArtist = f.DupTitleAlbumArtist
-	localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
+func (g *GlobalVars) SetFlagArgs(f FlagST) {
+	g.localFlags = new(FlagST)
+	g.localFlags.ShowArtistNotInMap = f.ShowArtistNotInMap
+	g.localFlags.DoRename = f.DoRename
+	g.localFlags.DoInventory = f.DoInventory
+	g.localFlags.DoSummary = f.DoSummary
+	g.localFlags.JustList = f.JustList
+	g.localFlags.NoGroup = f.NoGroup
+	g.localFlags.NoTags = f.NoTags
+	g.localFlags.ZDumpArtist = f.ZDumpArtist
+	g.localFlags.JsonOutput = f.JsonOutput
+	g.localFlags.Debug = f.Debug
+	g.localFlags.DupJustTitle = f.DupJustTitle
+	g.localFlags.DupTitleAlbumArtist = f.DupTitleAlbumArtist
+	g.localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
 }
-func GetFlags() *FlagST {
-	return localFlags
+func (g GlobalVars) GetFlags() *FlagST {
+	return g.localFlags
 }
 
 var enc metaphone3.Encoder
@@ -177,58 +171,58 @@ func EncodeArtist(s string) (string, string) {
 	return prim, sec
 }
 
-var Gptree = btree.New[string, string](g.Less[string])
-
-func GetArtistMap() *btree.Tree[string, string] {
-	return Gptree
-}
 func AllocateData() *GlobalVars {
 	enc.Encode("ignore this")
 	enc.MaxLength = maxEncode
 	rval := new(GlobalVars)
-	loadArtistMap()
+	rval.localFlags = new(FlagST)
+	rval.artistTree = avl.New[string, int](generic.Less[string])
+	rval.albumTree = avl.New[string, int](generic.Less[string])
+	rval.songTree = avl.New[string, int](generic.Less[string])
+	rval.gptree = btree.New[string, string](generic.Less[string])
+	if rval.localFlags == nil {
+		fmt.Println("PIB in allocate Data, localflags is nil")
+	}
+	rval.loadArtistMap()
 	return rval
 }
 
-var onlyOnce sync.Once
+func (g *GlobalVars) loadArtistMap() {
+	enc.Encode("ignore this")
+	enc.MaxLength = maxEncode
 
-func loadArtistMap() {
-	onlyOnce.Do(func() {
-		enc.Encode("ignore this")
-		enc.MaxLength = maxEncode
-		var artists []string
-		// Initialize the scanner.
-		var s scanner.Scanner
-		fset := token.NewFileSet()                              // positions are relative to fset
-		file := fset.AddFile("", fset.Base(), len(artistnames)) // register input "file"
-		s.Init(file, artistnames, nil /* no error handler */, scanner.ScanComments)
+	var artists []string
+	// Initialize the scanner.
+	var s scanner.Scanner
+	fset := token.NewFileSet()                              // positions are relative to fset
+	file := fset.AddFile("", fset.Base(), len(artistnames)) // register input "file"
+	s.Init(file, artistnames, nil /* no error handler */, scanner.ScanComments)
 
-		// Repeated calls to Scan yield the token sequence found in the input.
-		for {
-			_, tok, lit := s.Scan()
-			if tok == token.EOF {
-				break
-			}
-			if tok == token.STRING {
-				if strings.HasPrefix(lit, "\"") {
-					lit = lit[1:]
-				}
-				if strings.HasSuffix(lit, "\"") {
-					lit = lit[:len(lit)-1]
-				}
-				artists = append(artists, lit)
-			}
+	// Repeated calls to Scan yield the token sequence found in the input.
+	for {
+		_, tok, lit := s.Scan()
+		if tok == token.EOF {
+			break
 		}
-		sort.Strings(artists)
-		for _, n := range artists {
-			prim, sec := EncodeArtist(n)
-			Gptree.Put(prim, n)
-			if len(sec) > 0 {
-				Gptree.Put(sec, n)
+		if tok == token.STRING {
+			if strings.HasPrefix(lit, "\"") {
+				lit = lit[1:]
 			}
-			if GetFlags().Debug {
-				fmt.Printf("%s, %s, %s\n", prim, sec, n)
+			if strings.HasSuffix(lit, "\"") {
+				lit = lit[:len(lit)-1]
 			}
+			artists = append(artists, lit)
 		}
-	})
+	}
+	sort.Strings(artists)
+	for _, n := range artists {
+		prim, sec := EncodeArtist(n)
+		g.gptree.Put(prim, n)
+		if len(sec) > 0 {
+			g.gptree.Put(sec, n)
+		}
+		if g.GetFlags().Debug {
+			fmt.Printf("%s, %s, %s\n", prim, sec, n)
+		}
+	}
 }

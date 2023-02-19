@@ -33,7 +33,9 @@ func main() {
 	var globals *tagtool.GlobalVars
 	globals = tagtool.AllocateData()
 	fmt.Printf("initialized globalVars: %v\n", globals)
-
+	if globals.GetFlags() == nil {
+		fmt.Println("in main, PIB, GetFlags() is nil")
+	}
 	var helpflag bool
 
 	var flags = new(tagtool.FlagST)
@@ -57,32 +59,26 @@ func main() {
 		return
 	}
 
-	tagtool.SetFlagArgs(*flags)
+	globals.SetFlagArgs(*flags)
 
+	if globals.GetFlags() == nil {
+		fmt.Println("in main, PIB, after SetFlags(), GetFlags() is nil")
+	}
 	if false {
 		ch := make(chan tagtool.Song)
 		v := <-ch
 		fmt.Println(v)
 	}
 	if flags.ZDumpArtist {
-		tagtool.DumpGptree()
+		globals.DumpGptree()
 		return
 	}
 	pathArg := path.Clean(flag.Arg(0))
-	ProcessFiles(pathArg)
+	globals.ProcessFiles(pathArg)
 	if flags.JsonOutput && flags.Debug {
 		fmt.Printf("\n\n\n Dumping known ID names\n\n")
-		tagtool.DumpKnowIDnames()
+		globals.DumpKnowIDnames()
 	}
 	duration := time.Since(start)
 	fmt.Printf("# %v\n", duration)
-}
-
-func ProcessFiles(pathArg string) {
-	if tagtool.GetFlags().ZDumpArtist {
-		tagtool.DumpGptree()
-		return
-	}
-	rmap := tagtool.WalkFiles(pathArg)
-	tagtool.ProcessMap(pathArg, rmap)
 }

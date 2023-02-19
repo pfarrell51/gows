@@ -20,14 +20,14 @@ func init() {
 }
 
 // pull meta data from music file. Full file path is pathArg + p
-func GetMetaData(pathArg, p string) (*Song, error) {
-	if GetFlags().Debug {
+func (g GlobalVars) GetMetaData(pathArg, p string) (*Song, error) {
+	if g.GetFlags().Debug {
 		fmt.Printf("in GMD %s\n", p)
 	}
 	rval := new(Song)
-	rval.BasicPathSetup(pathArg, p)
+	rval.BasicPathSetup(g, pathArg, p)
 	if foundExt := ExtRegex.FindString(p); len(foundExt) > 0 { // redundant check to prevent Bozo programmers
-		if GetFlags().Debug {
+		if g.GetFlags().Debug {
 			fmt.Printf("gmd:foundExt %s\n", foundExt)
 		}
 	}
@@ -71,8 +71,8 @@ func GetMetaData(pathArg, p string) (*Song, error) {
 			}
 		}
 	}
-	rval.FixupOutputPath()
-	if GetFlags().Debug {
+	rval.FixupOutputPath(g)
+	if g.GetFlags().Debug {
 		for k, _ := range info { // loop thru extra meta data, musicbrainz, etc
 			found := knownIds[k]
 			if !found {
@@ -80,7 +80,7 @@ func GetMetaData(pathArg, p string) (*Song, error) {
 			}
 		}
 	}
-	if GetFlags().Debug {
+	if g.GetFlags().Debug {
 		fmt.Printf("Format %s Type %s\n", m.Format(), m.FileType())
 		if m.Title() != "" {
 			fmt.Printf("Title() %v\n", m.Title())
@@ -108,7 +108,7 @@ func GetMetaData(pathArg, p string) (*Song, error) {
 	}
 	return rval, nil
 }
-func DumpKnowIDnames() {
+func (g GlobalVars) DumpKnowIDnames() {
 	for k, _ := range knownIds {
 		fmt.Printf("%s\n", k)
 	}
