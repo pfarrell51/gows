@@ -29,7 +29,7 @@ func (a ByTrack) Len() int           { return len(a) }
 func (a ByTrack) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByTrack) Less(i, j int) bool { return a[i].Track < a[j].Track }
 
-func (g *GlobalVars) AddSongForSort(a Song) error {
+func (g *GlobalVars) AddSongForTrackSort(a Song) error {
 	//fmt.Println(a.inPath)
 	g.tracksongs = append(g.tracksongs, TrackSong{a.Track, a.inPath})
 	return nil
