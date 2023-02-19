@@ -32,9 +32,14 @@ func main() {
 	}
 	var globals *tagtool.GlobalVars
 	globals = tagtool.AllocateData()
+	if globals.GetSongTree() == nil {
+		panic("main.go global songtree is nil")
+	}
+
 	var helpflag bool
 
 	var flags = new(tagtool.FlagST)
+	flag.BoolVar(&flags.CSV, "csv", false, "output CSV format")
 	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (gpmap)")
 	flag.BoolVar(&flags.CopyAlbumInTrackOrder, "c", false, "Album track order - output cp command in track order")
 	flag.BoolVar(&flags.Debug, "de", false, "debug on")
