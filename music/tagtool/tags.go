@@ -20,12 +20,12 @@ func init() {
 }
 
 // pull meta data from music file. Full file path is pathArg + p
-func (g *GlobalVars) GetMetaData(pathArg, p string) (*Song, error) {
+func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 	if g.GetFlags().Debug {
 		fmt.Printf("in GMD %s\n", p)
 	}
 	rval := new(Song)
-	rval.BasicPathSetup(g, pathArg, p)
+	rval.BasicPathSetup(g, p)
 	if foundExt := ExtRegex.FindString(p); len(foundExt) > 0 { // redundant check to prevent Bozo programmers
 		if g.GetFlags().Debug {
 			fmt.Printf("gmd:foundExt %s\n", foundExt)

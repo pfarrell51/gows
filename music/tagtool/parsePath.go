@@ -25,12 +25,18 @@ func (g *GlobalVars) ProcessFiles(pathArg string) {
 	if g.GetFlags() == nil {
 		fmt.Println("PIB, g.GetFlags() is nil")
 	}
+	if g.songTree == nil {
+		panic("song tree nil in ProcessFiles")
+	}
 	if g.GetFlags().ZDumpArtist {
 		g.DumpGptree()
 		return
 	}
-	rmap := g.WalkFiles(pathArg)
-	g.ProcessMap(pathArg, rmap)
+	if len(g.pathArg) == 0 {
+		g.pathArg = pathArg
+	}
+	g.WalkFiles(pathArg)
+	g.ProcessMap()
 }
 
 var ExtRegex = regexp.MustCompile(`[Mm][Pp][34]|[Ff][Ll][Aa][Cc]$`) //"((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
@@ -38,7 +44,7 @@ var ExtRegex = regexp.MustCompile(`[Mm][Pp][34]|[Ff][Ll][Aa][Cc]$`) //"((M|m)(p|
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
 // p is the current path/name
-func (g *GlobalVars) processFile(pathArg string, sMap map[string]Song, fsys fs.FS, p string, d fs.DirEntry, err error) error {
+func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	if err != nil {
 		fmt.Println("Error processing", p, " in ", d)
 		fmt.Println("error is ", err)
@@ -53,19 +59,22 @@ func (g *GlobalVars) processFile(pathArg string, sMap map[string]Song, fsys fs.F
 	}
 
 	var aSong *Song
-	aSong, err = g.GetMetaData(pathArg, p)
+	aSong, err = g.GetMetaData(p)
 	if err != nil {
 		return err
 	}
 	g.songsProcessed++
 	key, _ := EncodeTitle(aSong.Title)
-	_, ok := sMap[key]
+	_, ok := g.songTree[key]
 	if ok {
 		return nil // hit, not unique, fix this with better hash
 	}
 	aSong.titleH = key
 	aSong.FixupOutputPath(g)
-	sMap[key] = *aSong
+	if g.songTree == nil {
+		panic("empty song tree")
+	}
+	g.songTree[key] = *aSong
 	if g.GetFlags().NoTags {
 		if aSong.AcoustID == "" {
 			g.numNoAcoustId++
@@ -85,7 +94,7 @@ func (g *GlobalVars) processFile(pathArg string, sMap map[string]Song, fsys fs.F
 		g.updateUniqueCounts(*aSong)
 	}
 	if g.GetFlags().CopyAlbumInTrackOrder {
-		g.AddSongForSort(*aSong)
+		g.AddSongForTrackSort(*aSong)
 	}
 	if g.GetFlags().DupJustTitle {
 		fmt.Printf("#dupJustTitleDetect Not Yet Implemented\n")
@@ -98,24 +107,24 @@ func (g *GlobalVars) processFile(pathArg string, sMap map[string]Song, fsys fs.F
 
 // walk all files, looking for nice GoPro created video files.
 // fill in a map keyed by the desired new name order
-func (g *GlobalVars) WalkFiles(pathArg string) map[string]Song {
-	songMap := make(map[string]Song)
+func (g *GlobalVars) WalkFiles(pathArg string) {
+	g.pathArg = pathArg
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		err = g.processFile(pathArg, songMap, fsys, p, d, err)
+		err = g.processFile(fsys, p, d, err)
 		return nil
 	})
-	return songMap
+	return
 }
 
 // prepopulate song structure with what we can know from the little we get from the user entered pathArg
 // and the p lower path/filename.ext that we are walking through
-func (s *Song) BasicPathSetup(g *GlobalVars, pathArg, p string) {
-	joined := filepath.FromSlash(path.Join(pathArg, p))
+func (s *Song) BasicPathSetup(g *GlobalVars, p string) {
+	joined := filepath.FromSlash(path.Join(g.pathArg, p))
 	s.inPath = joined
 	s.inPathDescent, _ = path.Split(p) // ignore file name for now
-	s.outPathBase = pathArg
-	s.outPath = filepath.FromSlash(path.Join(pathArg, s.inPathDescent)) // start to build from here
+	s.outPathBase = g.pathArg
+	s.outPath = filepath.FromSlash(path.Join(g.pathArg, s.inPathDescent)) // start to build from here
 	s.ext = path.Ext(p)
 	if g.GetFlags().Debug {
 		fmt.Printf("inpath %s\n", s.inPath)
@@ -161,45 +170,45 @@ func (s *Song) FixupOutputPath(g *GlobalVars) {
 // called for each song, we see if we have this artist/album/song in the appropriate
 // tree, and either increment it or insert it with 1 (seen once)
 func (g *GlobalVars) updateUniqueCounts(s Song) {
-	if g.songsProcessed < g.songTree.Size() {
-		fmt.Printf("PIB42, how can SP be < ST.size? %d < %d %s\n", g.songsProcessed, g.songTree.Size(), s.inPath)
+	if g.songsProcessed < g.songCountTree.Size() {
+		fmt.Printf("PIB42, how can SP be < ST.size? %d < %d %s\n", g.songsProcessed, g.songCountTree.Size(), s.inPath)
 	}
-	v, ok := g.artistTree.Get(s.Artist)
+	v, ok := g.artistCountTree.Get(s.Artist)
 	if ok {
 		v++
 	} else {
 		v = 1
 	}
-	g.artistTree.Put(s.Artist, v)
-	v, ok = g.artistTree.Get(s.Artist)
+	g.artistCountTree.Put(s.Artist, v)
+	v, ok = g.artistCountTree.Get(s.Artist)
 
 	key := s.Artist + " " + s.Album
-	v, ok = g.albumTree.Get(key)
+	v, ok = g.albumCountTree.Get(key)
 	if ok {
 		v++
 	} else {
 		v = 1
 	}
-	g.albumTree.Put(key, v)
+	g.albumCountTree.Put(key, v)
 
 	key = s.Title + " " + s.Artist
-	v, ok = g.songTree.Get(key)
+	v, ok = g.songCountTree.Get(key)
 	if ok {
 		v++
 	} else {
 		v = 1
 	}
-	g.songTree.Put(key, v)
+	g.songCountTree.Put(key, v)
 }
 
 // this is the output routine. it goes thru the map and produces output
 // appropriate for the specified flag, unless -r was specified, there
 // is a separate routine to output the rename command
 
-func (g *GlobalVars) ProcessMap(pathArg string, m map[string]Song) {
+func (g *GlobalVars) ProcessMap() {
 	switch {
 	case g.GetFlags().JsonOutput:
-		PrintJson(m)
+		PrintJson(g.songTree)
 		return
 
 	case g.GetFlags().CopyAlbumInTrackOrder:
@@ -207,12 +216,12 @@ func (g *GlobalVars) ProcessMap(pathArg string, m map[string]Song) {
 		return
 
 	case g.GetFlags().DoInventory:
-		g.doInventory(m)
+		g.doInventory()
 		return
 	}
 	uniqueArtists := make(map[string]Song)
 	var countSongs, countNoGroup int
-	for _, aSong := range m {
+	for _, aSong := range g.songTree {
 		countSongs++
 		if countSongs > g.songsProcessed {
 			fmt.Printf("PIB, countsongs too big %d > %d for %s\n", countSongs, g.songsProcessed, aSong.inPath)
@@ -275,8 +284,9 @@ func (g *GlobalVars) ProcessMap(pathArg string, m map[string]Song) {
 	}
 	return
 }
-func (g *GlobalVars) doInventory(m map[string]Song) {
-	for _, aSong := range m {
+
+func (g *GlobalVars) doInventory() {
+	for _, aSong := range g.songTree {
 		if g.GetFlags().CSV {
 			fmt.Printf("\"%s\", \"%s\", \"%s\"\n", aSong.Artist, aSong.Album, aSong.Title)
 		} else {
@@ -287,28 +297,28 @@ func (g *GlobalVars) doInventory(m map[string]Song) {
 func (g *GlobalVars) doSummary() {
 	if g.GetFlags().Debug {
 		fmt.Println("artists. Count is number of songs across all albums for this artist")
-		g.artistTree.Each(func(k string, v int) {
+		g.artistCountTree.Each(func(k string, v int) {
 			fmt.Printf("%d %s\n", v, k)
 		})
 
 		fmt.Printf(">#2 found %d artists, %d albums and %d songs\n",
-			g.artistTree.Size(), g.albumTree.Size(), g.songTree.Size())
+			g.artistCountTree.Size(), g.albumCountTree.Size(), g.songCountTree.Size())
 		fmt.Println("albums. Count is number of songs in the given artist/album")
-		g.albumTree.Each(func(k string, v int) {
+		g.albumCountTree.Each(func(k string, v int) {
 			fmt.Printf("%d %s\n", v, k)
 		})
 		fmt.Printf(">#3 found %d artists, %d albums and %d songs\n",
-			g.artistTree.Size(), g.albumTree.Size(), g.songTree.Size())
+			g.artistCountTree.Size(), g.albumCountTree.Size(), g.songCountTree.Size())
 
 		if g.GetFlags().Debug {
 			fmt.Println("songs")
-			g.songTree.Each(func(k string, v int) {
+			g.songCountTree.Each(func(k string, v int) {
 				fmt.Printf("%d %s\n", v, k)
 			})
 		}
 	}
-	fmt.Printf("found %d artists, %d albums and %d songs or sP %d\n", g.artistTree.Size(), g.albumTree.Size(),
-		g.songTree.Size(), g.songsProcessed)
+	fmt.Printf("found %d artists, %d albums and %d songs or sP %d\n", g.artistCountTree.Size(), g.albumCountTree.Size(),
+		g.songCountTree.Size(), g.songsProcessed)
 	return
 }
 
