@@ -277,7 +277,11 @@ func (g *GlobalVars) ProcessMap(pathArg string, m map[string]Song) {
 }
 func (g *GlobalVars) doInventory(m map[string]Song) {
 	for _, aSong := range m {
-		fmt.Printf("%s, %s, %s\n", aSong.Artist, aSong.Album, aSong.Title)
+		if g.GetFlags().CSV {
+			fmt.Printf("\"%s\", \"%s\", \"%s\"\n", aSong.Artist, aSong.Album, aSong.Title)
+		} else {
+			fmt.Printf("%s, %s, %s\n", aSong.Artist, aSong.Album, aSong.Title)
+		}
 	}
 }
 func (g *GlobalVars) doSummary() {

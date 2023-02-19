@@ -44,19 +44,20 @@ type Song struct {
 	ext               string
 }
 type FlagST struct {
-	ShowArtistNotInMap    bool
-	DoRename              bool
+	CopyAlbumInTrackOrder bool
+	CSV                   bool
+	Debug                 bool
 	DoInventory           bool
+	DoRename              bool
 	DoSummary             bool
+	DupJustTitle          bool
+	DupTitleAlbumArtist   bool
+	JsonOutput            bool
 	JustList              bool
 	NoGroup               bool
 	NoTags                bool
+	ShowArtistNotInMap    bool
 	ZDumpArtist           bool
-	JsonOutput            bool
-	Debug                 bool
-	DupJustTitle          bool
-	DupTitleAlbumArtist   bool
-	CopyAlbumInTrackOrder bool
 }
 
 type GlobalVars struct {
@@ -75,6 +76,7 @@ type GlobalVars struct {
 // copy user set flags to a local store
 func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags = new(FlagST)
+	g.localFlags.CSV = f.CSV
 	g.localFlags.ShowArtistNotInMap = f.ShowArtistNotInMap
 	g.localFlags.DoRename = f.DoRename
 	g.localFlags.DoInventory = f.DoInventory
