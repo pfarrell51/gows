@@ -37,8 +37,7 @@ func GetMetaData(pathArg, p string) (*Song, error) {
 	file, err := os.Open(rval.inPath)
 	defer file.Close()
 	if err != nil {
-		fmt.Printf("err : %v\n", err)
-		fmt.Println(rval.inPath)
+		fmt.Printf("err : %v %s\n", err, rval.inPath)
 		return nil, err
 	}
 	m, err := tag.ReadFrom(file)
