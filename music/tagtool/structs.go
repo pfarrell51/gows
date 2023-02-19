@@ -1,4 +1,4 @@
-// this  file contains structures and other "global" data stores
+// structs  this  file contains structures and other "global" data stores
 
 package tagtool
 
@@ -17,6 +17,7 @@ import (
 
 	"github.com/dlclark/metaphone3"
 	g "github.com/zyedidia/generic"
+	"github.com/zyedidia/generic/avl"
 	"github.com/zyedidia/generic/btree"
 )
 
@@ -59,20 +60,20 @@ type FlagST struct {
 	CopyAlbumInTrackOrder bool
 }
 
-/*
-// type GlobalVars struct {
-// localFlags = new(FlagST)
-// artistTree = avl.New[string, int](g.Less[string])
-// albumTree = avl.New[string, int](g.Less[string])
-// songTree = avl.New[string, int](g.Less[string])
-var localFlags FlagST
-var songsProcessed int
-var numNoAcoustId, numNoTitle, numNoMBID int
-var numAlbums, numArtists int
-var artistTree = avl.New[string, int](g.Less[string])
-var albumTree = avl.New[string, int](g.Less[string])
-var songTree = avl.New[string, int](g.Less[string])
-*/
+type GlobalVars struct {
+	// localFlags = new(FlagST)
+	// artistTree = avl.New[string, int](g.Less[string])
+	// albumTree = avl.New[string, int](g.Less[string])
+	// songTree = avl.New[string, int](g.Less[string])
+	// var localFlags FlagST
+	songsProcessed                       int
+	numNoAcoustId, numNoTitle, numNoMBID int
+	numAlbums, numArtists                int
+	artistTree                           avl.Tree[string, int]
+	albumTree                            avl.Tree[string, int]
+	songTree                             avl.Tree[string, int]
+	gptree                               btree.Tree[string, string]
+}
 
 var localFlags = new(FlagST)
 
@@ -99,11 +100,6 @@ func GetFlags() *FlagST {
 var enc metaphone3.Encoder
 
 const maxEncode = 20
-
-func init() {
-	enc.Encode("ignore this")
-	enc.MaxLength = maxEncode
-}
 
 var (
 	//go:embed data/artist.txt
@@ -186,10 +182,17 @@ var Gptree = btree.New[string, string](g.Less[string])
 func GetArtistMap() *btree.Tree[string, string] {
 	return Gptree
 }
+func AllocateData() *GlobalVars {
+	enc.Encode("ignore this")
+	enc.MaxLength = maxEncode
+	rval := new(GlobalVars)
+	loadArtistMap()
+	return rval
+}
 
 var onlyOnce sync.Once
 
-func LoadArtistMap() {
+func loadArtistMap() {
 	onlyOnce.Do(func() {
 		enc.Encode("ignore this")
 		enc.MaxLength = maxEncode
