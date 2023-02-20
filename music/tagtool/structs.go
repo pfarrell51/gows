@@ -44,6 +44,10 @@ type Song struct {
 	outPathBase       string // copied from pathArg entered by the user
 	ext               string
 }
+type PairSongs struct {
+	a *Song
+	b *Song
+}
 type FlagST struct {
 	CopyAlbumInTrackOrder bool
 	CSV                   bool
@@ -73,6 +77,7 @@ type GlobalVars struct {
 	gptree                               *btree.Tree[string, string]
 	songTree                             map[string]Song
 	tracksongs                           []TrackSong // for sorting by track number within an album
+	dupSongs                             []PairSongs
 }
 
 // copy user set flags to a local store
@@ -195,6 +200,7 @@ func AllocateData() *GlobalVars {
 	rval.gptree = btree.New[string, string](generic.Less[string])
 	rval.songTree = make(map[string]Song)
 	rval.tracksongs = make([]TrackSong, 0, 50)
+	rval.dupSongs = make([]PairSongs, 0, 50)
 	if rval.localFlags == nil {
 		fmt.Println("PIB in allocate Data, localflags is nil")
 	}
