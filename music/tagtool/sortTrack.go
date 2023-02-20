@@ -12,6 +12,70 @@ import (
 	"sort"
 )
 
+type InventorySong struct {
+	artist string
+	album  string
+	title  string
+}
+
+func (i InventorySong) CSVString() string {
+	return fmt.Sprintf("\"%s\", \"%s\", \"%s\"\n", i.artist, i.album, i.title)
+}
+
+func (i InventorySong) String() string {
+	return fmt.Sprintf("%s, %s, %s\n", i.artist, i.album, i.title)
+}
+
+// ByThree implements sort.Interface for []InventorySong based on the three fields.
+type ByThree []InventorySong
+
+func (a ByThree) Len() int      { return len(a) }
+func (a ByThree) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByThree) Less(i, j int) bool {
+	p, q := a[i].artist, a[j].artist
+	switch {
+	case p < q:
+		return true
+	case q < p:
+		return false
+	}
+	// p == q, so try next one
+	p, q = a[i].album, a[j].album
+	switch {
+	case p < q:
+		return true
+	case q < p:
+		return false
+	}
+	// album and artist same
+	return a[i].title < a[j].title
+}
+func (g *GlobalVars) AddSongForTripleSort(a Song) error {
+	tmp := InventorySong{a.Artist, a.Album, a.Title}
+	g.invTriples = append(g.invTriples, tmp)
+	return nil
+}
+
+func (g GlobalVars) PrintTrpleSortedSongs() {
+	sort.Sort(ByThree(g.invTriples))
+	var oldArtist, oldAlbum string
+	for _, s := range g.invTriples {
+		if g.Flags().ShowNoSongs {
+			if s.artist != oldArtist || s.album != oldAlbum {
+				fmt.Printf("\"%s\", \"%s\"\n", s.artist, s.album)
+				oldArtist = s.artist
+				oldAlbum = s.album
+			}
+		} else {
+			if g.Flags().CSV {
+				fmt.Printf("\"%s\", \"%s\", \"%s\"\n", s.artist, s.album, s.title)
+			} else {
+				fmt.Printf("%s, %s, %s\n", s.artist, s.album, s.title)
+			}
+		}
+	}
+}
+
 type TrackSong struct {
 	Track int
 	Path  string
@@ -22,7 +86,7 @@ func (p TrackSong) String() string {
 }
 
 // ByTrack implements sort.Interface for []TrackSong based on
-// the Age field.
+// the track number field.
 type ByTrack []TrackSong
 
 func (a ByTrack) Len() int           { return len(a) }
