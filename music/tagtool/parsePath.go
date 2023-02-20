@@ -85,8 +85,11 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 	aSong.smapKey = combKey
 	tmp, ok := g.songTree[aSong.smapKey]
 	if ok {
-		fmt.Printf("possible dup? key %s found for %s and %s\n", aSong.smapKey, aSong.inPath, tmp.inPath)
-		return nil // hit, not unique, fix this with better hash
+		if g.Flags().DupJustTitle || g.Flags().DupTitleAlbumArtist {
+			twoSongs := PairSongs{aSong, &tmp}
+			g.dupSongs = append(g.dupSongs, twoSongs)
+		}
+		return nil
 	}
 	aSong.FixupOutputPath(g)
 	if g.songTree == nil {
@@ -113,12 +116,6 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 	}
 	if g.Flags().CopyAlbumInTrackOrder {
 		g.AddSongForTrackSort(*aSong)
-	}
-	if g.Flags().DupJustTitle {
-		fmt.Printf("#dupJustTitleDetect Not Yet Implemented\n")
-	}
-	if g.Flags().DupTitleAlbumArtist {
-		fmt.Printf("#dupTitleAlbumArtist Not Yet Implemented\n")
 	}
 	return nil
 }
@@ -236,6 +233,12 @@ func (g *GlobalVars) ProcessMap() {
 	case g.Flags().DoInventory:
 		g.doInventory()
 		return
+
+	case g.Flags().DupJustTitle || g.Flags().DupTitleAlbumArtist:
+		for i, d := range g.dupSongs {
+			fmt.Printf("%2d d.a %s\n   d.b %s\n", i, d.a.inPath, d.b.inPath)
+		}
+
 	}
 	uniqueArtists := make(map[string]Song)
 	var countSongs, countNoGroup int
