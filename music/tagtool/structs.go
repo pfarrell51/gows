@@ -27,6 +27,7 @@ type Song struct {
 	albumH            string
 	Title             string
 	titleH            string
+	smapKey           string
 	Genre             string
 	Disc, DiscCount   int
 	Track             int    `json:",omitempty"`
@@ -92,7 +93,7 @@ func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags.DupTitleAlbumArtist = f.DupTitleAlbumArtist
 	g.localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
 }
-func (g *GlobalVars) GetFlags() *FlagST {
+func (g *GlobalVars) Flags() *FlagST {
 	return g.localFlags
 }
 func (g *GlobalVars) GetSongTree() map[string]Song {
@@ -178,6 +179,10 @@ func EncodeArtist(s string) (string, string) {
 	prim, sec := enc.Encode(justLetter(StandardizeArtist(s)))
 	return prim, sec
 }
+func EncodeAlbum(s string) (string, string) {
+	prim, sec := enc.Encode(justLetter(StandardizeTitle(s)))
+	return prim, sec
+}
 
 func AllocateData() *GlobalVars {
 	enc.Encode("ignore this")
@@ -234,7 +239,7 @@ func (g *GlobalVars) loadArtistMap() {
 		if len(sec) > 0 {
 			g.gptree.Put(sec, n)
 		}
-		if g.GetFlags().Debug {
+		if g.Flags().Debug {
 			fmt.Printf("%s, %s, %s\n", prim, sec, n)
 		}
 	}
