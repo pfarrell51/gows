@@ -40,19 +40,19 @@ func main() {
 
 	var flags = new(tagtool.FlagST)
 	flag.BoolVar(&flags.CSV, "csv", false, "output CSV format")
-	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (gpmap)")
 	flag.BoolVar(&flags.CopyAlbumInTrackOrder, "c", false, "Album track order - output cp command in track order")
 	flag.BoolVar(&flags.Debug, "de", false, "debug on")
+	flag.BoolVar(&flags.DoInventory, "i", false, "inventory - basic inventory")
+	flag.BoolVar(&flags.DoRename, "r", false, "rename - output rename from internal metadata")
+	flag.BoolVar(&flags.DoSummary, "s", false, "summary - print summary statistics")
 	flag.BoolVar(&flags.DupJustTitle, "duptitle", false, "duplicate song based on just the title on")
 	flag.BoolVar(&flags.DupTitleAlbumArtist, "dup", false, "duplicate song based on title, album & Artist on")
 	flag.BoolVar(&helpflag, "h", false, "help")
-	flag.BoolVar(&flags.DoInventory, "i", false, "inventory - basic inventory")
 	flag.BoolVar(&flags.JsonOutput, "j", false, "output metadata as json")
 	flag.BoolVar(&flags.JustList, "l", false, "list - list files")
 	flag.BoolVar(&flags.NoGroup, "ng", false, "nogroup - list files that do not have an artist/group in the title")
 	flag.BoolVar(&flags.NoTags, "nt", false, "notags - list files that do not have any meta tags")
-	flag.BoolVar(&flags.DoRename, "r", false, "rename - output rename from internal metadata")
-	flag.BoolVar(&flags.DoSummary, "s", false, "summary - print summary statistics")
+	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (gpmap)")
 	flag.BoolVar(&flags.ZDumpArtist, "z", false, "list artist names one per line")
 	flag.Parse()
 	if helpflag {
@@ -62,11 +62,6 @@ func main() {
 
 	globals.SetFlagArgs(*flags)
 
-	if false {
-		ch := make(chan tagtool.Song)
-		v := <-ch
-		fmt.Println(v)
-	}
 	if flags.ZDumpArtist {
 		globals.DumpGptree()
 		return
