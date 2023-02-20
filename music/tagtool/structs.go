@@ -62,6 +62,7 @@ type FlagST struct {
 	NoGroup               bool
 	NoTags                bool
 	ShowArtistNotInMap    bool
+	ShowNoSongs           bool
 	ZDumpArtist           bool
 }
 
@@ -84,20 +85,22 @@ type GlobalVars struct {
 // copy user set flags to a local store
 func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags = new(FlagST)
+	g.localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
 	g.localFlags.CSV = f.CSV
+	g.localFlags.Debug = f.Debug
+	g.localFlags.DupJustTitle = f.DupJustTitle
+	g.localFlags.DupTitleAlbumArtist = f.DupTitleAlbumArtist
 	g.localFlags.ShowArtistNotInMap = f.ShowArtistNotInMap
 	g.localFlags.DoRename = f.DoRename
 	g.localFlags.DoInventory = f.DoInventory
 	g.localFlags.DoSummary = f.DoSummary
+	g.localFlags.NoTags = f.NoTags
+	g.localFlags.JsonOutput = f.JsonOutput
 	g.localFlags.JustList = f.JustList
 	g.localFlags.NoGroup = f.NoGroup
 	g.localFlags.NoTags = f.NoTags
+	g.localFlags.ShowNoSongs = f.ShowNoSongs
 	g.localFlags.ZDumpArtist = f.ZDumpArtist
-	g.localFlags.JsonOutput = f.JsonOutput
-	g.localFlags.Debug = f.Debug
-	g.localFlags.DupJustTitle = f.DupJustTitle
-	g.localFlags.DupTitleAlbumArtist = f.DupTitleAlbumArtist
-	g.localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
 }
 func (g *GlobalVars) Flags() *FlagST {
 	return g.localFlags
