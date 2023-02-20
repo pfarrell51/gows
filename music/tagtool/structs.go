@@ -77,6 +77,7 @@ type GlobalVars struct {
 	gptree                               *btree.Tree[string, string]
 	songTree                             map[string]Song
 	tracksongs                           []TrackSong // for sorting by track number within an album
+	invTriples                           []InventorySong
 	dupSongs                             []PairSongs
 }
 
@@ -201,6 +202,7 @@ func AllocateData() *GlobalVars {
 	rval.songTree = make(map[string]Song)
 	rval.tracksongs = make([]TrackSong, 0, 50)
 	rval.dupSongs = make([]PairSongs, 0, 50)
+	rval.invTriples = make([]InventorySong, 0, 100)
 	if rval.localFlags == nil {
 		fmt.Println("PIB in allocate Data, localflags is nil")
 	}
