@@ -96,7 +96,8 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 		panic("empty song tree")
 	}
 	g.songTree[aSong.smapKey] = *aSong
-	if g.Flags().NoTags {
+	switch {
+	case g.Flags().NoTags:
 		if aSong.AcoustID == "" {
 			g.numNoAcoustId++
 		}
@@ -109,13 +110,12 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 		if aSong.AcoustID == "" && aSong.Title == "" && aSong.MBID == "" {
 			fmt.Printf("#No tags found for %s\n", aSong.inPath)
 		}
-	}
-
-	if g.Flags().DoSummary {
+	case g.Flags().DoSummary:
 		g.updateUniqueCounts(*aSong)
-	}
-	if g.Flags().CopyAlbumInTrackOrder {
+	case g.Flags().CopyAlbumInTrackOrder:
 		g.AddSongForTrackSort(*aSong)
+	case g.Flags().DoInventory:
+		g.AddSongForTripleSort(*aSong)
 	}
 	return nil
 }
@@ -225,20 +225,17 @@ func (g *GlobalVars) ProcessMap() {
 	case g.Flags().JsonOutput:
 		PrintJson(g.songTree)
 		return
-
 	case g.Flags().CopyAlbumInTrackOrder:
 		g.PrintTrackSortedSongs()
 		return
-
 	case g.Flags().DoInventory:
 		g.doInventory()
 		return
-
 	case g.Flags().DupJustTitle || g.Flags().DupTitleAlbumArtist:
 		for i, d := range g.dupSongs {
 			fmt.Printf("%2d d.a %s\n   d.b %s\n", i, d.a.inPath, d.b.inPath)
 		}
-
+		return
 	}
 	uniqueArtists := make(map[string]Song)
 	var countSongs, countNoGroup int
@@ -307,13 +304,7 @@ func (g *GlobalVars) ProcessMap() {
 }
 
 func (g *GlobalVars) doInventory() {
-	for _, aSong := range g.songTree {
-		if g.Flags().CSV {
-			fmt.Printf("\"%s\", \"%s\", \"%s\"\n", aSong.Artist, aSong.Album, aSong.Title)
-		} else {
-			fmt.Printf("%s, %s, %s\n", aSong.Artist, aSong.Album, aSong.Title)
-		}
-	}
+	g.PrintTrpleSortedSongs()
 }
 func (g *GlobalVars) doSummary() {
 	if g.Flags().Debug {
