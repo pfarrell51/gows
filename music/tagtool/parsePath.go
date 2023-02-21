@@ -132,10 +132,9 @@ func (g *GlobalVars) WalkFiles(pathArg string) {
 	g.pathArg = pathArg
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		err = g.processFile(fsys, p, d, err)
+		g.processFile(fsys, p, d, err)
 		return nil
 	})
-	return
 }
 
 // prepopulate song structure with what we can know from the little we get from the user entered pathArg
@@ -201,7 +200,6 @@ func (g *GlobalVars) updateUniqueCounts(s Song) {
 		v = 1
 	}
 	g.artistCountTree.Put(s.Artist, v)
-	v, ok = g.artistCountTree.Get(s.Artist)
 
 	key := s.Artist + " " + s.Album
 	v, ok = g.albumCountTree.Get(key)
@@ -306,7 +304,6 @@ func (g *GlobalVars) ProcessMap() {
 	if g.Flags().DoSummary {
 		g.doSummary()
 	}
-	return
 }
 
 func (g *GlobalVars) doInventory() {
@@ -337,7 +334,6 @@ func (g *GlobalVars) doSummary() {
 	}
 	fmt.Printf("found %d artists, %d albums and %d songs or sP %d\n", g.artistCountTree.Size(), g.albumCountTree.Size(),
 		g.songCountTree.Size(), g.songsProcessed)
-	return
 }
 
 // prints out a suitable rename/mv/ren command to put the file name
@@ -363,7 +359,6 @@ func (g *GlobalVars) outputRenameCommand(aSong *Song) {
 		return
 	case aSong.Artist == "":
 		fmt.Printf("#rename artist is blank %s\n", aSong.inPath)
-		cmd = "#" + cmd
 		return
 	case aSong.artistInDirectory:
 		cmd = "#" + cmd
@@ -384,7 +379,7 @@ func (g *GlobalVars) DumpGptree() {
 		if g.Flags().Debug {
 			t = fmt.Sprintf("%s  \"%s\"", v, key)
 		} else {
-			t = fmt.Sprintf("%s", v)
+			t = v
 		}
 		arts = append(arts, t)
 	})
