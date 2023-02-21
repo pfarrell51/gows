@@ -90,7 +90,7 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 			aRunes := []rune(aSong.Title)
 			tRunes := []rune(tmp.Title)
 			distance := levenshtein.DistanceForStrings(aRunes, tRunes, levenshtein.DefaultOptions)
-			if distance == 0 {
+			if distance > 1 {
 				twoSongs := PairSongs{aSong, &tmp}
 				g.dupSongs = append(g.dupSongs, twoSongs)
 			}
