@@ -35,11 +35,11 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 		panic("PIB, input path empty")
 	}
 	file, err := os.Open(rval.inPath)
-	defer file.Close()
 	if err != nil {
 		fmt.Printf("err : %v %s\n", err, rval.inPath)
 		return nil, err
 	}
+	defer file.Close()
 	m, err := tag.ReadFrom(file)
 	if err != nil {
 		fmt.Printf("%v %s", err, rval.Title)
@@ -60,8 +60,8 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 	rval.Disc = disc
 	rval.DiscCount = discCount
 	info := mbz.Extract(m)
-	rval.MBID, _ = info["musicbrainz_trackid"]
-	rval.AcoustID, _ = info["acoustid_id"]
+	rval.MBID = info["musicbrainz_trackid"]
+	rval.AcoustID = info["acoustid_id"]
 	if rval.Year == 0 {
 		rw := m.Raw() // look in raw map.
 		yy := rw["TORY"]
@@ -74,7 +74,7 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 	}
 	rval.FixupOutputPath(g)
 	if g.Flags().Debug {
-		for k, _ := range info { // loop thru extra meta data, musicbrainz, etc
+		for k := range info { // loop thru extra meta data, musicbrainz, etc
 			found := knownIds[k]
 			if !found {
 				knownIds[k] = true
@@ -110,7 +110,7 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 	return rval, nil
 }
 func (g *GlobalVars) DumpKnowIDnames() {
-	for k, _ := range knownIds {
+	for k := range knownIds {
 		fmt.Printf("%s\n", k)
 	}
 }
