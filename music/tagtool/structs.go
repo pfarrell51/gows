@@ -71,7 +71,6 @@ type GlobalVars struct {
 	localFlags                           *FlagST
 	songsProcessed                       int
 	numNoAcoustId, numNoTitle, numNoMBID int
-	numAlbums, numArtists                int
 	artistCountTree                      *avl.Tree[string, int]
 	albumCountTree                       *avl.Tree[string, int]
 	songCountTree                        *avl.Tree[string, int]
@@ -146,9 +145,7 @@ func StandardizeArtist(art string) string {
 	if matched, _ := regexp.MatchString("^[A-Z]( |-|_)", rval); matched {
 		rval = rval[2:]
 	}
-	if strings.HasPrefix(rval, "The ") {
-		rval = rval[4:]
-	}
+	rval = strings.TrimPrefix(rval, "The ")
 	for j := 0; j < 4; j++ { // 4 allows the space before the keyword (and/the), as we back up
 		loc := regAndThe.FindStringIndex(rval)
 		if len(loc) < 1 {
@@ -234,12 +231,8 @@ func (g *GlobalVars) loadArtistMap() {
 			break
 		}
 		if tok == token.STRING {
-			if strings.HasPrefix(lit, "\"") {
-				lit = lit[1:]
-			}
-			if strings.HasSuffix(lit, "\"") {
-				lit = lit[:len(lit)-1]
-			}
+			lit = strings.TrimPrefix(lit, "\"")
+			lit = strings.TrimSuffix(lit, "\"")
 			artists = append(artists, lit)
 		}
 	}
