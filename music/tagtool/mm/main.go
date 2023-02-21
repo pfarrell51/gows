@@ -30,8 +30,7 @@ func main() {
 		fmt.Fprintf(w, "default is to list files that need love.\n")
 
 	}
-	var globals *tagtool.GlobalVars
-	globals = tagtool.AllocateData()
+	var globals = tagtool.AllocateData()
 	if globals.GetSongTree() == nil {
 		panic("main.go global songtree is nil")
 	}
