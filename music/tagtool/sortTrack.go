@@ -50,10 +50,9 @@ func (a ByThree) Less(i, j int) bool {
 	// album and artist same
 	return a[i].title < a[j].title
 }
-func (g *GlobalVars) AddSongForTripleSort(a Song) error {
+func (g *GlobalVars) AddSongForTripleSort(a Song) {
 	tmp := InventorySong{a.Artist, a.Album, a.Title}
 	g.invTriples = append(g.invTriples, tmp)
-	return nil
 }
 
 func (g GlobalVars) PrintTrpleSortedSongs() {
@@ -93,10 +92,8 @@ func (a ByTrack) Len() int           { return len(a) }
 func (a ByTrack) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a ByTrack) Less(i, j int) bool { return a[i].Track < a[j].Track }
 
-func (g *GlobalVars) AddSongForTrackSort(a Song) error {
-	//fmt.Println(a.inPath)
+func (g *GlobalVars) AddSongForTrackSort(a Song) {
 	g.tracksongs = append(g.tracksongs, TrackSong{a.Track, a.inPath})
-	return nil
 }
 
 // print out shell commands to copy the sorted and renamed fies
