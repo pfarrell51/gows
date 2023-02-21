@@ -3,7 +3,6 @@
 // this is not multi-processing safe
 
 // bugs
-// better hash/technique to identify and handle duplicate songs
 // count physical albums
 
 package tagtool
@@ -18,6 +17,8 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+
+	"github.com/texttheater/golang-levenshtein/levenshtein"
 )
 
 // top level entry point, takes the path to the directory to walk/process
@@ -86,8 +87,13 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 	tmp, ok := g.songTree[aSong.smapKey]
 	if ok {
 		if g.Flags().DupJustTitle || g.Flags().DupTitleAlbumArtist {
-			twoSongs := PairSongs{aSong, &tmp}
-			g.dupSongs = append(g.dupSongs, twoSongs)
+			aRunes := []rune(aSong.Title)
+			tRunes := []rune(tmp.Title)
+			distance := levenshtein.DistanceForStrings(aRunes, tRunes, levenshtein.DefaultOptions)
+			if distance == 0 {
+				twoSongs := PairSongs{aSong, &tmp}
+				g.dupSongs = append(g.dupSongs, twoSongs)
+			}
 		}
 		return nil
 	}
