@@ -40,7 +40,7 @@ func (g *GlobalVars) ProcessFiles(pathArg string) {
 	g.ProcessMap()
 }
 
-var ExtRegex = regexp.MustCompile(`[Mm][Pp][34]|[Ff][Ll][Aa][Cc]$`) //"((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
+var ExtRegex = regexp.MustCompile(`[Mm][Pp][34]|[Ff][Ll][Aa][Cc]$`)
 
 // this is the local  WalkDirFunc called by WalkDir for each file
 // p is the current path/name
@@ -57,19 +57,23 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 	if extR == nil {
 		return nil // not interesting extension
 	}
-	g.processSong(p)
+	rSong, _ := g.processSong(p)
+	g.getSong(rSong)
 	return nil
 }
 
 // isolate the actual work here, so we can cleanly
 // set it off as a goroutine.
-func (g *GlobalVars) processSong(p string) error {
+func (g *GlobalVars) processSong(p string) (*Song, error) {
 	var err error
 	var aSong *Song
 	aSong, err = g.GetMetaData(p)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	return aSong, nil
+}
+func (g *GlobalVars) getSong(aSong *Song) {
 	g.songsProcessed++
 	key, _ := EncodeTitle(aSong.Title)
 	combKey := key
@@ -101,7 +105,7 @@ func (g *GlobalVars) processSong(p string) error {
 				g.dupSongs = append(g.dupSongs, twoSongs)
 			}
 		}
-		return nil
+		return
 	}
 	aSong.FixupOutputPath(g)
 	if g.songTree == nil {
@@ -129,7 +133,7 @@ func (g *GlobalVars) processSong(p string) error {
 	case g.Flags().DoInventory:
 		g.AddSongForTripleSort(*aSong)
 	}
-	return nil
+	return
 }
 
 // walk all files, looking for nice GoPro created video files.
