@@ -43,7 +43,6 @@ func (g *GlobalVars) ProcessFiles(pathArg string) {
 var ExtRegex = regexp.MustCompile(`[Mm][Pp][34]|[Ff][Ll][Aa][Cc]$`) //"((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 
 // this is the local  WalkDirFunc called by WalkDir for each file
-// pathArg is the path to the base of our walk
 // p is the current path/name
 func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	if err != nil {
@@ -58,7 +57,14 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 	if extR == nil {
 		return nil // not interesting extension
 	}
+	g.processSong(p)
+	return nil
+}
 
+// isolate the actual work here, so we can cleanly
+// set it off as a goroutine.
+func (g *GlobalVars) processSong(p string) error {
+	var err error
 	var aSong *Song
 	aSong, err = g.GetMetaData(p)
 	if err != nil {
