@@ -79,6 +79,7 @@ type GlobalVars struct {
 	tracksongs                           []TrackSong // for sorting by track number within an album
 	invTriples                           []InventorySong
 	dupSongs                             []PairSongs
+	knownIds                             map[string]bool
 }
 
 // copy user set flags to a local store
@@ -203,6 +204,7 @@ func AllocateData() *GlobalVars {
 	rval.tracksongs = make([]TrackSong, 0, 50)
 	rval.dupSongs = make([]PairSongs, 0, 50)
 	rval.invTriples = make([]InventorySong, 0, 100)
+	rval.knownIds = make(map[string]bool)
 	if rval.localFlags == nil {
 		fmt.Println("PIB in allocate Data, localflags is nil")
 	}
