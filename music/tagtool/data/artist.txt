@@ -46,7 +46,7 @@
 		"Otis Redding", "Pablo Cruise",
 		"Paul Simon", "Pete Seeger", "Peter Paul Mary", "Pink Floyd", "Queen", 
 		"Randy Newman", "Rascals", "Ray Kaminsky", "Ringo Starr",
-		"Robert Plant Alison Kraus", "Roberta Flack", "Roches", "Roger McQuinn", "Rodgers Hammerstein", 
+		"Robert Plant Alison Kraus", "Roberta Flack", "Robin Bullock", "Roches", "Roger McQuinn", "Rodgers Hammerstein",
 		"Rooftop Singers", "Rolling Stones",
 		"Roy Orbison", "Sade", "Sam And Dave", "Santana", 
 		"Sarah Brightman", "Sarah Brightman & Andrea Bocelli", "Sarah McLachlan", "Scott McKenzie", 
