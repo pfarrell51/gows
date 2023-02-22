@@ -179,6 +179,7 @@ func StandardizeTitle(title string) string {
 	return rval
 }
 func EncodeTitle(s string) (string, string) {
+	//fmt.Printf("Encoding title of %s\n", s)
 	prim, sec := enc.Encode(justLetter(StandardizeTitle(s)))
 	return prim, sec
 }
