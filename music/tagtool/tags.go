@@ -13,12 +13,6 @@ import (
 	"github.com/dhowden/tag/mbz"
 )
 
-var knownIds map[string]bool
-
-func init() {
-	knownIds = make(map[string]bool)
-}
-
 // pull meta data from music file. Full file path is pathArg + p
 func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 	if g.Flags().Debug {
@@ -75,9 +69,9 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 	rval.FixupOutputPath(g)
 	if g.Flags().Debug {
 		for k := range info { // loop thru extra meta data, musicbrainz, etc
-			found := knownIds[k]
+			found := g.knownIds[k]
 			if !found {
-				knownIds[k] = true
+				g.knownIds[k] = true
 			}
 		}
 	}
@@ -110,7 +104,7 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 	return rval, nil
 }
 func (g *GlobalVars) DumpKnowIDnames() {
-	for k := range knownIds {
+	for k := range g.knownIds {
 		fmt.Printf("%s\n", k)
 	}
 }
