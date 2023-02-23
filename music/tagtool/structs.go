@@ -80,6 +80,7 @@ type GlobalVars struct {
 	invTriples                           []InventorySong
 	dupSongs                             []PairSongs
 	knownIds                             map[string]bool
+	numDirs                              int
 }
 
 // copy user set flags to a local store
