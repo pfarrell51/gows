@@ -349,13 +349,10 @@ func (g *GlobalVars) doSummary() {
 // prints out a suitable rename/mv/ren command to put the file name
 // in the format I like
 func (g *GlobalVars) outputRenameCommand(aSong *Song) {
-	aSong.FixupOutputPath(g)
 	cmd := "mv"
 	if runtime.GOOS == "windows" {
 		cmd = "ren "
 	}
-	// fmt.Printf("#oRC start  %s \"%s\" \"%s-/%s; %s\"\n", cmd, aSong.inPath,
-	// 	aSong.Title, aSong.Artist, aSong.ext)
 	if aSong.outPath == aSong.inPath {
 		if g.Flags().Debug {
 			fmt.Printf("#parseP no change for %s\n", aSong.inPath)
