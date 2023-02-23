@@ -67,7 +67,6 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 			}
 		}
 	}
-	rval.FixupOutputPath(g)
 	if g.Flags().Debug {
 		for k := range info { // loop thru extra meta data, musicbrainz, etc
 			found := g.knownIds[k]
