@@ -3,7 +3,6 @@
 // this is not multi-processing safe
 
 // bugs
-// count physical albums
 
 package tagtool
 
@@ -140,8 +139,14 @@ func (g *GlobalVars) getSong(aSong *Song) {
 // fill in a map keyed by the desired new name order
 func (g *GlobalVars) WalkFiles(pathArg string) {
 	g.pathArg = pathArg
+	var oldDir string
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
+		var notOld = filepath.Dir(p)
+		if oldDir != notOld && notOld != "." {
+			oldDir = notOld
+			g.numDirs++
+		}
 		g.processFile(fsys, p, d, err)
 		return nil
 	})
@@ -326,8 +331,8 @@ func (g *GlobalVars) doSummary() {
 			fmt.Printf("%d %s\n", v, k)
 		})
 
-		fmt.Printf(">#2 found %d artists, %d albums and %d songs\n",
-			g.artistCountTree.Size(), g.albumCountTree.Size(), g.songCountTree.Size())
+		fmt.Printf(">#2 found %d artists, %d albums (%d directories) and %d songs\n",
+			g.artistCountTree.Size(), g.albumCountTree.Size(), g.numDirs, g.songCountTree.Size())
 		fmt.Println("albums. Count is number of songs in the given artist/album")
 		g.albumCountTree.Each(func(k string, v int) {
 			fmt.Printf("%d %s\n", v, k)
@@ -342,8 +347,8 @@ func (g *GlobalVars) doSummary() {
 			})
 		}
 	}
-	fmt.Printf("found %d artists, %d albums and %d songs or sP %d\n", g.artistCountTree.Size(), g.albumCountTree.Size(),
-		g.songCountTree.Size(), g.songsProcessed)
+	fmt.Printf("found %d artists, %d albums (%d directories) and %d songs or sP %d\n",
+		g.artistCountTree.Size(), g.albumCountTree.Size(), g.numDirs, g.songCountTree.Size(), g.songsProcessed)
 }
 
 // prints out a suitable rename/mv/ren command to put the file name
