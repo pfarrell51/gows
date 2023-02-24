@@ -9,11 +9,11 @@ goPro naming conventions: https://community.gopro.com/s/article/GoPro-Camera-Fil
 
 For example, if you have files named GX010352.MP4 and GX020354.MP4
 on a Linux or OS-X system, the output would be
-    mv GX010352.MP4 GX035201.mp4 
-    mv GX020354.MP4 GX035202.mp4
 
-    On a Windows system, the "mv" command would be changed to "ren" for rename.
+	mv GX010352.MP4 GX035201.mp4
+	mv GX020354.MP4 GX035202.mp4
 
+	On a Windows system, the "mv" command would be changed to "ren" for rename.
 */
 package goprorename
 
@@ -29,7 +29,7 @@ import (
 )
 
 var extRegex = regexp.MustCompile(".(M|m)(p|P)4")
-var nameRegex = regexp.MustCompile("(?s)(GX|H)(\\d{2})(\\d{4})")
+var nameRegex = regexp.MustCompile("(?s)(GX|GH)(\\d{2})(\\d{4})")
 
 // walked the argument directory path looking for .mp4 files generated
 // by a GoPro camera, creating a map of old and new filenames
