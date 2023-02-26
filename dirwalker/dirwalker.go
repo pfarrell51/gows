@@ -8,7 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"text/template"
+	"regexp"
 )
 
 type FlagST struct {
@@ -18,12 +18,13 @@ type FlagST struct {
 }
 type GlobalVars struct {
 	pathArg    string
+	outPath    string
+	verb       string
 	localFlags *FlagST
 }
-type DirEntry struct {
-	InPath  string
-	OutPath string
-	Cmd     string
+
+func (g *GlobalVars) Flags() *FlagST {
+	return g.localFlags
 }
 
 // copy user set flags to a local store
@@ -36,26 +37,37 @@ func (g *GlobalVars) SetFlagArgs(f FlagST) {
 func AllocateData() *GlobalVars {
 	rval := new(GlobalVars)
 	rval.localFlags = new(FlagST)
-	if true {
-		std1 := DirEntry{"/home/Music/flac", "/home/music/mp3", "rename "}
-		tmpl, err := template.New("test").Parse("{{.Cmd}} {{.InPath}} of {{.OutPath}}")
-		if err != nil {
-			panic(err)
-		}
-		err = tmpl.Execute(os.Stdout, std1)
-		if err != nil {
-			panic(err)
-		}
-		fmt.Fprintf(os.Stdout, "\n")
-	}
 	return rval
 }
-func Files(path string) (count int) {
-	fsys := os.DirFS(path)
+
+var ExtRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
+
+func Files(verb, inpath, outpath, newExt string) (count int) {
+	if verb != "ffmpeg" {
+		fmt.Printf("unsupported verb: %s\n", verb)
+		return 0
+	}
+	fsys := os.DirFS(inpath)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		if filepath.Ext(p) == ".flac" {
-			count++
+		if err != nil {
+			fmt.Println(err)
+			return nil
 		}
+		if d.IsDir() {
+			return nil
+		}
+		if !ExtRegex.MatchString(p) {
+			fmt.Printf("#not interesting: %s\n", p)
+			return nil
+		}
+		newP := ExtRegex.ReplaceAllString(p, newExt)
+		count++
+		dir, fn := filepath.Split(filepath.Clean(filepath.Join(outpath, newP)))
+		err = os.MkdirAll(dir, 0777)
+		if err != nil {
+			panic(fmt.Sprintf("falled to make directory %s", dir))
+		}
+		fmt.Printf("%s -loglevel error -y -i \"%s\" -q:a 0 \"%s\"\n", verb, filepath.Join(inpath, p), filepath.Join(dir, fn))
 		return nil
 	})
 	return count
