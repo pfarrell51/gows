@@ -141,6 +141,9 @@ func (g *GlobalVars) WalkFiles(pathArg string) {
 	var oldDir string
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			return nil
+		}
 		var notOld = filepath.Dir(p)
 		if oldDir != notOld && notOld != "." {
 			oldDir = notOld
