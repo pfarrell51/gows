@@ -132,7 +132,6 @@ func (g *GlobalVars) getSong(aSong *Song) {
 	case g.Flags().DoInventory:
 		g.AddSongForTripleSort(*aSong)
 	}
-	return
 }
 
 // walk all files, looking for nice GoPro created video files.
