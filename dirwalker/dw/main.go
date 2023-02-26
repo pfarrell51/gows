@@ -4,9 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
-	"github.com/pfarrell51/gows/music/dirwalker"
+	"github.com/pfarrell51/gows/dirwalker"
 )
 
 func main() {
@@ -22,12 +23,8 @@ func main() {
 		fmt.Fprintf(w, "default is to list files that need love.\n")
 
 	}
-	/*
-		var globals = tagtool.AllocateData()
-		if globals.GetSongTree() == nil {
-			panic("main.go global songtree is nil")
-		}
-	*/
+
+	var globals = dirwalker.AllocateData()
 
 	var helpflag bool
 	var flags = new(dirwalker.FlagST)
@@ -41,9 +38,9 @@ func main() {
 
 	globals.SetFlagArgs(*flags)
 
-	pathArg := os.Args[1]
+	pathArg := path.Clean(flag.Arg(0))
 
-	fmt.Println(Files(pathArg))
+	fmt.Println(dirwalker.Files(pathArg))
 	duration := time.Since(start)
 	fmt.Printf("# %v\n", duration)
 
