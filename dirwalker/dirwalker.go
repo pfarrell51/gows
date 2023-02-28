@@ -47,6 +47,12 @@ func Files(verb, inpath, outpath, newExt string) (count int) {
 		fmt.Printf("unsupported verb: %s\n", verb)
 		return 0
 	}
+	_, inL := filepath.Split(inpath)
+	_, outL := filepath.Split(outpath)
+	if inL != outL {
+		fmt.Printf("input and output paths not parallel, %s != %s\n", inL, outL)
+		return 0
+	}
 	fsys := os.DirFS(inpath)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -57,7 +63,6 @@ func Files(verb, inpath, outpath, newExt string) (count int) {
 			return nil
 		}
 		if !ExtRegex.MatchString(p) {
-			fmt.Printf("#not interesting: %s\n", p)
 			return nil
 		}
 		newP := ExtRegex.ReplaceAllString(p, newExt)
@@ -67,6 +72,7 @@ func Files(verb, inpath, outpath, newExt string) (count int) {
 		if err != nil {
 			panic(fmt.Sprintf("falled to make directory %s", dir))
 		}
+
 		fmt.Printf("%s -loglevel error -y -i \"%s\" -q:a 0 \"%s\"\n", verb, filepath.Join(inpath, p), filepath.Join(dir, fn))
 		return nil
 	})
