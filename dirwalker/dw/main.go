@@ -40,7 +40,7 @@ func main() {
 		flag.Usage()
 		return
 	}
-	if len(flag.Args()) < 4 {
+	if len(flag.Args()) < 3 {
 		flag.Usage()
 		return
 	}
@@ -49,7 +49,12 @@ func main() {
 	verb := flag.Arg(0)
 	inpathArg := path.Clean(flag.Arg(1))
 	outpathArg := path.Clean(flag.Arg(2))
-	ext := strings.TrimSpace(flag.Arg(3))
+	ext := "mp3"
+	if len(flag.Args()) > 3 {
+		ext = strings.TrimSpace(flag.Arg(3))
+	} else if verb == "ffmpeg" {
+		ext = "mp3"
+	}
 
 	fmt.Printf("#%d\n", dirwalker.Files(verb, inpathArg, outpathArg, ext))
 	duration := time.Since(start)
