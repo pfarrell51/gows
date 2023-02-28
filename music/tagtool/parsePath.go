@@ -297,7 +297,6 @@ func (g *GlobalVars) ProcessMap() {
 		case g.Flags().NoGroup:
 			if aSong.Artist == "" {
 				countNoGroup++
-				fmt.Printf("nogroup %s\n", aSong.inPath)
 			}
 		default:
 		}
