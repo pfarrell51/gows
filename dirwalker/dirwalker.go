@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 type FlagST struct {
@@ -47,8 +48,12 @@ func Files(verb, inpath, outpath, newExt string) (count int) {
 		fmt.Printf("unsupported verb: %s\n", verb)
 		return 0
 	}
+	if outpath == "mp3" {
+		outpath = strings.Replace(inpath, "flac", "mp3", -1)
+	}
 	_, inL := filepath.Split(inpath)
 	_, outL := filepath.Split(outpath)
+
 	if inL != outL {
 		fmt.Printf("input and output paths not parallel,\n%s != \n%s\n", inL, outL)
 		return 0

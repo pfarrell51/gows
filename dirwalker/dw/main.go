@@ -12,12 +12,15 @@ import (
 )
 
 func usagePrint() {
-	fmt.Printf("Usage: %s [flags] verb in-directory-spec out-direcctory-spec extension\nFor now, only 'ffmpeg' is allowed as a verb", os.Args[0])
+	fmt.Printf("Usage: %s [flags] verb in-directory-spec out-direcctory-spec extension\n", os.Args[0])
+	fmt.Printf("For now, only 'ffmpeg' is allowed as a verb\n")
+	fmt.Printf("if the out-directory-spec is simply 'mp3' then the output spec will be built from the in-directory-spec,\n")
+	fmt.Printf("replacing the word 'flac'with 'mp3' in the path\n")
+	fmt.Printf("i.e. mumble/flac/fratz will create an output path of mumble/mp3/fratz\n")
 }
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("arglen %d\n", len(os.Args))
 		usagePrint()
 		os.Exit(1)
 	}
