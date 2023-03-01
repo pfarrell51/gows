@@ -50,7 +50,7 @@ func Files(verb, inpath, outpath, newExt string) (count int) {
 	_, inL := filepath.Split(inpath)
 	_, outL := filepath.Split(outpath)
 	if inL != outL {
-		fmt.Printf("input and output paths not parallel, %s != %s\n", inL, outL)
+		fmt.Printf("input and output paths not parallel,\n%s != \n%s\n", inL, outL)
 		return 0
 	}
 	fsys := os.DirFS(inpath)
