@@ -48,6 +48,9 @@ func Files(verb, inpath, outpath, newExt string) (count int) {
 		fmt.Printf("unsupported verb: %s\n", verb)
 		return 0
 	}
+	if outpath == "" && verb == "ffmpeg" {
+		outpath = "mp3"
+	}
 	if outpath == "mp3" {
 		outpath = strings.Replace(inpath, "flac", "mp3", -1)
 	}
