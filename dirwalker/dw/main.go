@@ -43,24 +43,35 @@ func main() {
 		flag.Usage()
 		return
 	}
-	if len(flag.Args()) < 3 {
-		flag.Usage()
-		return
-	}
 
 	globals.SetFlagArgs(*flags)
+
 	verb := flag.Arg(0)
-	inpathArg := path.Clean(flag.Arg(1))
-	outpathArg := path.Clean(flag.Arg(2))
+	numArgs := len(flag.Args())
+	var inpathArg, outpathArg string
+	inpathArg = path.Clean(flag.Arg(1))
+	outpathArg = path.Clean(flag.Arg(2))
 	ext := "mp3"
-	if len(flag.Args()) > 3 {
+	switch {
+	case numArgs == 1:
+		flag.Usage()
+		return
+	case numArgs == 2:
+		if verb == "ffmpeg" {
+			inpathArg = path.Clean(flag.Arg(1))
+			outpathArg = "mp3"
+		} else {
+			flag.Usage()
+			return
+		}
+	case numArgs >= 3:
+		inpathArg = path.Clean(flag.Arg(1))
+		outpathArg = path.Clean(flag.Arg(2))
 		ext = strings.TrimSpace(flag.Arg(3))
-	} else if verb == "ffmpeg" {
-		ext = "mp3"
 	}
 
-	fmt.Printf("#%d\n", dirwalker.Files(verb, inpathArg, outpathArg, ext))
+	numDone := dirwalker.Files(verb, inpathArg, outpathArg, ext)
+	fmt.Printf("#%d\n", numDone)
 	duration := time.Since(start)
 	fmt.Printf("# %v\n", duration)
-
 }
