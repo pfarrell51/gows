@@ -21,19 +21,34 @@ as Musicbrainz's Picard (https://picard.musicbrainz.org/)
   artists are kept in a text file in the data subdirectory, named data/artists.txt
 
   -c    Album track order - output cp command to copy songs in track order so that you can play the songs in the same order as they were in an album. Many albums in the late 60s and 70s had a specific flow for the songs
-    -csv       output CSV format
+
+
+ -csv       output CSV format
+
   -de      debug on
+
   -dup     locate duplicate song based on title, album & Artist on
+
   -duptitle     duplicate song based on just the title on
+
   -h    help
-  -i    inventory - basic inventory
+
+  -i    inventory - basic inventory (handy with -i -csv -sn)
+
   -j    output metadata as json
+
   -l    list - list files
+
   -ng      nogroup - list files that do not have an artist/group in the title
+
   -nt      notags - list files that do not have any meta tags
+
   -r    rename - output rename from internal metadata
+
   -s    summary - print summary statistics
+
   -sn     show no song titles (in inventory and other listings)
+
   -z    list artist names one per line
 
 default is to list files that need love.
