@@ -44,15 +44,28 @@ func AllocateData() *GlobalVars {
 var ExtRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 
 func Files(verb, inpath, outpath, newExt string) (count int) {
-	if verb != "ffmpeg" {
+	if !(verb == "ffmpeg" || verb == "sox") {
 		fmt.Printf("unsupported verb: %s\n", verb)
 		return 0
 	}
-	if outpath == "" && verb == "ffmpeg" {
-		outpath = "mp3"
+	if newExt == "" {
+		fmt.Printf("empty extension not supported\n")
+		return 0
 	}
-	if outpath == "mp3" {
-		outpath = strings.Replace(inpath, "flac", "mp3", -1)
+	switch verb {
+	case "ffmpeg":
+		if outpath == "" {
+			outpath = "mp3"
+		}
+		if outpath == "mp3" {
+			outpath = strings.Replace(inpath, "flac", "mp3", -1)
+		}
+	case "sox":
+		//fmt.Printf("PIB, figure it out unsupported verb: %s\n", verb)
+		//fmt.Println("sox asz.wav asz-car.wav compand 0.3,1 6:-70,-60,-20 -5 -90 0.2")
+	default:
+		fmt.Printf("unsupported verb: %s\n", verb)
+		return 0
 	}
 	_, inL := filepath.Split(inpath)
 	_, outL := filepath.Split(outpath)
@@ -81,7 +94,16 @@ func Files(verb, inpath, outpath, newExt string) (count int) {
 			panic(fmt.Sprintf("falled to make directory %s", dir))
 		}
 
-		fmt.Printf("%s -loglevel error -y -i \"%s\" -q:a 0 \"%s\"\n", verb, filepath.Join(inpath, p), filepath.Join(dir, fn))
+		useIn := filepath.Join(inpath, p)
+		useOut := filepath.Join(dir, fn)
+		switch verb {
+		case "ffmpeg":
+			fmt.Printf("%s -loglevel error -y -i \"%s\" -q:a 0 \"%s\"\n", verb, useIn, useOut)
+		case "sox":
+			fmt.Printf("%s \"%s\" \"%s\"  compand 0.3,1 6:-70,-60,-20 -5 -90 0.2\n", verb, useIn, useOut)
+		default:
+			fmt.Printf("unsupported verb: %s\n", verb)
+		}
 		return nil
 	})
 	return count
