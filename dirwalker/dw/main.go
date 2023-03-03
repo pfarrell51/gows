@@ -13,7 +13,7 @@ import (
 
 func usagePrint() {
 	fmt.Printf("Usage: %s [flags] verb in-directory-spec out-direcctory-spec extension\n", os.Args[0])
-	fmt.Printf("For now, only 'ffmpeg' is allowed as a verb\n")
+	fmt.Printf("For now, only 'ffmpeg' and 'sox' are allowed as a verb\n")
 	fmt.Printf("if the out-directory-spec is simply 'mp3' then the output spec will be built from the in-directory-spec,\n")
 	fmt.Printf("replacing the word 'flac'with 'mp3' in the path\n")
 	fmt.Printf("i.e. mumble/flac/fratz will create an output path of mumble/mp3/fratz\n")
@@ -47,6 +47,12 @@ func main() {
 	globals.SetFlagArgs(*flags)
 
 	verb := flag.Arg(0)
+	if !(verb == "ffmpeg" || verb == "sox") {
+		fmt.Printf("2 verb is %s\n", verb)
+		fmt.Printf("3 Verb must be either ffmpeg or sox, not %s\n", verb)
+		flag.Usage()
+		return
+	}
 	numArgs := len(flag.Args())
 	var inpathArg, outpathArg string
 	inpathArg = path.Clean(flag.Arg(1))
@@ -57,10 +63,14 @@ func main() {
 		flag.Usage()
 		return
 	case numArgs == 2:
-		if verb == "ffmpeg" {
+		switch verb {
+		case "ffmpeg":
 			inpathArg = path.Clean(flag.Arg(1))
 			outpathArg = "mp3"
-		} else {
+		case "sox":
+			inpathArg = path.Clean(flag.Arg(1))
+			outpathArg = "sox"
+		default:
 			flag.Usage()
 			return
 		}
