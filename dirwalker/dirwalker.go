@@ -72,8 +72,8 @@ func arePathsParallel(in, out string) bool {
 	if in == out {
 		return true
 	}
-	partsIn := strings.Split(in, string(filepath.Separator))
-	partsOut := strings.Split(out, string(filepath.Separator))
+	partsIn := strings.Split(in, pathSep)
+	partsOut := strings.Split(out, pathSep)
 	if len(partsIn) != len(partsOut) {
 		return false
 	}
@@ -98,10 +98,10 @@ func (g GlobalVars) ifExistsBreadcrumbfile(dir string) bool {
 	fpath := filepath.Join(dir, BreadcrumbFN)
 	var err error
 	if _, err = os.Stat(fpath); err == nil {
+		if g.Flags().Debug {
+			fmt.Printf("found breadcrumb for %s\n", dir)
+		}
 		return true // breadcrumb exists
-	}
-	if g.localFlags.Debug {
-		fmt.Printf("stat error: %s", err)
 	}
 	return false
 }
@@ -133,7 +133,7 @@ func (g *GlobalVars) Files(verb, inpath, outpath, newExt string) (count int) {
 		return 0
 	}
 	var songCount int
-	if newExt == "" {
+	if verb == "ffmpeg" && newExt == "" {
 		fmt.Printf("empty extension not supported\n")
 		return 0
 	}
@@ -177,6 +177,9 @@ func (g *GlobalVars) Files(verb, inpath, outpath, newExt string) (count int) {
 		dir, fn := filepath.Split(filepath.Clean(filepath.Join(outpath, newP)))
 		if g.ifExistsBreadcrumbfile(dir) {
 			if g.localFlags.SkipIfBreadcrumbExists {
+				if g.Flags().Debug {
+					fmt.Printf("#breadcrumb found, skipping directory %s\n", dir)
+				}
 				return nil
 			}
 		}
