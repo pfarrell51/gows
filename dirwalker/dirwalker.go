@@ -1,5 +1,8 @@
 // dirwalker
 // utility to walk a directory tree and output cool commands
+//
+// todo:
+// detect the "soxdata.txt" file and don't re-compress using 'sox' command unless you really want to
 
 package dirwalker
 
@@ -14,9 +17,10 @@ import (
 )
 
 type FlagST struct {
-	CopyAlbumInTrackOrder bool
-	CSV                   bool
-	Debug                 bool
+	CopyAlbumInTrackOrder  bool
+	CSV                    bool
+	Debug                  bool
+	SkipIfBreadcrumbExists bool
 }
 type GlobalVars struct {
 	pathArg    string
@@ -35,6 +39,7 @@ func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
 	g.localFlags.CSV = f.CSV
 	g.localFlags.Debug = f.Debug
+	g.localFlags.SkipIfBreadcrumbExists = f.SkipIfBreadcrumbExists
 }
 func AllocateData() *GlobalVars {
 	rval := new(GlobalVars)
@@ -86,21 +91,48 @@ func arePathsParallel(in, out string) bool {
 	}
 	return false
 }
-func makeDirAndInfoFile(dir string) {
+
+const BreadcrumbFN = "soxdata.txt"
+
+func (g GlobalVars) ifExistsBreadcrumbfile(dir string) bool {
+	fpath := filepath.Join(dir, BreadcrumbFN)
+	var err error
+	if _, err = os.Stat(fpath); err == nil {
+		return true // breadcrumb exists
+	}
+	if g.localFlags.Debug {
+		fmt.Printf("stat error: %s", err)
+	}
+	return false
+}
+func (g GlobalVars) makeDirAndInfoFile(dir string) {
 	err := os.MkdirAll(dir, 0777)
 	if err != nil {
 		panic(fmt.Sprintf("falled to make directory %s", dir))
 	}
-	fpath := filepath.Join(dir, "soxdata.txt")
-	file, err := os.Create(fpath)
-	file.Write(bytestamp)
-	file.Close()
+	fpath := filepath.Join(dir, BreadcrumbFN)
+	if g.ifExistsBreadcrumbfile(dir) {
+		// breadcrumb exists
+	} else {
+		file, err := os.Create(fpath) // breadcrumb file does *not* exist
+		if err != nil {
+			fmt.Printf("create error: %s", err)
+		}
+		file.Write(bytestamp)
+		file.Close()
+	}
 }
-func Files(verb, inpath, outpath, newExt string) (count int) {
+
+// process files, walking all of 'inpath' and creating the proper command
+// and arguments to execute the verb with the processed files going
+// to the parallel 'outpath' directory with the extension of 'newExt'
+// I expect that newExt will always be 'mp3' but lets see over time
+func (g *GlobalVars) Files(verb, inpath, outpath, newExt string) (count int) {
 	if !(verb == "ffmpeg" || verb == "sox") {
 		fmt.Printf("unsupported verb: %s\n", verb)
 		return 0
 	}
+	var songCount int
 	if newExt == "" {
 		fmt.Printf("empty extension not supported\n")
 		return 0
@@ -135,10 +167,21 @@ func Files(verb, inpath, outpath, newExt string) (count int) {
 		if !ExtRegex.MatchString(p) {
 			return nil
 		}
+
+		if songCount++; songCount%500 == 0 {
+			fmt.Printf("echo \"processing %d\"\n", songCount)
+		}
+
 		newP := ExtRegex.ReplaceAllString(p, newExt)
-		count++
+
 		dir, fn := filepath.Split(filepath.Clean(filepath.Join(outpath, newP)))
-		makeDirAndInfoFile(dir)
+		if g.ifExistsBreadcrumbfile(dir) {
+			if g.localFlags.SkipIfBreadcrumbExists {
+				return nil
+			}
+		}
+		g.makeDirAndInfoFile(dir)
+		count++
 		useIn := filepath.Join(inpath, p)
 		useOut := filepath.Join(dir, fn)
 		switch verb {
