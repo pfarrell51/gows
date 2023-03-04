@@ -141,6 +141,10 @@ func (g *GlobalVars) WalkFiles(pathArg string) {
 	var oldDir string
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			fmt.Printf("Oh No, can't process because %s\n", err)
+			return err
+		}
 		if d.IsDir() {
 			return nil
 		}
