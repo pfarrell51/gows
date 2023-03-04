@@ -76,19 +76,14 @@ func main() {
 		inpathArg = path.Clean(flag.Arg(1))
 		outpathArg = path.Clean(flag.Arg(2))
 		ext = strings.TrimSpace(flag.Arg(3))
-		if strings.HasPrefix(inpathArg, "-") {
-			fmt.Printf("WARNING, switches must be before the verb, %s ignored\n", inpathArg)
-			flag.Usage()
-			return
-		}
-		if strings.HasPrefix(outpathArg, "-") {
-			fmt.Printf("WARNING, switches must be before the verb, %s ignored\n", outpathArg)
+		if strings.HasPrefix(inpathArg, "-") || strings.HasPrefix(outpathArg, "-") {
+			fmt.Printf("WARNING, switches must be before the verb, %s i%s ignored\n", inpathArg, outpathArg)
 			flag.Usage()
 			return
 		}
 	}
 	if globals.Flags().Debug {
-		fmt.Printf("v: %s i: %s  o: %s\n", verb, inpathArg, outpathArg)
+		fmt.Printf("#v: %s i: %s  o: %s\n", verb, inpathArg, outpathArg)
 	}
 	numDone := globals.Files(verb, inpathArg, outpathArg, ext)
 	fmt.Printf("#%d\n", numDone)
