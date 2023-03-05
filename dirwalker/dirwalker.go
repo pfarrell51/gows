@@ -110,6 +110,9 @@ func (g GlobalVars) makeDirAndInfoFile(dir string) {
 	if err != nil {
 		panic(fmt.Sprintf("falled to make directory %s", dir))
 	}
+	if g.verb == "ffmpeg" {
+		return
+	}
 	fpath := filepath.Join(dir, BreadcrumbFN)
 	if g.ifExistsBreadcrumbfile(dir) {
 		// breadcrumb exists
@@ -132,6 +135,7 @@ func (g *GlobalVars) Files(verb, inpath, outpath, newExt string) (count int) {
 		fmt.Printf("unsupported verb: %s\n", verb)
 		return 0
 	}
+	g.verb = verb
 	var songCount int
 	if verb == "ffmpeg" && newExt == "" {
 		fmt.Printf("empty extension not supported\n")
