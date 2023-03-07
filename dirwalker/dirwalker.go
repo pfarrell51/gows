@@ -54,11 +54,11 @@ var ExtRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 //	[soft-knee-dB:]in-dB1[,out-dB1]{,in-dB2,out-dB2}
 //	[gain [initial-volume-dB [delay]]]
 const verbosity = " -V2"
-const norm = "-v 0.98  --norm -G"
+const norm = " --norm " // = "-v 0.98  --norm -G"
 const attackDelay = "0.3,1"
 const softKnee = "6" // from https://sox.sourceforge.net/sox.html
 const transferFun = "-70,-60,-20"
-const makeupGain = "-4"
+const makeupGain = "-8"
 const initialVolume = "-90"
 const delay = "0.2"
 const soxParams = verbosity + norm + attackDelay + softKnee + ":" + transferFun + " " + makeupGain + initialVolume + delay
