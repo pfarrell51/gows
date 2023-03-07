@@ -50,6 +50,7 @@ type PairSongs struct {
 }
 type FlagST struct {
 	CopyAlbumInTrackOrder bool
+	CpuProfile            string
 	CSV                   bool
 	Debug                 bool
 	DoInventory           bool
@@ -59,6 +60,7 @@ type FlagST struct {
 	DupTitleAlbumArtist   bool
 	JsonOutput            bool
 	JustList              bool
+	MemProfile            string
 	NoGroup               bool
 	NoTags                bool
 	ShowArtistNotInMap    bool
@@ -87,19 +89,21 @@ type GlobalVars struct {
 func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags = new(FlagST)
 	g.localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
+	g.localFlags.CpuProfile = f.CpuProfile
 	g.localFlags.CSV = f.CSV
 	g.localFlags.Debug = f.Debug
 	g.localFlags.DupJustTitle = f.DupJustTitle
 	g.localFlags.DupTitleAlbumArtist = f.DupTitleAlbumArtist
-	g.localFlags.ShowArtistNotInMap = f.ShowArtistNotInMap
 	g.localFlags.DoRename = f.DoRename
 	g.localFlags.DoInventory = f.DoInventory
 	g.localFlags.DoSummary = f.DoSummary
 	g.localFlags.NoTags = f.NoTags
 	g.localFlags.JsonOutput = f.JsonOutput
 	g.localFlags.JustList = f.JustList
+	g.localFlags.MemProfile = f.MemProfile
 	g.localFlags.NoGroup = f.NoGroup
 	g.localFlags.NoTags = f.NoTags
+	g.localFlags.ShowArtistNotInMap = f.ShowArtistNotInMap
 	g.localFlags.ShowNoSongs = f.ShowNoSongs
 	g.localFlags.ZDumpArtist = f.ZDumpArtist
 }
