@@ -66,5 +66,8 @@ will do the same, outputting the list in .csv (comma separated values) so the re
 
      mm/mm -i -csv -sn directory-spec
 will show no song titles, i.e. just the artist and album name.
-This is handy when you want to compare you inventory to your physical collection of CDs in a box somewhere
+This is handy when you want to compare you inventory to your physical collection of CDs in a box somewhere.
+And if you pipe it to a file, you can load the data into your favorite spreadsheet.
+     mm/mm -i -csv -sn directory-spec  > inventory.csv
+
 
