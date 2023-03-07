@@ -38,6 +38,7 @@ func main() {
 	var helpflag bool
 
 	var flags = new(tagtool.FlagST)
+	flag.StringVar(&flags.CpuProfile, "cpuprofile", "", "write cpu profile to `file`")
 	flag.BoolVar(&flags.CSV, "csv", false, "output CSV format")
 	flag.BoolVar(&flags.CopyAlbumInTrackOrder, "c", false, "Album track order - output cp command in track order")
 	flag.BoolVar(&flags.Debug, "de", false, "debug on")
@@ -49,6 +50,7 @@ func main() {
 	flag.BoolVar(&helpflag, "h", false, "help")
 	flag.BoolVar(&flags.JsonOutput, "j", false, "output metadata as json")
 	flag.BoolVar(&flags.JustList, "l", false, "list - list files")
+	flag.StringVar(&flags.MemProfile, "memprofile", "", "write memory profile to `file`")
 	flag.BoolVar(&flags.NoGroup, "ng", false, "nogroup - list files that do not have an artist/group in the title")
 	flag.BoolVar(&flags.NoTags, "nt", false, "notags - list files that do not have any meta tags")
 	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (gpmap)")
