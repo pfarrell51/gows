@@ -207,10 +207,10 @@ func AllocateData() *GlobalVars {
 	rval.songCountTree = avl.New[string, int](generic.Less[string])
 	rval.gptree = btree.New[string, string](generic.Less[string])
 	rval.songTree = make(map[string]Song)
-	rval.tracksongs = make([]TrackSong, 0, 50)
-	rval.dupSongs = make([]PairSongs, 0, 50)
-	rval.invTriples = make([]InventorySong, 0, 100)
-	rval.knownIds = make(map[string]bool)
+	rval.tracksongs = make([]TrackSong, 0, 1500)
+	rval.dupSongs = make([]PairSongs, 0, 1500)
+	rval.invTriples = make([]InventorySong, 0, 1000)
+	rval.knownIds = make(map[string]bool, 1000)
 	if rval.localFlags == nil {
 		fmt.Println("PIB in allocate Data, localflags is nil")
 	}
@@ -225,7 +225,7 @@ func (g *GlobalVars) loadArtistMap() {
 	if g.gptree.Size() > 0 {
 		panic("PIB group/artist array already populated")
 	}
-	var artists []string
+	artists := make([]string, 0, 600)
 	// Initialize the scanner.
 	var s scanner.Scanner
 	fset := token.NewFileSet()                              // positions are relative to fset
