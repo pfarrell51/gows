@@ -12,7 +12,7 @@ import (
 )
 
 func usagePrint() {
-	fmt.Printf("Usage: %s [flags] verb in-directory-spec out-direcctory-spec \n", os.Args[0])
+	fmt.Printf("Usage: %s [flags] in-directory-spec out-direcctory-spec \n", os.Args[0])
 	fmt.Printf(" a quick copy, like rsync, but tuned for writing to flash USB drives\n")
 }
 
