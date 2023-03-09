@@ -5,8 +5,12 @@
 package msync
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
+	"io"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -117,6 +121,7 @@ func (g *GlobalVars) WalkDirectories(inpath, outpath string) {
 	g.outPath = outpath
 	var oldOutDir string
 	var sumLines = make([]string, 10)
+	hasher := sha256.New()
 	fsys := os.DirFS(inpath)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -157,7 +162,17 @@ func (g *GlobalVars) WalkDirectories(inpath, outpath string) {
 		count++
 		useIn := filepath.Join(inpath, p)
 		useOut := filepath.Join(dir, fn)
-		fmt.Printf("i: %s, o: %s\n", useIn, useOut)
+		fmt.Printf("i: %s, o: %s", useIn, useOut)
+		f, err := os.Open(useIn)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		if _, err := io.Copy(hasher, f); err != nil {
+			log.Fatal(err)
+		}
+		result := hasher.Sum(nil)
+		fmt.Printf(" %x   %s\n", result, base64.StdEncoding.EncodeToString(result))
 		return nil
 	})
 	return
