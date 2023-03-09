@@ -206,7 +206,7 @@ func AllocateData() *GlobalVars {
 	rval.albumCountTree = avl.New[string, int](generic.Less[string])
 	rval.songCountTree = avl.New[string, int](generic.Less[string])
 	rval.gptree = btree.New[string, string](generic.Less[string])
-	rval.songTree = make(map[string]Song)
+	rval.songTree = make(map[string]Song, 1000)
 	rval.tracksongs = make([]TrackSong, 0, 1500)
 	rval.dupSongs = make([]PairSongs, 0, 1500)
 	rval.invTriples = make([]InventorySong, 0, 1000)
