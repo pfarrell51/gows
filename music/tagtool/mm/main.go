@@ -40,6 +40,7 @@ func main() {
 	var flags = new(tagtool.FlagST)
 	flag.StringVar(&flags.CpuProfile, "cpuprofile", "", "write cpu profile to `file`")
 	flag.BoolVar(&flags.CSV, "csv", false, "output CSV format")
+	flag.BoolVar(&flags.CompareTagsToTitle, "ctt", false, "compare Tags to Title")
 	flag.BoolVar(&flags.CopyAlbumInTrackOrder, "c", false, "Album track order - output cp command in track order")
 	flag.BoolVar(&flags.Debug, "de", false, "debug on")
 	flag.BoolVar(&flags.DoInventory, "i", false, "inventory - basic inventory")

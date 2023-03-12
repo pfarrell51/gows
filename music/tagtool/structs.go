@@ -49,6 +49,7 @@ type PairSongs struct {
 	b *Song
 }
 type FlagST struct {
+	CompareTagsToTitle    bool
 	CopyAlbumInTrackOrder bool
 	CpuProfile            string
 	CSV                   bool
@@ -88,6 +89,7 @@ type GlobalVars struct {
 // copy user set flags to a local store
 func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags = new(FlagST)
+	g.localFlags.CompareTagsToTitle = f.CompareTagsToTitle
 	g.localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
 	g.localFlags.CpuProfile = f.CpuProfile
 	g.localFlags.CSV = f.CSV
