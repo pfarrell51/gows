@@ -57,6 +57,9 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 		return nil // not interesting extension
 	}
 	rSong, _ := g.processSong(p)
+	if rSong == nil {
+		panic(fmt.Sprintf("processfile srong %s resulted in nil Song", p))
+	}
 	g.getSong(rSong)
 	return nil
 }
@@ -70,9 +73,15 @@ func (g *GlobalVars) processSong(p string) (*Song, error) {
 	if err != nil {
 		return nil, err
 	}
+	if aSong == nil {
+		panic(fmt.Sprintf("song %s resulted in nil Song", p))
+	}
 	return aSong, nil
 }
 func (g *GlobalVars) getSong(aSong *Song) {
+	if aSong == nil {
+		panic(fmt.Sprintf("getsong has nil Song"))
+	}
 	g.songsProcessed++
 	key, _ := EncodeTitle(aSong.Title)
 	combKey := key
@@ -270,6 +279,8 @@ func (g *GlobalVars) ProcessMap() {
 			fmt.Printf("PIB, countsongs too big %d > %d for %s\n", countSongs, g.songsProcessed, aSong.inPath)
 		}
 		switch {
+		case g.Flags().CompareTagsToTitle:
+			g.doCompareTagsToTitle(aSong)
 		case g.Flags().DoRename:
 			g.outputRenameCommand(&aSong)
 		case g.Flags().JustList:
@@ -325,7 +336,29 @@ func (g *GlobalVars) ProcessMap() {
 		g.doSummary()
 	}
 }
-
+func (g *GlobalVars) doCompareTagsToTitle(aSong Song) {
+	dir, fn := path.Split(aSong.inPath)
+	fname := strings.TrimSuffix(fn, filepath.Ext(fn))
+	var ttl, art string
+	if strings.Contains(fname, ";") {
+		parts := strings.Split(fname, ";")
+		if parts == nil || len(parts) == 0 {
+			panic("file name has no parts but has a ;")
+		}
+		ttl = parts[0]
+		art = parts[1]
+	} else {
+		ttl = fname
+	}
+	var disTTL, disART int
+	disTTL = levenshtein.DistanceForStrings([]rune(ttl), []rune(aSong.Title), levenshtein.DefaultOptions)
+	if art != "" {
+		disART = levenshtein.DistanceForStrings([]rune(art), []rune(aSong.Artist), levenshtein.DefaultOptions)
+	}
+	if disTTL > 4 || disART > 4 {
+		fmt.Printf(" dT: %d, dA: %d, d: %s  fn:%s\n", disTTL, disART, dir, fn)
+	}
+}
 func (g *GlobalVars) doInventory() {
 	g.PrintTrpleSortedSongs()
 }
