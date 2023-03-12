@@ -14,12 +14,13 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"time"
 )
 
 type FlagST struct {
-	Debug bool
+	Debug      bool
+	ProfileCPU bool
+	ProfileMEM bool
 }
 type GlobalVars struct {
 	inPath     string
@@ -36,6 +37,8 @@ func (g *GlobalVars) Flags() *FlagST {
 func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags = new(FlagST)
 	g.localFlags.Debug = f.Debug
+	g.localFlags.ProfileCPU = f.ProfileCPU
+	g.localFlags.ProfileMEM = f.ProfileMEM
 }
 func AllocateData() *GlobalVars {
 	rval := new(GlobalVars)
@@ -50,31 +53,6 @@ var currentTime = time.Now().String()
 var bytestamp = []byte(" " + currentTime + "\n")
 
 const SumFN = "msync.txt"
-const pathSep = string(os.PathSeparator)
-
-func arePathsParallel(in, out string) bool {
-	if in == out {
-		return true
-	}
-	partsIn := strings.Split(in, pathSep)
-	partsOut := strings.Split(out, pathSep)
-	if len(partsIn) != len(partsOut) {
-		return false
-	}
-	var cDiff int
-	for i := 0; i < len(partsIn); i++ {
-		if partsIn[i] != partsOut[i] {
-			cDiff++
-		}
-		if cDiff > 1 {
-			return false
-		}
-	}
-	if cDiff == 1 {
-		return true
-	}
-	return false
-}
 
 func (g GlobalVars) ifExistsBreadcrumbfile(dir string) bool {
 	fpath := filepath.Join(dir, SumFN)
@@ -104,7 +82,8 @@ func (g GlobalVars) makeDirAndInfoFile(dir string) {
 		file.Close()
 	}
 }
-func writeDirSumFile(g *GlobalVars, sumLines []string) {
+func writeDirSumFile(g *GlobalVars, path string, sumLines []string) {
+	fmt.Printf("wDSF %s, %d\n", path, len(sumLines))
 }
 
 // process files, walking all of 'inpath' and creating the proper command
@@ -113,32 +92,31 @@ func writeDirSumFile(g *GlobalVars, sumLines []string) {
 // I expect that newExt will always be 'mp3' but lets see over time
 func (g *GlobalVars) WalkDirectories(inpath, outpath string) {
 	var count int
-	if !arePathsParallel(inpath, outpath) {
-		fmt.Printf("input and output paths not parallel,\n%s != \n%s\n", inpath, outpath)
-		return
-	}
 	g.inPath = inpath
 	g.outPath = outpath
-	var oldOutDir string
-	var sumLines = make([]string, 10)
-	hasher := sha256.New()
+	var oldInDir string
+	var sumLines = make([]string, 0, 10)
+	hDir := sha256.New()
 	fsys := os.DirFS(inpath)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			fmt.Println(err)
 			return err
 		}
-
-		t := filepath.Clean(filepath.Join(outpath, p))
-		dir, fn := filepath.Split(t)
+		t := filepath.Clean(filepath.Join(inpath, p))
+		dir, _ := filepath.Split(t)
+		fmt.Printf("t: %s  dir: %s\n", t, dir)
 		if d.IsDir() {
 			g.walkedDir = append(g.walkedDir, dir)
 		}
-		if dir != oldOutDir {
-			writeDirSumFile(g, sumLines)
-			oldOutDir = dir
-			sumLines = make([]string, 10)
+		if dir != oldInDir {
+			fmt.Printf("# oldIn: %s, current: %s\n", oldInDir, dir)
+			writeDirSumFile(g, t, sumLines)
+			oldInDir = dir
+			sumLines = make([]string, 0, 10)
+			hDir = sha256.New()
 		}
+		hFile := sha256.New()
 		//g.makeDirAndInfoFile(dir)
 		if g.ifExistsBreadcrumbfile(dir) {
 			if g.Flags().Debug {
@@ -148,32 +126,35 @@ func (g *GlobalVars) WalkDirectories(inpath, outpath string) {
 		if !ExtRegex.MatchString(p) {
 			return nil
 		}
-
 		if count++; count%500 == 0 {
 			fmt.Printf("echo \"processing %d\"\n", count)
 		}
-
 		if g.ifExistsBreadcrumbfile(dir) {
 			if g.Flags().Debug {
 				fmt.Printf("#breadcrumb found, skipping directory %s\n", dir)
 			}
 		}
-
 		count++
 		useIn := filepath.Join(inpath, p)
-		useOut := filepath.Join(dir, fn)
-		fmt.Printf("i: %s, o: %s", useIn, useOut)
+		//	useOut := filepath.Join(dir, fn)
 		f, err := os.Open(useIn)
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer f.Close()
-		if _, err := io.Copy(hasher, f); err != nil {
+		if _, err := io.Copy(hFile, f); err != nil {
 			log.Fatal(err)
 		}
-		result := hasher.Sum(nil)
-		fmt.Printf(" %x   %s\n", result, base64.StdEncoding.EncodeToString(result))
+		result := hFile.Sum(nil)
+		fmt.Fprintf(hDir, "%x  %s\n", result, useIn) // add in line to hDir (whole directory hash)
+		nameSum := fmt.Sprintf("%s %s", useIn, base64.StdEncoding.EncodeToString(result))
+		sumLines = append(sumLines, nameSum)
 		return nil
 	})
+	fmt.Printf("%d\n", len(sumLines))
+	for _, l := range sumLines {
+		fmt.Printf("%s\n", l)
+	}
+	fmt.Printf("hDir: %s\n", base64.StdEncoding.EncodeToString(hDir.Sum(nil)))
 	return
 }
