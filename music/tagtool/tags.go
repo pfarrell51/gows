@@ -39,6 +39,9 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 		fmt.Printf("%v %s", err, rval.Title)
 		return nil, err
 	}
+	if m == nil {
+		fmt.Printf("tag.ReadFrom (file) turned nil but no error for %s\n", p)
+	}
 	rval.Title = StandardizeTitle(m.Title()) // The title of the track (see Metadata interface for more details).
 	if strings.Contains(rval.Title, "/") {
 		rval.Title = strings.ReplaceAll(rval.Title, "/", " ")
