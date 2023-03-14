@@ -37,6 +37,7 @@ func main() {
 	flag.BoolVar(&helpflag, "h", false, "help")
 	flag.BoolVar(&flags.ProfileCPU, "profcpu", false, "turn on profiling for CPU")
 	flag.BoolVar(&flags.ProfileMEM, "profmem", false, "turn on profiling for memory usage")
+	flag.BoolVar(&flags.Verify, "v", false, "verify music file hash vs contents of msync.txt")
 	flag.Parse()
 	if helpflag {
 		flag.Usage()
@@ -47,9 +48,11 @@ func main() {
 
 	var inpathArg, outpathArg string
 	switch {
-	case numArgs < 2:
+	case numArgs < 1:
 		flag.Usage()
 		return
+	case numArgs == 1:
+		inpathArg = path.Clean(flag.Arg(0))
 	case numArgs >= 2:
 		inpathArg = path.Clean(flag.Arg(0))
 		outpathArg = path.Clean(flag.Arg(1))
@@ -63,7 +66,7 @@ func main() {
 		fmt.Printf("i: %s  o: %s\n", inpathArg, outpathArg)
 	}
 	if globals.Flags().ProfileCPU {
-		defer profile.Start(profile.CPUProfile, // profile.ProfilePath(os.Getenv("HOME")),
+		defer profile.Start(profile.CPUProfile, profile.ProfilePath(os.Getenv("HOME")),
 			profile.NoShutdownHook)
 	}
 	globals.WalkDirectories(inpathArg, outpathArg)
