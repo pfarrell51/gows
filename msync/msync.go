@@ -79,13 +79,15 @@ func (hd *HashedDir) String() string {
 	if hd.t.Before(LastCentury) {
 		hd.t = time.Now()
 	}
-
-	rval.WriteString(fmt.Sprintf("%s\n", hd.t.In(UTCloc).Format(time.RFC822)))
-	rval.WriteString(fmt.Sprintf("%s %d\n", hd.p, hd.n))
+	rval.WriteString(fmt.Sprintf("A%s\n", hd.t.In(UTCloc).Format(time.RFC822)))
+	rval.WriteString(fmt.Sprintf("A%s %d\n", hd.p, hd.n))
 	for i := 0; i < hd.n; i++ {
-		rval.WriteString(hd.lines[i].String())
+		rval.WriteString(fmt.Sprintf("A%s", hd.lines[i].String()))
 	}
-	rval.WriteString(fmt.Sprintf("%s\n", hd.dirHash))
+	if hd.dirHash == "" {
+		fmt.Printf("*** empty dirHash %s\n", hd.p)
+	}
+	rval.WriteString(fmt.Sprintf("AdirH: %s\n", hd.dirHash))
 	return rval.String()
 }
 
@@ -210,7 +212,7 @@ func writeDirSumFile(g *GlobalVars, path string, sumLines []string, hs string) {
 	fmt.Printf("%s", t)
 	fmt.Fprintf(file, "%s", t)
 	for _, l := range sumLines {
-		t = fmt.Sprintf("wDSD %s\n", l)
+		t = fmt.Sprintf("w %s\n", l)
 		fmt.Printf("%s", t)
 		fmt.Fprintf(file, "%s", t)
 	}
@@ -248,6 +250,7 @@ func (g *GlobalVars) WalkInputDirectories(inp string) {
 				if oldInDir != "" {
 					dH := base64.StdEncoding.EncodeToString(hashedDirEntries.Sum(nil))
 					writeDirSumFile(g, oldInDir, sumLines, dH)
+					hsDir.dirHash = dH
 					fmt.Printf(hsDir.String())
 				}
 				oldInDir = joined
@@ -278,12 +281,13 @@ func (g *GlobalVars) WalkInputDirectories(inp string) {
 		fileHash := base64.StdEncoding.EncodeToString(result)
 		fmt.Fprintf(hashedDirEntries, "%x  %s\n", result, joined) // add in line to hashedDirEntries (whole directory hash)
 		hsDir.addHash(joined, fileHash)
-		nameSum := fmt.Sprintf("nameSum: %s %s", joined, fileHash)
+		nameSum := fmt.Sprintf("%s %s", joined, fileHash)
 		sumLines = append(sumLines, nameSum)
 		return nil
 	})
 	fmt.Println("#falling out of dir walk, last line")
 	dirH := base64.StdEncoding.EncodeToString(hashedDirEntries.Sum(nil))
+	hsDir.dirHash = dirH
 	writeDirSumFile(g, oldInDir, sumLines, dirH)
 	fmt.Printf("final hashedDir\n%s\n", hsDir.String())
 	return
