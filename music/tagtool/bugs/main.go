@@ -26,10 +26,13 @@ func main() {
 
 	m, err := tag.ReadFrom(file)
 	if err != nil {
-		fmt.Printf("%v", err)
+		// Deliberately don't print anything.  If the lilbrary is printing
+		// the error we should see it.
+		//fmt.Printf("%v", err)
 		return
 	}
 	if m == nil {
 		fmt.Printf("tag.ReadFrom (file) turned nil but no error for %s\n", arg)
 	}
+	fmt.Println("Got to the end") // Print this if we get to the end
 }
