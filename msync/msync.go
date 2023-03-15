@@ -9,13 +9,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"hash"
 	"io"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -35,8 +35,58 @@ type GlobalVars struct {
 	cacheRval  bool
 }
 
+// holds one line with the p path to of the file and h hash value
+type HashLine struct {
+	p string
+	h string
+}
+type HashedDir struct {
+	p       string
+	t       time.Time
+	n       int        // number of music files
+	lines   []HashLine // one for each music file
+	dirHash string     // hash of contained Hashlines
+}
+
+var ExtRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
+
+const PermBitsFile = 0766 // unix style permissions for txt file
+const PermBitsDir = 0777  // unix style permissions for directory
+const SumFN = "msync.sum"
+
+var UTCloc, _ = time.LoadLocation("UTC")
+var LastCentury = time.Date(1999, time.December, 31, 0, 0, 0, 0, time.UTC)
+
+func (hl *HashLine) String() string {
+	return hl.p + " " + hl.h + "\n"
+}
+func newHashedDir() *HashedDir {
+	var rval = new(HashedDir)
+	rval.lines = make([]HashLine, 0, 15)
+	return rval
+}
 func (g *GlobalVars) Flags() *FlagST {
 	return g.localFlags
+}
+func (hd *HashedDir) addHash(p, h string) {
+	hl := HashLine{p: p, h: h}
+	hd.lines = append(hd.lines, hl)
+	hd.n++
+}
+
+func (hd *HashedDir) String() string {
+	var rval strings.Builder
+	if hd.t.Before(LastCentury) {
+		hd.t = time.Now()
+	}
+
+	rval.WriteString(fmt.Sprintf("%s\n", hd.t.In(UTCloc).Format(time.RFC822)))
+	rval.WriteString(fmt.Sprintf("%s %d\n", hd.p, hd.n))
+	for i := 0; i < hd.n; i++ {
+		rval.WriteString(hd.lines[i].String())
+	}
+	rval.WriteString(fmt.Sprintf("%s\n", hd.dirHash))
+	return rval.String()
 }
 
 // copy user set flags to a local store
@@ -54,11 +104,6 @@ func AllocateData() *GlobalVars {
 	rval.location, _ = time.LoadLocation("UTC")
 	return rval
 }
-
-var ExtRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
-
-const PermBits = 0766 // unix style permissions
-const SumFN = "msync.txt"
 
 func (g *GlobalVars) getBytestamp() []byte {
 	s := g.toUTC(time.Now())
@@ -118,7 +163,7 @@ func (g GlobalVars) ifExistsBreadcrumbfile(dir string) bool {
 }
 
 func (g GlobalVars) makeDirAndInfoFile(dir string) {
-	err := os.MkdirAll(dir, 0777)
+	err := os.MkdirAll(dir, PermBitsDir)
 	if err != nil {
 		panic(fmt.Sprintf("falled to make directory %s", dir))
 	}
@@ -128,7 +173,7 @@ func (g GlobalVars) makeDirAndInfoFile(dir string) {
 	} else {
 		fmt.Printf("mDIF will touch %s\n", fpath)
 		// breadcrumb file does *not* exist
-		file, err := os.OpenFile(fpath, os.O_RDWR|os.O_CREATE|os.O_EXCL, PermBits)
+		file, err := os.OpenFile(fpath, os.O_RDWR|os.O_CREATE|os.O_EXCL, PermBitsFile)
 		if err != nil {
 			fmt.Printf("create error: %s", err)
 		}
@@ -136,7 +181,7 @@ func (g GlobalVars) makeDirAndInfoFile(dir string) {
 		file.Close()
 	}
 }
-func writeDirSumFile(g *GlobalVars, path string, sumLines []string, h hash.Hash) {
+func writeDirSumFile(g *GlobalVars, path string, sumLines []string, hs string) {
 	info, err := os.Stat(path) // warning for possible race condition
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -150,7 +195,7 @@ func writeDirSumFile(g *GlobalVars, path string, sumLines []string, h hash.Hash)
 		return
 	}
 	fpath := filepath.Join(path, SumFN)
-	file, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE, PermBits)
+	file, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE, PermBitsFile)
 	if err != nil {
 		fmt.Printf("create error: %s", err)
 		file.Close()
@@ -169,7 +214,7 @@ func writeDirSumFile(g *GlobalVars, path string, sumLines []string, h hash.Hash)
 		fmt.Printf("%s", t)
 		fmt.Fprintf(file, "%s", t)
 	}
-	t = fmt.Sprintf("hDir %s\n", base64.StdEncoding.EncodeToString(h.Sum(nil)))
+	t = fmt.Sprintf("hDir %s\n", hs) //base64.StdEncoding.EncodeToString(h.Sum(nil)))
 	fmt.Printf("%s", t)
 	fmt.Fprintf(file, "%s", t)
 }
@@ -188,7 +233,8 @@ func (g *GlobalVars) WalkInputDirectories(inp string) {
 	var count int
 	var oldInDir string
 	var sumLines = make([]string, 0, 10)
-	hDir := sha256.New()
+	hsDir := newHashedDir()
+	hashedDirEntries := sha256.New()
 	fsys := os.DirFS(inp)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -200,11 +246,16 @@ func (g *GlobalVars) WalkInputDirectories(inp string) {
 			g.walkedDir = append(g.walkedDir, joined)
 			if joined != oldInDir {
 				if oldInDir != "" {
-					writeDirSumFile(g, oldInDir, sumLines, hDir)
+					dH := base64.StdEncoding.EncodeToString(hashedDirEntries.Sum(nil))
+					writeDirSumFile(g, oldInDir, sumLines, dH)
+					fmt.Printf(hsDir.String())
 				}
 				oldInDir = joined
 				sumLines = make([]string, 0, 10)
-				hDir = sha256.New()
+				hashedDirEntries = sha256.New()
+				hsDir = newHashedDir()
+				hsDir.p = joined
+				hsDir.t = time.Now()
 			}
 		}
 		if !ExtRegex.MatchString(p) {
@@ -224,12 +275,16 @@ func (g *GlobalVars) WalkInputDirectories(inp string) {
 			log.Fatal(err)
 		}
 		result := hFile.Sum(nil)
-		fmt.Fprintf(hDir, "%x  %s\n", result, joined) // add in line to hDir (whole directory hash)
-		nameSum := fmt.Sprintf("nameSum: %s %s", joined, base64.StdEncoding.EncodeToString(result))
+		fileHash := base64.StdEncoding.EncodeToString(result)
+		fmt.Fprintf(hashedDirEntries, "%x  %s\n", result, joined) // add in line to hashedDirEntries (whole directory hash)
+		hsDir.addHash(joined, fileHash)
+		nameSum := fmt.Sprintf("nameSum: %s %s", joined, fileHash)
 		sumLines = append(sumLines, nameSum)
 		return nil
 	})
 	fmt.Println("#falling out of dir walk, last line")
-	writeDirSumFile(g, oldInDir, sumLines, hDir)
+	dirH := base64.StdEncoding.EncodeToString(hashedDirEntries.Sum(nil))
+	writeDirSumFile(g, oldInDir, sumLines, dirH)
+	fmt.Printf("final hashedDir\n%s\n", hsDir.String())
 	return
 }
