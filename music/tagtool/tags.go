@@ -46,7 +46,6 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 	if strings.Contains(rval.Title, "/") {
 		rval.Title = strings.ReplaceAll(rval.Title, "/", " ")
 	}
-	//fmt.Printf("in GMD, title is %s for %s\n", rval.Title, rval.inPath)
 	rval.titleH, _ = EncodeTitle(rval.Title)
 	rval.Artist = StandardizeArtist(m.Artist())
 	rval.Album = m.Album()
