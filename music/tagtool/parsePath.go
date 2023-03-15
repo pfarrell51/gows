@@ -58,7 +58,8 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 	}
 	rSong, _ := g.processSong(p)
 	if rSong == nil {
-		panic(fmt.Sprintf("processfile srong %s resulted in nil Song", p))
+		fmt.Printf("#processfile srong %s resulted in nil Song", p)
+		return nil
 	}
 	g.getSong(rSong)
 	return nil
