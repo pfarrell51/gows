@@ -1,3 +1,4 @@
+// encodings
 package tagtool
 
 import (
@@ -55,6 +56,41 @@ func PrintCSVtoWriter(w io.Writer, m map[string]Song) {
 	for _, song := range songs {
 		if err := cw.Write(song); err != nil {
 			log.Fatalln("error writing record to csv:", err)
+		}
+	}
+	cw.Flush() // Write any buffered data to the underlying writer (standard output).
+	if err := cw.Error(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// generate CSV from song map, output to stdout
+func (g *GlobalVars) PrintSortedSongsCSV(showNoSongs bool) {
+	PrintSortedCSVtoWriter(os.Stdout, g.invTriples, showNoSongs)
+}
+
+// generate CSV from song map, output to writer
+func PrintSortedCSVtoWriter(w io.Writer, songs []InventorySong, showNoSongs bool) {
+	var oldArtist, oldAlbum string
+	cw := csv.NewWriter(w)
+	for _, song := range songs {
+		var aSong []string
+		if showNoSongs {
+			if song.artist != oldArtist || song.album != oldAlbum {
+				aSong = append(aSong, song.artist)
+				aSong = append(aSong, song.album)
+				oldArtist = song.artist
+				oldAlbum = song.album
+			}
+		} else {
+			aSong = append(aSong, song.artist)
+			aSong = append(aSong, song.album)
+			aSong = append(aSong, song.title)
+		}
+		if len(aSong) > 0 {
+			if err := cw.Write(aSong); err != nil {
+				log.Fatalln("error writing record to csv:", err)
+			}
 		}
 	}
 	cw.Flush() // Write any buffered data to the underlying writer (standard output).
