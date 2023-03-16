@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -92,6 +93,31 @@ Elvis Presley,Forest Gump,Hound Dog,Rock,0,1957,
 	elines := splitLines(expected)
 	if !compareLineArrays(clines, elines) {
 		t.Errorf("did not match expected CSV")
+	}
+
+}
+func TestPrintSortedCSV(t *testing.T) {
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	var triParts []InventorySong
+	for _, s := range tsongs {
+		tP := InventorySong{artist: s.Artist}
+		triParts = append(triParts, tP)
+	}
+	sort.Sort(ByThree(triParts))
+	PrintSortedCSVtoWriter(w, triParts, true)
+	cs := b.String()
+	clines := splitLines(cs)
+	expected := `"Crosby, Still & Nash",Deja Vu,"Suite, Judy Blue Eyes",Rock,1,1969,
+Animals,Best of 60s,House of Rising Sun,Rock,0,1965,
+Heart,Dog & Butterfly,Baracuda,Rock,6,1980,
+Elvis Presley,Forest Gump,Hound Dog,Rock,0,1957,
+`
+	elines := splitLines(expected)
+	if !compareLineArrays(clines, elines) {
+		t.Errorf("did not match expected CSV")
+		fmt.Println(clines)
+		fmt.Println(elines)
 	}
 
 }
