@@ -361,7 +361,7 @@ func (g *GlobalVars) doCompareTagsToTitle(aSong Song) {
 	}
 }
 func (g *GlobalVars) doInventory() {
-	g.PrintTrpleSortedSongs()
+	g.PrintTripleSortedSongs()
 }
 func (g *GlobalVars) doSummary() {
 	if g.Flags().Debug {
