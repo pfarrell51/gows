@@ -102,7 +102,11 @@ func processMap(m map[string]string) map[string]string {
 		source, _ := m[k]
 		delete(m, k)
 		m[k] = source
-		fmt.Printf("%s%s %2s%02d%4s.mp4\n", cmd, source, firstChpt[0:2], cnum, firstChpt[2:6])
+		dest := fmt.Sprintf("%2s%02d%4s.MP4", firstChpt[0:2], cnum, firstChpt[2:6])
+		if source == dest {
+			cmd = "# "
+		}
+		fmt.Printf("%s%s %s\n", cmd, source, dest)
 	}
 	return m
 }
