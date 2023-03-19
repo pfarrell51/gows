@@ -18,6 +18,30 @@ type InventorySong struct {
 	title  string
 }
 
+// ByTrack implements sort.Interface for []TrackSong based on
+// the track number field.
+type ByTrack []TrackSong
+
+func (a ByTrack) Len() int           { return len(a) }
+func (a ByTrack) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a ByTrack) Less(i, j int) bool { return a[i].Track < a[j].Track }
+
+// ByTwo implements sort.Interface for []InventorySong based on artist & album fields.
+type ByTwo []InventorySong
+
+func (a ByTwo) Len() int      { return len(a) }
+func (a ByTwo) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a ByTwo) Less(i, j int) bool {
+	p, q := a[i].artist, a[j].artist
+	switch {
+	case p < q:
+		return true
+	case q < p:
+		return false
+	}
+	return a[i].album < a[j].album
+}
+
 // ByThree implements sort.Interface for []InventorySong based on the three fields.
 type ByThree []InventorySong
 
@@ -75,14 +99,6 @@ type TrackSong struct {
 func (p TrackSong) String() string {
 	return fmt.Sprintf("%s: %d", p.Path, p.Track)
 }
-
-// ByTrack implements sort.Interface for []TrackSong based on
-// the track number field.
-type ByTrack []TrackSong
-
-func (a ByTrack) Len() int           { return len(a) }
-func (a ByTrack) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ByTrack) Less(i, j int) bool { return a[i].Track < a[j].Track }
 
 func (g *GlobalVars) AddSongForTrackSort(a Song) {
 	g.tracksongs = append(g.tracksongs, TrackSong{a.Track, a.inPath})
