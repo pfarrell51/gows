@@ -18,6 +18,10 @@ type InventorySong struct {
 	title  string
 }
 
+func (s InventorySong) String() string {
+	return fmt.Sprintf("%s: %s -->  %s", s.artist, s.album, s.title)
+}
+
 // ByTrack implements sort.Interface for []TrackSong based on
 // the track number field.
 type ByTrack []TrackSong
