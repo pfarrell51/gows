@@ -65,17 +65,17 @@ func PrintCSVtoWriter(w io.Writer, m map[string]Song) {
 }
 
 // generate CSV from song map, output to stdout
-func (g *GlobalVars) PrintSortedSongsCSV(showNoSongs bool) {
-	PrintSortedCSVtoWriter(os.Stdout, g.invTriples, showNoSongs)
+func (g *GlobalVars) PrintSortedSongsCSV(suppressTitle bool) {
+	PrintSortedCSVtoWriter(os.Stdout, g.invTriples, suppressTitle)
 }
 
 // generate CSV from song map, output to writer
-func PrintSortedCSVtoWriter(w io.Writer, songs []InventorySong, showNoSongs bool) {
+func PrintSortedCSVtoWriter(w io.Writer, songs []InventorySong, suppressTitle bool) {
 	var oldArtist, oldAlbum string
 	cw := csv.NewWriter(w)
 	for _, song := range songs {
 		var aSong []string
-		if showNoSongs {
+		if suppressTitle {
 			if song.artist != oldArtist || song.album != oldAlbum {
 				aSong = append(aSong, song.artist)
 				aSong = append(aSong, song.album)
