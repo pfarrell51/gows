@@ -17,6 +17,7 @@ var m map[string]Song
 
 func init() {
 	tsongs = []Song{
+		Song{Artist: "Heart", Album: "Dreamboat Annie", Title: "Magic Man", Genre: "Rock", Disc: 1, DiscCount: 1, Track: 1, Year: 1976},
 		Song{Artist: "Heart", Album: "Dreamboat Annie", Title: "Crazy On You", Genre: "Rock", Disc: 1, DiscCount: 1, Track: 3, Year: 1976},
 		Song{Artist: "Elvis Presley", Album: "Forest Gump", Title: "Hound Dog", Genre: "Rock", Disc: 1, DiscCount: 2, Year: 1957},
 		Song{Artist: "Santana", Album: "All That I Am", Title: "Brown Skin Girl", Year: 2005, Genre: "Rock", Disc: 1, DiscCount: 1, Track: 11},
@@ -103,10 +104,10 @@ func compareLineArrays(a, b []string) bool {
 				if rv := compareLine(a[i], b[j]); rv == 0 {
 					matched++
 					foundA[i] = true
-					//fmt.Printf("matched! (%d) i: %d j: %d  %s\n", matched, i, j, b[j])
+					// fmt.Printf("matched! (%d) i: %d j: %d  %s\n", matched, i, j, b[j])
 					break
 				} else {
-					//fmt.Printf("cb) %d i: %d >%s< != \nj: %d >%s<\n", rv, i, a[i], j, b[j])
+					// fmt.Printf("cb) %d i: %d >%s< != \nj: %d >%s<\n", rv, i, a[i], j, b[j])
 				}
 			} else {
 				// ignore short line  fmt.Printf("b[j] >%s<\n", b[j])
@@ -114,8 +115,8 @@ func compareLineArrays(a, b []string) bool {
 		}
 	}
 	rval := la == matched
-	fmt.Printf("returning rval: %t, la: %d, lb: %d, matched: %d\n", rval, la, lb, matched)
-	fmt.Printf("foundA: %v\n", foundA)
+	//fmt.Printf("returning rval: %t, la: %d, lb: %d, matched: %d\n", rval, la, lb, matched)
+	//fmt.Printf("foundA: %v\n", foundA)
 	return rval
 }
 func TestPrintJson(t *testing.T) {
@@ -130,6 +131,7 @@ func TestPrintJson(t *testing.T) {
 ,{"Artist":"Animals","Album":"Best of 60s","Title":"House of Rising Sun","Genre":"Rock","Disc":1,"DiscCount":1,"Year":1965}
 ,{"Artist":"Heart","Album":"Dog \u0026 Butterfly","Title":"Baracuda","Genre":"Rock","Disc":1,"DiscCount":1,"Track":6,"Year":1980}
 ,{"Artist":"Heart","Album":"Dreamboat Annie","Title":"Crazy On You","Genre":"Rock","Disc":1,"DiscCount":1,"Track":3,"Year":1976}
+,{"Artist":"Heart","Album":"Dreamboat Annie","Title":"Magic Man","Genre":"Rock","Disc":1,"DiscCount":1,"Track":1,"Year":1976}
 ,{"Artist":"Elvis Presley","Album":"Forest Gump","Title":"Hound Dog","Genre":"Rock","Disc":1,"DiscCount":2,"Year":1957}
 `
 	elines := splitLines(expected)
@@ -140,7 +142,6 @@ func TestPrintJson(t *testing.T) {
 	}
 }
 func TestPrintCSV(t *testing.T) {
-	fmt.Println("TestPrintCSV")
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)
 	PrintCSVtoWriter(w, m)
@@ -150,6 +151,7 @@ func TestPrintCSV(t *testing.T) {
 Animals,Best of 60s,House of Rising Sun,Rock,0,1965,
 Heart,Dog & Butterfly,Baracuda,Rock,6,1980,
 Heart,Dreamboat Annie,Crazy On You,Rock,3,1976,
+Heart,Dreamboat Annie,Magic Man,Rock,1,1976,
 Elvis Presley,Forest Gump,Hound Dog,Rock,0,1957,
 Santana,All That I Am,Brown Skin Girl,Rock,11,2005,
 `
@@ -160,34 +162,71 @@ Santana,All That I Am,Brown Skin Girl,Rock,11,2005,
 		fmt.Printf("ex: %s\n", elines)
 	}
 }
-func TestPrintSortedCSV(t *testing.T) {
-	fmt.Println("TestPrintSortedCSV")
+func printAllTPlines(t []InventorySong) {
+	for i, v := range t {
+		fmt.Printf("%d  %s\n", i, v)
+	}
+}
+
+func TestPrintSortedCSVWithTitle(t *testing.T) {
+	var suppressTitles = false
+	//fmt.Printf("TestPrintSortedCSVwithTitles: %t\n", suppressTitles)
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)
 	var triParts []InventorySong
 	for _, s := range tsongs {
-		tP := InventorySong{artist: s.Artist, album: s.Album,
-			title: s.Title}
-		fmt.Printf("tp: %v ar: %s  al: %s, t:%s\n", tP, tP.artist, tP.album, tP.title)
+		tP := InventorySong{artist: s.Artist, album: s.Album, title: s.Title}
 		triParts = append(triParts, tP)
-		fmt.Printf("triP: %v %d\n", triParts, len(triParts))
 	}
-	fmt.Println()
+
 	sort.Sort(ByThree(triParts))
-	PrintSortedCSVtoWriter(w, triParts, false)
+	PrintSortedCSVtoWriter(w, triParts, suppressTitles)
 	cs := b.String()
+	//	fmt.Printf("cs before split: %s\n", cs)
 	clines := splitLines(cs)
-	expected := `Animals,Best of 60s,House of Rising Sun,
-"Crosby, Still & Nash",Deja Vu,"Suite, Judy Blue Eyes",
-Elvis Presley,Forest Gump,Hound Dog,
-Heart,Dog & Butterfly,Baracuda,
-Heart,Dreamboat Annie,Crazy On You,
-Santana, All That I Am,
+	expected := `Animals,Best of 60s,House of Rising Sun
+"Crosby, Still & Nash",Deja Vu,"Suite, Judy Blue Eyes"
+Elvis Presley,Forest Gump,Hound Dog
+Heart,Dog & Butterfly,Baracuda
+Heart,Dreamboat Annie,Crazy On You
+Heart,Dreamboat Annie,Magic Man
+Santana,All That I Am,Brown Skin Girl
 `
 	elines := splitLines(expected)
 	if !compareLineArrays(clines, elines) {
-		t.Errorf("did not match expected Sorted CSV")
-		fmt.Printf("Sorted CSV lines: %s\n", clines)
+		t.Errorf("did not match expected Sorted CSV with title")
+		fmt.Printf("SortedCSV clines: %s\n", clines)
+		fmt.Printf("expected %s\n", elines)
+	}
+}
+
+// this test generates CSV of just the artist/album, which will
+// not show two lines for Heart's Dreamboat Annie album
+func TestPrintSortedCSV(t *testing.T) {
+	var suppressTitles = true
+	//fmt.Printf("TestPrintSortedCSV with suppressTitles: %t\n", suppressTitles)
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	var triParts []InventorySong
+	for _, s := range tsongs {
+		tP := InventorySong{artist: s.Artist, album: s.Album}
+		triParts = append(triParts, tP)
+	}
+	sort.Sort(ByThree(triParts))
+	PrintSortedCSVtoWriter(w, triParts, suppressTitles)
+	cs := b.String()
+	clines := splitLines(cs)
+	expected := `Animals,Best of 60s
+"Crosby, Still & Nash",Deja Vu
+Elvis Presley,Forest Gump
+Heart,Dog & Butterfly
+Heart,Dreamboat Annie
+Santana,All That I Am
+`
+	elines := splitLines(expected)
+	if !compareLineArrays(clines, elines) {
+		t.Errorf("did not match expected Sorted CSV no titles")
+		fmt.Printf("SortedCSV clines: %s\n", clines)
 		fmt.Printf("expected %s\n", elines)
 	}
 }
