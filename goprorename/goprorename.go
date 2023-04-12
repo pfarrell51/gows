@@ -92,6 +92,7 @@ func processMap(m map[string]string) map[string]string {
 	var firstChpt string
 	var cnum int
 	for _, k := range keys {
+		var fcmd = cmd
 		if cnum < 1 {
 			firstChpt = k[0:6]
 			c, _ := strconv.Atoi(k[6:8])
@@ -104,9 +105,9 @@ func processMap(m map[string]string) map[string]string {
 		m[k] = source
 		dest := fmt.Sprintf("%2s%02d%4s.MP4", firstChpt[0:2], cnum, firstChpt[2:6])
 		if source == dest {
-			cmd = "# "
+			fcmd = "# "
 		}
-		fmt.Printf("%s%s %s\n", cmd, source, dest)
+		fmt.Printf("%s%s %s\n", fcmd, source, dest)
 	}
 	return m
 }
