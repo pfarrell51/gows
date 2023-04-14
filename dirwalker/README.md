@@ -12,6 +12,8 @@ Supported verbs are
 
   sox       use the sox "compand" command to compress the dynamic range of the audio
 
+  both      do to commands, ffmpeg and then sox
+
 none of these operations change the files being processed, they are all read-only.  The execution of a verb 
 creates a command that can be used to rename the files into the new format.
 
