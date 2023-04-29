@@ -13,7 +13,8 @@ import (
 	"os"
 	"path"
 	"time"
-    "github.com/pfarrell51/gows/music/filenametool"
+
+	"github.com/pfarrell51/gows/music/filenametool"
 )
 
 func main() {
@@ -33,12 +34,13 @@ func main() {
 	var flags = new(filenametool.FlagST)
 	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (data/artists.txt)")
 	flag.BoolVar(&flags.Debug, "de", false, "debug on")
-	flag.BoolVar(&flags.DuplicateDetect, "dup", false, "duplicate song -" +
-			" attempts to identify duplicate songs, very buggy")
+	flag.BoolVar(&flags.DuplicateDetect, "dup", false, "duplicate song -"+
+		" attempts to identify duplicate songs, very buggy")
 	flag.BoolVar(&helpflag, "h", false, "help")
 	flag.BoolVar(&flags.JustList, "l", false, "list - list files")
 	flag.BoolVar(&flags.NoGroup, "ng", false, "nogroup - list files that do not have an artist/group in the title")
 	flag.BoolVar(&flags.DoRename, "re", false, "rename - output rename from path/filename")
+	flag.BoolVar(&flags.Verify, "v", false, "verify file name against internal tag for artist and title")
 	flag.BoolVar(&flags.ZDumpArtist, "z", false, "list artist names one per line")
 	flag.Parse()
 	if helpflag {
