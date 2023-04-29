@@ -47,6 +47,7 @@ type FlagST struct {
 	JsonOutput         bool
 	Debug              bool
 	DuplicateDetect    bool
+	Verify             bool
 }
 
 var localFlags = new(FlagST)
@@ -61,6 +62,7 @@ func SetFlagArgs(f FlagST) {
 	localFlags.JsonOutput = f.JsonOutput
 	localFlags.Debug = f.Debug
 	localFlags.DuplicateDetect = f.DuplicateDetect
+	localFlags.Verify = f.Verify
 }
 func GetFlags() *FlagST {
 	return localFlags
