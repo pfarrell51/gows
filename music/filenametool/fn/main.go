@@ -40,7 +40,6 @@ func main() {
 	flag.BoolVar(&flags.JustList, "l", false, "list - list files")
 	flag.BoolVar(&flags.NoGroup, "ng", false, "nogroup - list files that do not have an artist/group in the title")
 	flag.BoolVar(&flags.DoRename, "re", false, "rename - output rename from path/filename")
-	flag.BoolVar(&flags.Verify, "v", false, "verify file name against internal tag for artist and title")
 	flag.BoolVar(&flags.ZDumpArtist, "z", false, "list artist names one per line")
 	flag.Parse()
 	if helpflag {
