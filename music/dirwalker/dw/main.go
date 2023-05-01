@@ -49,29 +49,17 @@ func main() {
 
 	verb := flag.Arg(0)
 	if !(verb == "ffmpeg" || verb == "sox" || verb == "both") {
-		fmt.Printf("3 Verb must be either ffmpeg sox or both, not %s\n", verb)
+		fmt.Printf("Verb must be either ffmpeg sox or both, not %s\n", verb)
 		flag.Usage()
 		return
 	}
 	var inpathArg, outpathArg string
 	inpathArg = path.Clean(flag.Arg(1))
 	outpathArg = path.Clean(flag.Arg(2))
-	ext := "mp3"
 	switch {
-	case numArgs == 1:
+	case numArgs == 1 || numArgs == 2:
 		flag.Usage()
 		return
-	case numArgs == 2:
-		switch verb {
-		case "ffmpeg", "sox", "both":
-			inpathArg = path.Clean(flag.Arg(1))
-			outpathArg = path.Clean(flag.Arg(2))
-			outpathArg = "mp3"
-
-		default:
-			flag.Usage()
-			return
-		}
 	case numArgs > 2:
 		if strings.HasPrefix(inpathArg, "-") || strings.HasPrefix(outpathArg, "-") {
 			fmt.Printf("WARNING, switches must be before the verb, %s i%s ignored\n", inpathArg, outpathArg)
@@ -82,7 +70,7 @@ func main() {
 	if globals.Flags().Debug {
 		fmt.Printf("#v: %s i: %s  o: %s\n", verb, inpathArg, outpathArg)
 	}
-	numDone := globals.Files(verb, inpathArg, outpathArg, ext)
+	numDone := globals.Files(verb, inpathArg, outpathArg)
 	fmt.Printf("#%d\n", numDone)
 	duration := time.Since(start)
 	fmt.Printf("# %v\n", duration)
