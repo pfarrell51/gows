@@ -68,6 +68,9 @@ var bytestamp = []byte(soxParams + " " + currentTime + "\n")
 
 const pathSep = string(os.PathSeparator)
 
+const interPathPart = "mp3u"
+const BreadcrumbFN = "soxdata.txt"
+
 func arePathsParallel(in, out string) bool {
 	if in == out {
 		return true
@@ -92,8 +95,6 @@ func arePathsParallel(in, out string) bool {
 	return false
 }
 
-const BreadcrumbFN = "soxdata.txt"
-
 func (g GlobalVars) ifExistsBreadcrumbfile(dir string) bool {
 	fpath := filepath.Join(dir, BreadcrumbFN)
 	var err error
@@ -105,7 +106,7 @@ func (g GlobalVars) ifExistsBreadcrumbfile(dir string) bool {
 	}
 	return false
 }
-func (g GlobalVars) makeDirAndInfoFile(dir string) {
+func (g GlobalVars) makeDirAndBreadcrumbFile(dir string) {
 	err := os.MkdirAll(dir, 0777)
 	if err != nil {
 		panic(fmt.Sprintf("falled to make directory %s", dir))
@@ -128,24 +129,23 @@ func (g GlobalVars) makeDirAndInfoFile(dir string) {
 
 // process files, walking all of 'inpath' and creating the proper command
 // and arguments to execute the verb with the processed files going
-// to the parallel 'outpath' directory with the extension of 'newExt'
-// I expect that newExt will always be 'mp3' but lets see over time
-func (g *GlobalVars) Files(verb, inpath, outpath, newExt string) (count int) {
+// to the parallel 'outpath' directory
+func (g *GlobalVars) Files(verb, inpath, outpath string) (count int) {
 	if !(verb == "ffmpeg" || verb == "sox" || verb == "both") {
 		fmt.Printf("unsupported verb: %s\n", verb)
 		return 0
 	}
 	g.verb = verb
 	var songCount int
-	if verb == "ffmpeg" && newExt == "" {
-		fmt.Printf("empty extension not supported\n")
-		return 0
-	}
+	var tmpPath = inpath
 	switch verb {
-	case "ffmpeg", "both":
-		if outpath == "" {
-			outpath = "mp3"
+	case "ffmpeg":
+		if outpath == "mp3" {
+			outpath = strings.Replace(inpath, "flac", "mp3", -1)
 		}
+
+	case "both":
+		tmpPath = strings.Replace(inpath, "flac", interPathPart, -1)
 		if outpath == "mp3" {
 			outpath = strings.Replace(inpath, "flac", "mp3", -1)
 		}
@@ -160,24 +160,21 @@ func (g *GlobalVars) Files(verb, inpath, outpath, newExt string) (count int) {
 		fmt.Printf("input and output paths not parallel,\n%s != \n%s\n", inpath, outpath)
 		return 0
 	}
+
 	fsys := os.DirFS(inpath)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			fmt.Println(err)
 			return nil
 		}
-		if d.IsDir() {
+		if d.IsDir() || !ExtRegex.MatchString(p) {
 			return nil
 		}
-		if !ExtRegex.MatchString(p) {
-			return nil
-		}
-
 		if songCount++; songCount%500 == 0 {
 			fmt.Printf("echo \"processing %d\"\n", songCount)
 		}
 
-		newP := ExtRegex.ReplaceAllString(p, newExt)
+		newP := ExtRegex.ReplaceAllString(p, "mp3")
 
 		dir, fn := filepath.Split(filepath.Clean(filepath.Join(outpath, newP)))
 		if g.ifExistsBreadcrumbfile(dir) {
@@ -188,9 +185,11 @@ func (g *GlobalVars) Files(verb, inpath, outpath, newExt string) (count int) {
 				return nil
 			}
 		}
-		g.makeDirAndInfoFile(dir)
+
+		g.makeDirAndBreadcrumbFile(dir)
 		count++
 		useIn := filepath.Join(inpath, p)
+		useFN := filepath.Join(tmpPath, newP)
 		useOut := filepath.Join(dir, fn)
 		switch verb {
 		case "ffmpeg":
@@ -199,9 +198,9 @@ func (g *GlobalVars) Files(verb, inpath, outpath, newExt string) (count int) {
 			fmt.Printf("%s %s %s \"%s\" \"%s\" compand %s %s:%s %s %s %s\n",
 				verb, verbosity, norm, useIn, useOut, attackDelay, softKnee, transferFun, makeupGain, initialVolume, delay)
 		case "both":
-			fmt.Printf("%s -loglevel error -y -i \"%s\" -q:a 0 \"%s\"\n", "ffmpeg", useIn, useOut)
+			fmt.Printf("%s -loglevel error -y -i \"%s\" -q:a 0 \"%s\"\n", "ffmpeg", useIn, useFN)
 			fmt.Printf("%s %s %s \"%s\" \"%s\" compand %s %s:%s %s %s %s\n",
-				"sox", verbosity, norm, useIn, useOut, attackDelay, softKnee, transferFun, makeupGain, initialVolume, delay)
+				"sox", verbosity, norm, useFN, useOut, attackDelay, softKnee, transferFun, makeupGain, initialVolume, delay)
 		default:
 			fmt.Printf("unsupported verb: %s\n", verb)
 		}
