@@ -14,6 +14,8 @@ import (
 	"github.com/texttheater/golang-levenshtein/levenshtein"
 )
 
+const apostrophemangle = "â€™"
+
 type FlagST struct {
 	Debug bool
 }
