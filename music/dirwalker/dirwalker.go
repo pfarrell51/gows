@@ -109,7 +109,7 @@ func (g GlobalVars) ifExistsBreadcrumbfile(dir string) bool {
 func (g GlobalVars) makeDirAndBreadcrumbFile(dir string) {
 	err := os.MkdirAll(dir, 0777)
 	if err != nil {
-		panic(fmt.Sprintf("falled to make directory %s", dir))
+		panic(fmt.Sprintf("%v falled to make directory %s", err, dir))
 	}
 	if g.verb == "ffmpeg" {
 		return
@@ -175,7 +175,6 @@ func (g *GlobalVars) Files(verb, inpath, outpath string) (count int) {
 		}
 
 		newP := ExtRegex.ReplaceAllString(p, "mp3")
-
 		dir, fn := filepath.Split(filepath.Clean(filepath.Join(outpath, newP)))
 		if g.ifExistsBreadcrumbfile(dir) {
 			if g.localFlags.SkipIfBreadcrumbExists {
@@ -187,10 +186,11 @@ func (g *GlobalVars) Files(verb, inpath, outpath string) (count int) {
 		}
 
 		g.makeDirAndBreadcrumbFile(dir)
-		count++
+
 		useIn := filepath.Join(inpath, p)
-		useFN := filepath.Join(tmpPath, newP)
+		middleFN := filepath.Join(tmpPath, newP)
 		useOut := filepath.Join(dir, fn)
+
 		switch verb {
 		case "ffmpeg":
 			fmt.Printf("%s -loglevel error -y -i \"%s\" -q:a 0 \"%s\"\n", verb, useIn, useOut)
@@ -198,13 +198,15 @@ func (g *GlobalVars) Files(verb, inpath, outpath string) (count int) {
 			fmt.Printf("%s %s %s \"%s\" \"%s\" compand %s %s:%s %s %s %s\n",
 				verb, verbosity, norm, useIn, useOut, attackDelay, softKnee, transferFun, makeupGain, initialVolume, delay)
 		case "both":
-			fmt.Printf("%s -loglevel error -y -i \"%s\" -q:a 0 \"%s\"\n", "ffmpeg", useIn, useFN)
+			middleDir, _ := filepath.Split(filepath.Clean(middleFN))
+			g.makeDirAndBreadcrumbFile(middleDir)
+			fmt.Printf("%s -loglevel error -y -i \"%s\" -q:a 0 \"%s\"\n", "ffmpeg", useIn, middleFN)
 			fmt.Printf("%s %s %s \"%s\" \"%s\" compand %s %s:%s %s %s %s\n",
-				"sox", verbosity, norm, useFN, useOut, attackDelay, softKnee, transferFun, makeupGain, initialVolume, delay)
+				"sox", verbosity, norm, middleFN, useOut, attackDelay, softKnee, transferFun, makeupGain, initialVolume, delay)
 		default:
 			fmt.Printf("unsupported verb: %s\n", verb)
 		}
 		return nil
 	})
-	return count
+	return songCount
 }
