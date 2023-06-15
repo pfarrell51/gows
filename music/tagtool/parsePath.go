@@ -144,7 +144,7 @@ func (g *GlobalVars) getSong(aSong *Song) {
 	}
 }
 
-// walk all files, looking for nice GoPro created video files.
+// walk all files, looking for nice music files.
 // fill in a map keyed by the desired new name order
 func (g *GlobalVars) WalkFiles(pathArg string) {
 	g.pathArg = pathArg
