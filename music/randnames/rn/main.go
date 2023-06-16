@@ -35,16 +35,16 @@ func main() {
 
 	var flags = new(randnames.FlagST)
 	flag.BoolVar(&helpflag, "h", false, "help")
-	flag.BoolVar(&flags.NoTags, "nt", false, "notags - list files that do not have any meta tags")
 	flag.BoolVar(&flags.TwoLetter, "tl", false, "two letter - list leading two letter words in titles")
 	flag.Parse()
 	if helpflag {
 		flag.Usage()
 		return
 	}
+	randnames.SetFlags(*flags)
 
 	pathArg := path.Clean(flag.Arg(0))
-	fmt.Println(pathArg)
+	randnames.WalkFiles(pathArg)
 
 	duration := time.Since(start)
 	fmt.Printf("# %v\n", duration)
