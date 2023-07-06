@@ -13,6 +13,7 @@ import (
 type FlagST struct {
 	NoTags    bool
 	TwoLetter bool
+	Debug     bool
 }
 
 var localFlags = new(FlagST)
@@ -104,8 +105,9 @@ func processFile(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	twoL := twoletterRegex.FindStringIndex(p)
 	if twoL != nil {
 		f := p[twoL[0] : twoL[1]-1]
+		twoltr[f]++
 		s := twoltr[f]
-		fmt.Printf("%s ? %s\n", f, s)
+		fmt.Printf("%s '%s' ? %d\n", f, p, s)
 	}
 
 	return nil
