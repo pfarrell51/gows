@@ -35,6 +35,7 @@ func main() {
 
 	var flags = new(randnames.FlagST)
 	flag.BoolVar(&helpflag, "h", false, "help")
+	flag.BoolVar(&flags.Debug, "d", false, "debug")
 	flag.BoolVar(&flags.TwoLetter, "tl", false, "two letter - list leading two letter words in titles")
 	flag.Parse()
 	if helpflag {
