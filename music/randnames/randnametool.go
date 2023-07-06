@@ -1,3 +1,9 @@
+// this generates randomized two latter prefixes for song nmes to that
+// my silly Mazda's infotainment system will play all of my songs and not
+// restart the order every time I turn off the car.
+//
+// not re-entrant, thread safe, etc.
+
 package randnames
 
 import (
@@ -19,14 +25,18 @@ type FlagST struct {
 var localFlags = new(FlagST)
 var numDirs int
 
-// twoltr acts as a set of strings
-var twoltr map[string]int
+const maxsongs = 750
+
+var songprefix [maxsongs]string
+
+// stopwords acts as a set of strings
+var stopwords map[string]int
 
 func init() {
-	twoltr = make(map[string]int)
-	mumble := [17]string{"As", "Do", "El", "Go", "He", "If", "In", "It", "La", "My", "No", "Oh", "On", "So", "To", "Up", "We"}
-	for _, m := range mumble {
-		twoltr[m] = 0
+	stopwords = make(map[string]int)
+	ktl := [17]string{"As", "Do", "El", "Go", "He", "If", "In", "It", "La", "My", "No", "Oh", "On", "So", "To", "Up", "We"}
+	for _, m := range ktl {
+		stopwords[m] = 0
 	}
 }
 func SetFlags(arg FlagST) {
@@ -56,6 +66,10 @@ func countFiles(pathArg string) int {
 	if err != nil {
 		panic(err)
 	}
+	if len(list) > maxsongs {
+		panic(fmt.Sprintf("too many songs %d in directory, rebuild with bigger maxsongs %d\n", len(list), maxsongs))
+	}
+
 	return len(list)
 }
 
@@ -85,7 +99,7 @@ func WalkFiles(pathArg string) {
 }
 
 var ExtRegex = regexp.MustCompile(`[Mm][Pp][34]|[Ff][Ll][Aa][Cc]$`)
-var twoletterRegex = regexp.MustCompile(`^[[:alpha:]]{2} `)
+var twoletterRegex = regexp.MustCompile(`^[[:alpha:]]{2}[[:space:]]`)
 
 // this is the local  process  called by WalkDir for each file
 // p is the current path/name
@@ -105,10 +119,17 @@ func processFile(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	twoL := twoletterRegex.FindStringIndex(p)
 	if twoL != nil {
 		f := p[twoL[0] : twoL[1]-1]
-		twoltr[f]++
-		s := twoltr[f]
-		fmt.Printf("%s '%s' ? %d\n", f, p, s)
-	}
+		_, ok := stopwords[f]
+		if ok {
+			stopwords[f]++
+			if GetFlag().Debug {
+				v := stopwords[f]
+				fmt.Printf("%s '%s' ? %d\n", f, p, v)
+			}
+		} else {
+			panic(fmt.Sprintf("unknown two letter word %s in song %s\n", f, p))
+		}
 
+	}
 	return nil
 }
