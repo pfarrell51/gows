@@ -44,12 +44,7 @@ func init() {
 Outerloop:
 	for j := 0; j < len(lowers); j++ {
 		for k := 0; k < len(alphas); k++ {
-			var t string
-			var f, s byte
-			f = lowers[j]
-			s = alphas[k]
-			t = string(f) + string(s)
-			songprefix[j*len(lowers)+k]  = t
+			songprefix[j*len(lowers)+k]  = string(lowers[j]) + string(alphas[k])
 			i++
 			if i >= maxsongs {
 				break Outerloop
