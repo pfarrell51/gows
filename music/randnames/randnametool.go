@@ -26,6 +26,8 @@ var localFlags = new(FlagST)
 var numDirs int
 
 const maxsongs = 750
+const lowers = "abcdefghighlmnopqrstuvwxyz"
+const alphas = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghighlmnopqrstuvwxyz"
 
 var songprefix [maxsongs]string
 
@@ -38,6 +40,23 @@ func init() {
 	for _, m := range ktl {
 		stopwords[m] = 0
 	}
+	i := 0
+Outerloop:
+	for j := 0; j < len(lowers); j++ {
+		for k := 0; k < len(alphas); k++ {
+			var t string
+			var f, s byte
+			f = lowers[j]
+			s = alphas[k]
+			t = string(f) + string(s)
+			songprefix[j*len(lowers)+k]  = t
+			i++
+			if i >= maxsongs {
+				break Outerloop
+			}
+		}
+	}
+	fmt.Printf("sp: %s\n", songprefix[0:40])
 }
 func SetFlags(arg FlagST) {
 	localFlags = &arg
