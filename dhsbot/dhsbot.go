@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 )
 
 type Response []struct {
@@ -24,6 +25,8 @@ type Response []struct {
 }
 
 const getURL = "https://ttp.cbp.dhs.gov/schedulerapi/slots?orderBy=soonest&limit=1&minimum=1&locationId="
+const jsontime = "2006-01-02T15:04"
+const outtime = "Jan 02, 2006 15:04"
 
 func main() {
 	if len(os.Args) != 2 {
@@ -44,6 +47,16 @@ func main() {
 	var result Response
 	if err := json.Unmarshal(body, &result); err != nil { // Parse []byte to the go struct pointer
 		fmt.Printf("Can not unmarshal JSON %v\n", err)
+		return
 	}
+
 	fmt.Println(result)
+	for i, r := range result {
+		st, err := time.Parse(jsontime, r.StartTimestamp)
+		if err != nil {
+			fmt.Println(err)
+		}
+		et, _ := time.Parse(jsontime, r.EndTimestamp)
+		fmt.Printf("%d open from %s to %s\n", i, st.Format(outtime), et.Format(outtime))
+	}
 }
