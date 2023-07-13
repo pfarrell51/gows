@@ -14,31 +14,43 @@ import (
 )
 
 type Response struct {
-	LocationId     int    `json:"locationId"`
+	LocationID     int    `json:"locationId"`
 	StartTimestamp string `json:"startTimestamp"`
 	EndTimestamp   string `json:"endTimestamp"`
 	Active         bool   `json:"active"`
 	Duration       int    `json:"duration"`
-	RemoteInd      bool   `jason:"remoteInd"`
+	RemoteInd      bool   `json:"remoteInd"`
 }
 
 const getURL = "https://ttp.cbp.dhs.gov/schedulerapi/slots?orderBy=soonest&limit=1&locationId=5004&minimum=1"
 
+const dhsResponse = `{
+  "locationId" : 5004,
+  "startTimestamp" : "2023-07-14T09:45",
+  "endTimestamp" : "2023-07-14T10:00",
+  "active" : true,
+  "duration" : 15,
+  "remoteInd" : false
+} 
+`
+
 func main() {
-
-	// Get request
-	resp, err := http.Get(getURL)
-	if err != nil {
-		fmt.Println("No response from request")
+	var body []byte
+	if true {
+		// Get request
+		resp, err := http.Get(getURL)
+		if err != nil {
+			fmt.Println("No response from request")
+		}
+		defer resp.Body.Close()
+		body, err = ioutil.ReadAll(resp.Body) // response body is []byte
+	} else {
+		body = []byte(dhsResponse)
 	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body) // response body is []byte
-
 	fmt.Println(string(body))
-
 	var result Response
 	if err := json.Unmarshal(body, &result); err != nil { // Parse []byte to the go struct pointer
 		fmt.Printf("Can not unmarshal JSON %v\n", err)
 	}
-
+	fmt.Println(result)
 }
