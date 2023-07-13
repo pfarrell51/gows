@@ -30,6 +30,7 @@ const outtime = "Jan 02, 2006 15:04"
 
 func main() {
 	if len(os.Args) != 2 {
+		fmt.Printf("Usage: %s <locationId>\n", os.Args[0])
 		fmt.Println("must specify locationId as argument")
 		fmt.Println("PHL = 5445, Laredo = 5004")
 		return
