@@ -56,7 +56,13 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
+		wd := st.Weekday()
+		if wd == time.Thursday {
+				fmt.Println("its on Thursday")
+		} else {
+				fmt.Println("sadly not Thursday")
+		}
 		et, _ := time.Parse(jsontime, r.EndTimestamp)
-		fmt.Printf("%d open from %s to %s\n", i, st.Format(outtime), et.Format(outtime))
+		fmt.Printf("%d available %s from %s to %s\n", i, wd, st.Format(outtime), et.Format(outtime))
 	}
 }
