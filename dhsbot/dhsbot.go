@@ -1,8 +1,8 @@
 // package to call DHS's trusted traveler appointment website
 // a good GET is  https://ttp.cbp.dhs.gov/schedulerapi/slots?orderBy=soonest&limit=100&locationId=5445&minimum=1
 //
-// this link will return JSON of all the locations
-// https://ttp.cbp.dhs.gov/schedulerapi/slots/asLocations?limit=100
+// this link will return JSON of some of the locations
+// https://ttp.cbp.dhs.gov/schedulerapi/slots/asLocations?limit=1000
 
 package main
 
@@ -11,9 +11,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 )
 
-type Response struct {
+type Response []struct {
 	LocationID     int    `json:"locationId"`
 	StartTimestamp string `json:"startTimestamp"`
 	EndTimestamp   string `json:"endTimestamp"`
@@ -22,31 +23,23 @@ type Response struct {
 	RemoteInd      bool   `json:"remoteInd"`
 }
 
-const getURL = "https://ttp.cbp.dhs.gov/schedulerapi/slots?orderBy=soonest&limit=1&locationId=5004&minimum=1"
-
-const dhsResponse = `{
-  "locationId" : 5004,
-  "startTimestamp" : "2023-07-14T09:45",
-  "endTimestamp" : "2023-07-14T10:00",
-  "active" : true,
-  "duration" : 15,
-  "remoteInd" : false
-} 
-`
+const getURL = "https://ttp.cbp.dhs.gov/schedulerapi/slots?orderBy=soonest&limit=1&minimum=1&locationId="
 
 func main() {
-	var body []byte
-	if true {
-		// Get request
-		resp, err := http.Get(getURL)
-		if err != nil {
-			fmt.Println("No response from request")
-		}
-		defer resp.Body.Close()
-		body, err = ioutil.ReadAll(resp.Body) // response body is []byte
-	} else {
-		body = []byte(dhsResponse)
+	if len(os.Args) != 2 {
+		fmt.Println("must specify locationId as argument")
+		fmt.Println("PHL = 5445, Laredo = 5004")
+		return
 	}
+	// Get request
+	var URL = getURL + os.Args[1]
+	resp, err := http.Get(URL)
+	if err != nil {
+		fmt.Println("No response from request")
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body) // response body is []byte
+
 	fmt.Println(string(body))
 	var result Response
 	if err := json.Unmarshal(body, &result); err != nil { // Parse []byte to the go struct pointer
