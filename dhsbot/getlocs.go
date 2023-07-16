@@ -6,10 +6,13 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"strconv"
 )
 
 type Generated []struct {
@@ -42,7 +45,15 @@ func main() {
 		fmt.Printf("Can not unmarshal JSON %v\n", err)
 		return
 	}
+	cw := csv.NewWriter(os.Stdout)
 	for _, r := range result {
-		fmt.Printf("Id: %d %s  %s, %s\n", r.ID, r.Name, r.City, r.State)
+		outline := make([]string, 5)
+		outline[0] = strconv.Itoa(r.ID)
+		outline[1] = r.Name
+		outline[2] = r.Address
+		outline[3] = r.City
+		outline[4] = r.State
+		cw.Write(outline)
 	}
+	cw.Flush()
 }
