@@ -56,6 +56,7 @@ func main() {
 	flag.BoolVar(&flags.NoTags, "nt", false, "notags - list files that do not have any meta tags")
 	flag.BoolVar(&flags.ShowArtistNotInMap, "a", false, "artist map -  list artist not in source code (gpmap)")
 	flag.BoolVar(&flags.ShowNoSongs, "sn", false, "show no song titles (in inventory and other listings)")
+	flag.BoolVar(&flags.UnicodePunct, "u", false, "show songs with Unicode punct")
 	flag.BoolVar(&flags.ZDumpArtist, "z", false, "list artist names one per line")
 	flag.Parse()
 	if helpflag {
