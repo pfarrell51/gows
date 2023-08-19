@@ -66,6 +66,7 @@ type FlagST struct {
 	NoTags                bool
 	ShowArtistNotInMap    bool
 	ShowNoSongs           bool
+	UnicodePunct          bool
 	ZDumpArtist           bool
 }
 
@@ -107,6 +108,7 @@ func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags.NoTags = f.NoTags
 	g.localFlags.ShowArtistNotInMap = f.ShowArtistNotInMap
 	g.localFlags.ShowNoSongs = f.ShowNoSongs
+	g.localFlags.UnicodePunct = f.UnicodePunct
 	g.localFlags.ZDumpArtist = f.ZDumpArtist
 }
 func (g *GlobalVars) Flags() *FlagST {
