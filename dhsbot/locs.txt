@@ -1,0 +1,64 @@
+5001,Hidalgo Enrollment Center,Anzalduas International Bridge,Mission,TX
+5003,Brownsville Enrollment Center,"700 Amelia Earhart Dr, Brownsville, Texas",Brownsville,TX
+5004,Laredo Enrollment Center,400 San Edwardo,Laredo,TX
+5005,El Paso Enrollment Center,797 S. Zaragoza Rd. Bldg.  A,El Paso,TX
+5007,"Nogales, AZ",200 N. MARIPOSA RD STE. B700,NOGALES,AZ
+5020,Blaine NEXUS And FAST Enrollment Center ,8115 Birch Bay Square St.,BLAINE,WA
+5021,Champlain Enrollment Center,237 West Service Road,Champlain,NY
+5022,Buffalo-Ft. Erie Enrollment Center,10 Central Ave,Fort Erie,ON
+5023,Detroit Enrollment Center Global Entry,2810 W. Fort Street Suite 124,Detroit,MI
+5024,Port Huron Enrollment Center,2321 Pine Grove Avenue,Port Huron,MI
+5025,Ottawa International Airport,"1000, Airport Parkway Private",Ottawa,ON
+5026,Vancouver International Airport,3211 Grant McConachie Way,Richmond,BC
+5027,Toronto Pearson International Airport - Terminal 1,6301 Silver Dart Drive ,Mississauga,ON
+5028,Montréal - Trudeau International Airport,1 Pierre E Trudeau International Airport ,Montreal,QC
+5029,Winnipeg International Airport,1970 Winnipeg NEXUS Office,Winnipeg,MB
+5030,Calgary International Airport,2000 Airport Rd N.E.,Calgary,AB
+5031,Halifax Stanfield International Airport,747 Bell Boulevard,Goffs,NS
+5032,Edmonton International Airport,1000 Airport Road,Edmonton,AB
+5060,Warroad Enrollment Center ,41059 Warroad Enrollment Center,Warroad,MN
+5080,Sault Ste Marie Enrollment Center,900 International Bridge Plaza,Sault Ste. Marie,MI
+5100,Pembina Enrollment Center,10980 Interstate 29,Pembina,ND
+5101,Houlton POE/Woodstock,27 Customs Loop,Houlton,ME
+5120,Sweetgrass NEXUS and FAST Enrollment Center," Nexus Enrollment Center",Sweetgrass,MT
+5140,JFK International Global Entry EC,JFK International Airport,Jamaica,NY
+5160,International Falls NEXUS/FAST Enrollment Center,3214 2nd Ave E,International Falls,MN
+5161,Niagara Falls Enrollment Center,2250 Whirlpool St,Niagara Falls,NY
+5181,Miami International Airport,21 Miad Circle,Miami,FL
+5183,Chicago O'Hare International Global Entry EC ,10000 West O'Hare Drive,CHICAGO,IL
+5221,Portal FAST Enrollment Center,301 West Railway Ave,Portal,ND
+5222,Otay Mesa FAST Enrollment Center,9725 Via De La Amistad,San Diego,CA
+5223,Derby Line Enrollment Center,107 I-91 South,Derby Line,VT
+5224,Calexico FAST Enrollment Center,1699 E. Carr Rd,Calexico,CA
+5225,Brownsville FAST Enrollment Center,700 Amelia Earhart Dr,Brownsville,TX
+5226,Windsor FAST Enrollment Center,2810 W. Fort Street Suite 124,Detroit,MI
+5227,Laredo FAST Enrollment Center,715 Bob Bullock Loop,Laredo,TX
+5228,Fort Erie (Peace Bridge),10 Central Ave,Fort Erie,ON
+5229,Port Huron FAST Enrollment Center,2321 Pine Grove Avenue,Port Huron,MI
+5320,Detroit Metro Airport," Detroit Evans Terminal",Detroit,MI
+5400,San Juan Global Entry Enrollment Center,Luis Muñoz Marin International Airport (SJU),Carolina,PR
+5460,San Luis Enrollment Center,SLU II Global Enrollment Center,San Luis,AZ
+5500,Calais Enrollment Center,3 Customs Street,Calais,ME
+5520,Lansdowne (Thousand Islands Bridge),860 Highway 137,Lansdowne,ON
+6920,Doha International Airport,Hamad International Airport,Doha,
+7160,Phoenix Sky Harbor Global Entry Enrollment Center,CBP-Global Enrollment Center,Phoenix,AZ
+7540,Anchorage Enrollment Center,Ted Stevens International Airport,Anchorage ,AK
+8100,Douglas Enrollment Center,1 Pan American Ave,Douglas,AZ
+9101,Grand Portage,9403 E Highway 61,Grand Portage,MN
+9140,Guam International Airport,355 Chalan PasaHeru,Tamuning,GU
+9180,Cleveland U.S. Customs and border protection,Customs & Border Protection,Middleburg Heights,OH
+9240,Tucson Enrollment Center,7081 S. Plumer Ave.,Tucson,AZ
+11981,Chicago Field Office Enrollment Center,610 S. CANAL STREET,CHICAGO,IL
+13321,Blaine Global Entry Enrollment Center,8115 Birch Bay Square St.,Blaine,WA
+14181,International Falls Global Entry Enrollment Center,3214 2nd Ave E,International Falls,MN
+14381,Fairbanks Enrollment Center,6450 Airport Way - Suite 13,Fairbanks,AK
+15221,Pembina Global Entry Enrollment Center,10980 Interstate 29 N,Pembina,ND
+16226,Eagle Pass ,160 E. Garrison St.,Eagle Pass,TX
+16251,Sweetgrass Global Entry Enrollment Center,Nexus Enrollment Center,Sweetgrass,MT
+16460,Del Rio Enrollment Center,3140 Spur 239," Del Rio",TX
+16476,SEAFO - FARGO Global Entry Workshop,3803 20th Street N.,Fargo,ND
+16511,Detroit Enrollment Center NEXUS,2810 W. Fort Street Suite 124,Detroit,MI
+16519,Champlain GE Only,237 West Service Road,Champlain,NY
+16546,Ogdensburg Enrollment Center,104 Bridge Approach Road,Ogdensburg,NY
+16549,Aruba Enrollment Center,L.G. Smith Blvd 95 Ste. 125,Oranjestad,
+16555,Norfolk EC,U.S. Customs House,Norfolk,VA
