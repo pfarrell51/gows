@@ -44,14 +44,24 @@ func init() {
 Outerloop:
 	for j := 0; j < len(lowers); j++ {
 		for k := 0; k < len(alphas); k++ {
-			songprefix[j*len(lowers)+k]  = string(lowers[j]) + string(alphas[k])
-			i++
-			if i >= maxsongs {
-				break Outerloop
+			val := string(lowers[j]) + string(alphas[k])
+			if len(val) < 2 {
+					panic("empty val")
+			}
+			_, ok := stopwords[val]
+			if !ok {
+				songprefix[i] = val
+				i++
+				if i >= maxsongs {
+					break Outerloop
+				}
+				fmt.Printf("i: %d j: %d k: %d >%s< |%s|\n", i, j, k, songprefix[i], val)
+			} else {
+				fmt.Printf("found i: %d j: %d k: %d %s\n", i, j, k, songprefix[i])
 			}
 		}
 	}
-	fmt.Printf("sp: %s\n", songprefix[0:40])
+	fmt.Printf("sp: %s\n", songprefix[0:60])
 }
 func SetFlags(arg FlagST) {
 	localFlags = &arg
@@ -114,6 +124,7 @@ func WalkFiles(pathArg string) {
 
 var ExtRegex = regexp.MustCompile(`[Mm][Pp][34]|[Ff][Ll][Aa][Cc]$`)
 var twoletterRegex = regexp.MustCompile(`^[[:alpha:]]{2}[[:space:]]`)
+var twoAlphaUnderscoreRegex = regexp.MustCompile(`^[[:alpha:]]{2}_`)
 
 // this is the local  process  called by WalkDir for each file
 // p is the current path/name
