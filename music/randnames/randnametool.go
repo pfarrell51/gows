@@ -25,11 +25,11 @@ type FlagST struct {
 var localFlags = new(FlagST)
 var numDirs int
 
-const maxsongs = 750
+const maxsongs = 800
 const lowers = "abcdefghighlmnopqrstuvwxyz"
 const alphas = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghighlmnopqrstuvwxyz"
 
-var songprefix [maxsongs]string
+var tmpprefix, songprefix [maxsongs]string
 
 // stopwords acts as a set of strings
 var stopwords map[string]int
@@ -40,41 +40,37 @@ func init() {
 	for _, m := range ktl {
 		stopwords[m] = 0
 	}
+	s := rand.NewSource(1234567)
+	r := rand.New(s)
+
+	ranIdx := r.Perm(maxsongs)
 	i := 0
 Outerloop:
 	for j := 0; j < len(lowers); j++ {
 		for k := 0; k < len(alphas); k++ {
 			val := string(lowers[j]) + string(alphas[k])
-			if len(val) < 2 {
-					panic("empty val")
-			}
 			_, ok := stopwords[val]
 			if !ok {
-				songprefix[i] = val
+				tmpprefix[i] = val
 				i++
 				if i >= maxsongs {
 					break Outerloop
 				}
-				fmt.Printf("i: %d j: %d k: %d >%s< |%s|\n", i, j, k, songprefix[i], val)
+
 			} else {
-				fmt.Printf("found i: %d j: %d k: %d %s\n", i, j, k, songprefix[i])
+				fmt.Printf("found i: %d j: %d k: %d %s\n", i, j, k, tmpprefix[i])
 			}
 		}
 	}
-	fmt.Printf("sp: %s\n", songprefix[0:60])
+	for i = 0; i < maxsongs; i++ {
+		songprefix[i] = tmpprefix[ranIdx[i]]
+	}
 }
 func SetFlags(arg FlagST) {
 	localFlags = &arg
 }
 func GetFlag() *FlagST {
 	return localFlags
-}
-
-func foo() {
-	s := rand.NewSource(1234567)
-	r := rand.New(s)
-
-	fmt.Println(r.Perm(20))
 }
 func listTwoLetterWords(arg string) {
 }
@@ -97,11 +93,14 @@ func countFiles(pathArg string) int {
 	return len(list)
 }
 
+var WalkFileNum int
+
 // walk all files, looking for nice music files.
 // fill in a map keyed by the desired new name order
 func WalkFiles(pathArg string) {
 	fmt.Printf("num files %d\n", countFiles(pathArg))
 
+	WalkFileNum++
 	var oldDir string
 	fsys := os.DirFS(pathArg)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
@@ -141,12 +140,21 @@ func processFile(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	if extR == nil {
 		return nil // not interesting extension
 	}
+	newP := p
+	twoPunctL := twoAlphaUnderscoreRegex.FindStringIndex(p)
+	if twoPunctL != nil {
+		fmt.Printf("found leading sort in %s will use %s\n", p, p[3:])
+		p = p[3:]
+	}
 	twoL := twoletterRegex.FindStringIndex(p)
-	if twoL != nil {
+	if twoL == nil {
+		newP = songprefix[WalkFileNum] + "_" + p
+	} else {
 		f := p[twoL[0] : twoL[1]-1]
 		_, ok := stopwords[f]
 		if ok {
 			stopwords[f]++
+			newP = songprefix[WalkFileNum] + "_" + p
 			if GetFlag().Debug {
 				v := stopwords[f]
 				fmt.Printf("%s '%s' ? %d\n", f, p, v)
@@ -156,5 +164,7 @@ func processFile(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 		}
 
 	}
+	fmt.Printf("mv \"%s\" \"%s\"\n", p, newP)
+	WalkFileNum++
 	return nil
 }
