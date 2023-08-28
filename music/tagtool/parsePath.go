@@ -282,6 +282,8 @@ func (g *GlobalVars) ProcessMap() {
 		switch {
 		case g.Flags().CompareTagsToTitle:
 			g.doCompareTagsToTitle(aSong)
+		case g.Flags().UnicodePunct:
+			g.doSearchForUnicodePunct(aSong)
 		case g.Flags().DoRename:
 			g.outputRenameCommand(&aSong)
 		case g.Flags().JustList:
@@ -336,6 +338,10 @@ func (g *GlobalVars) ProcessMap() {
 	if g.Flags().DoSummary {
 		g.doSummary()
 	}
+}
+func (g *GlobalVars) doSearchForUnicodePunct(aSong Song) {
+	dir, fn := path.Split(aSong.inPath)
+	fname := strings.TrimSuffix(fn, filepath.Ext(fn))
 }
 func (g *GlobalVars) doCompareTagsToTitle(aSong Song) {
 	dir, fn := path.Split(aSong.inPath)
