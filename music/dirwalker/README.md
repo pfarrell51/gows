@@ -2,7 +2,8 @@
 the utility program walks music file directories and execute a "verb" against each music file.
 (This could be done with a proper "find" command, but that syntax is so strange.....)
 
-The basic operation is to run the executable, give it a "verb" to say what you want to do, and specify a folder/directory that will be processed.
+The basic operation is to run the executable, give it a "verb" to say what you want to do, 
+and specify a folder/directory that will be processed.
 
 Usage of dw/dw [verb] indirectory-spec outdirecgtory-spec extension-spec
 
@@ -17,4 +18,8 @@ Supported verbs are
 none of these operations change the files being processed, they are all read-only.  The execution of a verb 
 creates a command that can be used to rename the files into the new format.
 
+Special shortcut command:
+dw/dw both indirectory-spec mp3
+will cause ffmpeg to be run on the flac directory, outputing to a 'mp3u' directory
+and then run sox on the mp3u files putting the resulting compressed files in the mp3 directory
 

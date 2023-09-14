@@ -17,6 +17,11 @@ func usagePrint() {
 	fmt.Printf("if the out-directory-spec is simply 'mp3' then the output spec will be built from the in-directory-spec,\n")
 	fmt.Printf("replacing the word 'flac'with 'mp3' in the path\n")
 	fmt.Printf("i.e. mumble/flac/fratz will create an output path of mumble/mp3/fratz\n")
+	fmt.Printf("\nSpecial shortcut command:\n")
+	fmt.Printf("dw/dw both indirectory-spec mp3\n")
+	fmt.Printf("will cause ffmpeg to be run on the flac directory, outputing to a 'mp3u' directory\n")
+	fmt.Printf("and then run sox on the mp3u files putting the resulting compressed files in the mp3 directory\n")
+
 }
 
 func main() {
