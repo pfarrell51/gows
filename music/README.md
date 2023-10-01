@@ -17,3 +17,6 @@ for cars that want to play in alphabetical order
  
 5. verify Compare the file name against the metadata "tags" that are in the mp3 file.
 List those that are sufficiently different.
+
+6. flac2mp3 utility that writes out commands to convert FLAC files to MP3
+
