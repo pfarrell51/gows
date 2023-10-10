@@ -1,4 +1,4 @@
-// this generates randomized two latter prefixes for song nmes to that
+// this manages randomized two latter prefixes for song nmes to that
 // my silly Mazda's infotainment system will play all of my songs and not
 // restart the order every time I turn off the car.
 //
@@ -17,9 +17,14 @@ import (
 )
 
 type FlagST struct {
+	AddTag    bool
 	NoTags    bool
+	RmTag     bool
 	TwoLetter bool
 	Debug     bool
+}
+type FileDoer interface {
+	FileDo(fsys fs.FS, p string, d fs.DirEntry, err error) error
 }
 
 var localFlags = new(FlagST)
@@ -116,7 +121,8 @@ func WalkFiles(pathArg string) {
 			oldDir = notOld
 			numDirs++
 		}
-		processFile(fsys, p, d, err)
+
+		perFile(fsys, p, d, err)
 		return nil
 	})
 }
@@ -127,7 +133,7 @@ var twoAlphaUnderscoreRegex = regexp.MustCompile(`^[[:alpha:]]{2}_`)
 
 // this is the local  process  called by WalkDir for each file
 // p is the current path/name
-func processFile(fsys fs.FS, p string, d fs.DirEntry, err error) error {
+func perFile(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	if err != nil {
 		fmt.Println("Error processing", p, " in ", d)
 		fmt.Println("error is ", err)
@@ -140,6 +146,29 @@ func processFile(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	if extR == nil {
 		return nil // not interesting extension
 	}
+	
+	switch {
+	case localFlags.AddTag:
+		err = processAddTag(fsys, p, d, err)
+		if err != nil {
+			return err
+		}
+	case localFlags.RmTag:
+		err = processRmTag(fsys, p, d, err)
+		if err != nil {
+			return err
+		}
+	case localFlags.TwoLetter:
+		err = processTwoLetter(fsys, p, d, err)
+		if err != nil {
+			return err
+		}
+	default:
+		fmt.Println("default triggered")
+	}
+	return nil
+}
+func processAddTag(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	newP := p
 	twoPunctL := twoAlphaUnderscoreRegex.FindStringIndex(p)
 	if twoPunctL != nil {
@@ -166,5 +195,13 @@ func processFile(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	}
 	fmt.Printf("mv \"%s\" \"%s\"\n", p, newP)
 	WalkFileNum++
+	return nil
+}
+func processRmTag(fsys fs.FS, p string, d fs.DirEntry, err error) error {
+	fmt.Println("implement RmTag")
+	return nil
+}
+func processTwoLetter(fsys fs.FS, p string, d fs.DirEntry, err error) error {
+	fmt.Println("implement TwoLetter")
 	return nil
 }
