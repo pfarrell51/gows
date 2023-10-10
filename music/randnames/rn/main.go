@@ -1,8 +1,7 @@
-// this program helps clean up the mp3 and flac files in my hits playlist
+// this program deals with creatging random prefixes for music files
+// and managing them
 // its main task is to normalize the file names to relect the artist and song title
 //
-// this is not multi-processing safe
-
 // Bugs
 
 package main
@@ -34,8 +33,10 @@ func main() {
 	var helpflag bool
 
 	var flags = new(randnames.FlagST)
+	flag.BoolVar(&flags.AddTag, "add", false, "add prefix")
 	flag.BoolVar(&helpflag, "h", false, "help")
 	flag.BoolVar(&flags.Debug, "d", false, "debug")
+	flag.BoolVar(&flags.RmTag, "rm", false, "rm (remove) prefix")
 	flag.BoolVar(&flags.TwoLetter, "tl", false, "two letter - list leading two letter words in titles")
 	flag.Parse()
 	if helpflag {
