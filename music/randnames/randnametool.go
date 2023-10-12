@@ -129,7 +129,8 @@ func WalkFiles(pathArg string) {
 
 var ExtRegex = regexp.MustCompile(`[Mm][Pp][34]|[Ff][Ll][Aa][Cc]$`)
 var twoletterRegex = regexp.MustCompile(`^[[:alpha:]]{2}[[:space:]]`)
-var twoAlphaUnderscoreRegex = regexp.MustCompile(`^[[:alpha:]]{2}_`)
+var goodPrefixRegex = regexp.MustCompile(`^[a-z][[:alpha:]]_`)
+var brokenPrefixRegex = regexp.MustCompile(`^[a-z][[:alpha:]][A-Z][[:alpha:]]`)
 
 // this is the local  process  called by WalkDir for each file
 // p is the current path/name
@@ -146,7 +147,7 @@ func perFile(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	if extR == nil {
 		return nil // not interesting extension
 	}
-	
+
 	switch {
 	case localFlags.AddTag:
 		err = processAddTag(fsys, p, d, err)
@@ -168,13 +169,17 @@ func perFile(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 	}
 	return nil
 }
-func processAddTag(fsys fs.FS, p string, d fs.DirEntry, err error) error {
-	newP := p
-	twoPunctL := twoAlphaUnderscoreRegex.FindStringIndex(p)
+
+// check format of file name (p) and return new name
+// with random prefix
+func pAndNewP(p string) (newP string) {
+	newP = p
+	twoPunctL := goodPrefixRegex.FindStringIndex(p)
 	if twoPunctL != nil {
 		fmt.Printf("found leading sort in %s will use %s\n", p, p[3:])
-		p = p[3:]
+		newP = p[3:]
 	}
+
 	twoL := twoletterRegex.FindStringIndex(p)
 	if twoL == nil {
 		newP = songprefix[WalkFileNum] + "_" + p
@@ -191,17 +196,33 @@ func processAddTag(fsys fs.FS, p string, d fs.DirEntry, err error) error {
 		} else {
 			panic(fmt.Sprintf("unknown two letter word %s in song %s\n", f, p))
 		}
-
 	}
+	return newP
+}
+func processAddTag(fsys fs.FS, p string, d fs.DirEntry, err error) error {
+	newP := pAndNewP(p)
 	fmt.Printf("mv \"%s\" \"%s\"\n", p, newP)
 	WalkFileNum++
 	return nil
 }
 func processRmTag(fsys fs.FS, p string, d fs.DirEntry, err error) error {
-	fmt.Println("implement RmTag")
+	goodIdx := goodPrefixRegex.FindStringIndex(p)
+	if goodIdx != nil {
+		fmt.Printf("mv \"%s\" \"%s\"\n", p, p[3:])
+	}
 	return nil
 }
 func processTwoLetter(fsys fs.FS, p string, d fs.DirEntry, err error) error {
-	fmt.Println("implement TwoLetter")
+	goodIdx := goodPrefixRegex.FindStringIndex(p)
+	if goodIdx != nil {
+		fmt.Printf("good %s\n", p)
+		return nil
+	}
+	badIdx := brokenPrefixRegex.FindStringIndex(p)
+	if badIdx != nil {
+		fmt.Printf("found bad index in %s\n", p)
+	} else {
+		fmt.Printf("no prefix in %s\n", p)
+	}
 	return nil
 }
