@@ -3,6 +3,7 @@
 // this is not multi-processing safe
 
 // bugs
+// unicode search not implemented
 
 package tagtool
 
@@ -14,7 +15,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"sort"
 	"strings"
 
 	"github.com/texttheater/golang-levenshtein/levenshtein"
@@ -24,13 +24,6 @@ import (
 func (g *GlobalVars) ProcessFiles(pathArg string) {
 	if g.Flags() == nil {
 		fmt.Println("PIB, g.Flags() is nil")
-	}
-	if g.songTree == nil {
-		panic("song tree nil in ProcessFiles")
-	}
-	if g.Flags().ZDumpArtist {
-		g.DumpGptree()
-		return
 	}
 	if len(g.pathArg) == 0 {
 		g.pathArg = pathArg
@@ -103,24 +96,7 @@ func (g *GlobalVars) getSong(aSong *Song) {
 		combKey += "+"
 	}
 	aSong.smapKey = combKey
-	tmp, ok := g.songTree[aSong.smapKey]
-	if ok {
-		if g.Flags().DupJustTitle || g.Flags().DupTitleAlbumArtist {
-			aRunes := []rune(aSong.Title)
-			tRunes := []rune(tmp.Title)
-			distance := levenshtein.DistanceForStrings(aRunes, tRunes, levenshtein.DefaultOptions)
-			if distance > 1 {
-				twoSongs := PairSongs{aSong, &tmp}
-				g.dupSongs = append(g.dupSongs, twoSongs)
-			}
-		}
-		return
-	}
 	aSong.FixupOutputPath(g)
-	if g.songTree == nil {
-		panic("empty song tree")
-	}
-	g.songTree[aSong.smapKey] = *aSong
 	switch {
 	case g.Flags().NoTags:
 		if aSong.AcoustID == "" {
@@ -136,7 +112,7 @@ func (g *GlobalVars) getSong(aSong *Song) {
 			fmt.Printf("#No tags found for %s\n", aSong.inPath)
 		}
 	case g.Flags().DoSummary:
-		g.updateUniqueCounts(*aSong)
+		fmt.Println("no imp for DoSummery")
 	case g.Flags().CopyAlbumInTrackOrder:
 		g.AddSongForTrackSort(*aSong)
 	case g.Flags().DoInventory:
@@ -145,7 +121,6 @@ func (g *GlobalVars) getSong(aSong *Song) {
 }
 
 // walk all files, looking for nice music files.
-// fill in a map keyed by the desired new name order
 func (g *GlobalVars) WalkFiles(pathArg string) {
 	g.pathArg = pathArg
 	var oldDir string
@@ -156,6 +131,7 @@ func (g *GlobalVars) WalkFiles(pathArg string) {
 			return err
 		}
 		if d.IsDir() {
+			fmt.Println(p)
 			return nil
 		}
 		var notOld = filepath.Dir(p)
@@ -163,7 +139,7 @@ func (g *GlobalVars) WalkFiles(pathArg string) {
 			oldDir = notOld
 			g.numDirs++
 		}
-		g.processFile(fsys, p, d, err)
+		// g.processFile(fsys, p, d, err)
 		return nil
 	})
 }
@@ -218,38 +194,6 @@ func (s *Song) FixupOutputPath(g *GlobalVars) {
 	}
 }
 
-// called for each song, we see if we have this artist/album/song in the appropriate
-// tree, and either increment it or insert it with 1 (seen once)
-func (g *GlobalVars) updateUniqueCounts(s Song) {
-	if g.songsProcessed < g.songCountTree.Size() {
-		fmt.Printf("PIB42, how can SP be < ST.size? %d < %d %s\n", g.songsProcessed, g.songCountTree.Size(), s.inPath)
-	}
-	v, ok := g.artistCountTree.Get(s.Artist)
-	if ok {
-		v++
-	} else {
-		v = 1
-	}
-	g.artistCountTree.Put(s.Artist, v)
-
-	key := s.Artist + " " + s.Album
-	v, ok = g.albumCountTree.Get(key)
-	if ok {
-		v++
-	} else {
-		v = 1
-	}
-	g.albumCountTree.Put(key, v)
-
-	key = s.Title + " " + s.Artist
-	v, ok = g.songCountTree.Get(key)
-	if ok {
-		v++
-	} else {
-		v = 1
-	}
-	g.songCountTree.Put(key, v)
-}
 
 // this is the output routine. it goes thru the map and produces output
 // appropriate for the specified flag, unless -r was specified, there
@@ -258,7 +202,7 @@ func (g *GlobalVars) updateUniqueCounts(s Song) {
 func (g *GlobalVars) ProcessMap() {
 	switch {
 	case g.Flags().JsonOutput:
-		PrintJson(g.songTree)
+	fmt.Println("no impl for JsonOutput")
 		return
 	case g.Flags().CopyAlbumInTrackOrder:
 		g.PrintTrackSortedSongs()
@@ -266,74 +210,16 @@ func (g *GlobalVars) ProcessMap() {
 	case g.Flags().DoInventory:
 		g.doInventory()
 		return
-	case g.Flags().DupJustTitle || g.Flags().DupTitleAlbumArtist:
+	case g.Flags().DupTitleAlbumArtist:
 		for i, d := range g.dupSongs {
 			fmt.Printf("%2d d.a %s\n   d.b %s\n", i, d.a.inPath, d.b.inPath)
 		}
 		return
 	}
-	uniqueArtists := make(map[string]Song)
-	var countSongs, countNoGroup int
-	for _, aSong := range g.songTree {
-		countSongs++
-		if countSongs > g.songsProcessed {
-			fmt.Printf("PIB, countsongs too big %d > %d for %s\n", countSongs, g.songsProcessed, aSong.inPath)
-		}
-		switch {
-		case g.Flags().CompareTagsToTitle:
-			g.doCompareTagsToTitle(aSong)
-		case g.Flags().UnicodePunct:
-			g.doSearchForUnicodePunct(aSong)
-		case g.Flags().DoRename:
-			g.outputRenameCommand(&aSong)
-		case g.Flags().JustList:
-			fmt.Printf("%s by %s\n", aSong.Title, aSong.Artist)
-			continue
-		case g.Flags().ShowArtistNotInMap && !aSong.artistKnown:
-			if aSong.Artist == "" {
-				countNoGroup++
-				continue
-			}
-			prim, sec := EncodeArtist(aSong.Artist)
-			_, ok := g.gptree.Get(prim)
-			if ok {
-				// fmt.Printf("primary found %s %s\n", prim, aSong.Artist)
-				continue
-			}
-			if len(sec) > 0 {
-				_, ok = g.gptree.Get(sec)
-				if ok {
-					fmt.Printf("sec found %s %s\n", prim, aSong.Artist)
-					continue
-				}
-			}
-			fmt.Printf("not found %s %s\n%s\n", prim, aSong.Artist, aSong.inPath)
-			uniqueArtists[prim] = aSong
-			if len(sec) > 0 {
-				uniqueArtists[sec] = aSong
-			}
-		case g.Flags().NoGroup:
-			if aSong.Artist == "" {
-				countNoGroup++
-			}
-		default:
-		}
-	}
 
-	if g.Flags().NoGroup {
-		fmt.Printf("#scanned %d songs, %d had no artist/group\n", countSongs, countNoGroup)
-	}
 	if g.Flags().NoTags {
-		if countSongs > g.songsProcessed {
-			fmt.Printf("PIB 3, cS %d > sp %d\n", countSongs, g.songsProcessed)
-		}
-		fmt.Printf("#scanned %d songs, %d had no artist, %d no AcoustId, %d no title, %d no MBID\n",
-			countSongs, countNoGroup, g.numNoAcoustId, g.numNoTitle, g.numNoMBID)
-	}
-	if g.Flags().ShowArtistNotInMap {
-		for k, v := range uniqueArtists {
-			fmt.Printf("addto map k: %s v: %s %s\n", k, v.Artist, v.inPath)
-		}
+		fmt.Printf("#scanned  %d no AcoustId, %d no title, %d no MBID\n",
+			g.numNoAcoustId, g.numNoTitle, g.numNoMBID)
 	}
 	if g.Flags().DoSummary {
 		g.doSummary()
@@ -342,6 +228,7 @@ func (g *GlobalVars) ProcessMap() {
 func (g *GlobalVars) doSearchForUnicodePunct(aSong Song) {
 	dir, fn := path.Split(aSong.inPath)
 	fname := strings.TrimSuffix(fn, filepath.Ext(fn))
+	fmt.Println("not yet implemented %s %s and %s\n", dir, fn, fname)
 }
 func (g *GlobalVars) doCompareTagsToTitle(aSong Song) {
 	dir, fn := path.Split(aSong.inPath)
@@ -423,25 +310,4 @@ func (g *GlobalVars) outputRenameCommand(aSong *Song) {
 		return
 	}
 	fmt.Printf("%s \"%s\" \"%s\"\n", cmd, aSong.inPath, aSong.outPath)
-}
-
-// specialized function, dumps the Artist map
-func (g *GlobalVars) DumpGptree() {
-	if !g.Flags().ZDumpArtist {
-		return
-	}
-	var arts []string
-	g.gptree.Each(func(key string, v string) {
-		var t string
-		if g.Flags().Debug {
-			t = fmt.Sprintf("%s  \"%s\"", v, key)
-		} else {
-			t = v
-		}
-		arts = append(arts, t)
-	})
-	sort.Strings(arts)
-	for _, v := range arts {
-		fmt.Printf("%s\n", v)
-	}
 }

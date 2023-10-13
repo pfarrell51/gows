@@ -6,10 +6,7 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"go/scanner"
-	"go/token"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -17,7 +14,6 @@ import (
 	"github.com/dlclark/metaphone3"
 	"github.com/zyedidia/generic"
 	"github.com/zyedidia/generic/avl"
-	"github.com/zyedidia/generic/btree"
 )
 
 type Song struct {
@@ -51,23 +47,18 @@ type PairSongs struct {
 type FlagST struct {
 	CompareTagsToTitle    bool
 	CopyAlbumInTrackOrder bool
-	CpuProfile            string
 	CSV                   bool
 	Debug                 bool
 	DoInventory           bool
 	DoRename              bool
 	DoSummary             bool
-	DupJustTitle          bool
 	DupTitleAlbumArtist   bool
 	JsonOutput            bool
 	JustList              bool
-	MemProfile            string
 	NoGroup               bool
 	NoTags                bool
-	ShowArtistNotInMap    bool
 	ShowNoSongs           bool
 	UnicodePunct          bool
-	ZDumpArtist           bool
 }
 
 type GlobalVars struct {
@@ -78,8 +69,6 @@ type GlobalVars struct {
 	artistCountTree                      *avl.Tree[string, int]
 	albumCountTree                       *avl.Tree[string, int]
 	songCountTree                        *avl.Tree[string, int]
-	gptree                               *btree.Tree[string, string]
-	songTree                             map[string]Song
 	tracksongs                           []TrackSong // for sorting by track number within an album
 	invTriples                           []InventorySong
 	dupSongs                             []PairSongs
@@ -92,10 +81,8 @@ func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags = new(FlagST)
 	g.localFlags.CompareTagsToTitle = f.CompareTagsToTitle
 	g.localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
-	g.localFlags.CpuProfile = f.CpuProfile
 	g.localFlags.CSV = f.CSV
 	g.localFlags.Debug = f.Debug
-	g.localFlags.DupJustTitle = f.DupJustTitle
 	g.localFlags.DupTitleAlbumArtist = f.DupTitleAlbumArtist
 	g.localFlags.DoRename = f.DoRename
 	g.localFlags.DoInventory = f.DoInventory
@@ -103,29 +90,18 @@ func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags.NoTags = f.NoTags
 	g.localFlags.JsonOutput = f.JsonOutput
 	g.localFlags.JustList = f.JustList
-	g.localFlags.MemProfile = f.MemProfile
 	g.localFlags.NoGroup = f.NoGroup
 	g.localFlags.NoTags = f.NoTags
-	g.localFlags.ShowArtistNotInMap = f.ShowArtistNotInMap
 	g.localFlags.ShowNoSongs = f.ShowNoSongs
 	g.localFlags.UnicodePunct = f.UnicodePunct
-	g.localFlags.ZDumpArtist = f.ZDumpArtist
 }
 func (g *GlobalVars) Flags() *FlagST {
 	return g.localFlags
-}
-func (g *GlobalVars) GetSongTree() map[string]Song {
-	return g.songTree
 }
 
 var enc metaphone3.Encoder
 
 const maxEncode = 20
-
-var (
-	//go:embed data/artist.txt
-	artistnames []byte
-)
 
 // takes a string and returns just the letters.
 func justLetter(a string) string {
@@ -201,6 +177,8 @@ func EncodeAlbum(s string) (string, string) {
 	return prim, sec
 }
 
+const NAllocateSongs = 10 * 1000
+
 func AllocateData() *GlobalVars {
 	enc.Encode("ignore this")
 	enc.MaxLength = maxEncode
@@ -209,54 +187,13 @@ func AllocateData() *GlobalVars {
 	rval.artistCountTree = avl.New[string, int](generic.Less[string])
 	rval.albumCountTree = avl.New[string, int](generic.Less[string])
 	rval.songCountTree = avl.New[string, int](generic.Less[string])
-	rval.gptree = btree.New[string, string](generic.Less[string])
-	rval.songTree = make(map[string]Song, 1000)
-	rval.tracksongs = make([]TrackSong, 0, 1500)
-	rval.dupSongs = make([]PairSongs, 0, 1500)
-	rval.invTriples = make([]InventorySong, 0, 1000)
-	rval.knownIds = make(map[string]bool, 1000)
+	rval.tracksongs = make([]TrackSong, 0, NAllocateSongs)
+	rval.dupSongs = make([]PairSongs, 0, NAllocateSongs/10)
+	rval.invTriples = make([]InventorySong, 0, NAllocateSongs)
+	rval.knownIds = make(map[string]bool, NAllocateSongs)
 	if rval.localFlags == nil {
 		fmt.Println("PIB in allocate Data, localflags is nil")
 	}
-	if rval.songTree == nil {
-		panic("Allocate Data post setup songTree is nil")
-	}
-	rval.loadArtistMap()
 	return rval
 }
 
-func (g *GlobalVars) loadArtistMap() {
-	if g.gptree.Size() > 0 {
-		panic("PIB group/artist array already populated")
-	}
-	artists := make([]string, 0, 600)
-	// Initialize the scanner.
-	var s scanner.Scanner
-	fset := token.NewFileSet()                              // positions are relative to fset
-	file := fset.AddFile("", fset.Base(), len(artistnames)) // register input "file"
-	s.Init(file, artistnames, nil /* no error handler */, scanner.ScanComments)
-
-	// Repeated calls to Scan yield the token sequence found in the input.
-	for {
-		_, tok, lit := s.Scan()
-		if tok == token.EOF {
-			break
-		}
-		if tok == token.STRING {
-			lit = strings.TrimPrefix(lit, "\"")
-			lit = strings.TrimSuffix(lit, "\"")
-			artists = append(artists, lit)
-		}
-	}
-	sort.Strings(artists)
-	for _, n := range artists {
-		prim, sec := EncodeArtist(n)
-		g.gptree.Put(prim, n)
-		if len(sec) > 0 {
-			g.gptree.Put(sec, n)
-		}
-		if g.Flags().Debug {
-			fmt.Printf("%s, %s, %s\n", prim, sec, n)
-		}
-	}
-}
