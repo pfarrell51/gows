@@ -70,14 +70,6 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 		}
 	}
 	if g.Flags().Debug {
-		for k := range info { // loop thru extra meta data, musicbrainz, etc
-			found := g.knownIds[k]
-			if !found {
-				g.knownIds[k] = true
-			}
-		}
-	}
-	if g.Flags().Debug {
 		fmt.Printf("Format %s Type %s\n", m.Format(), m.FileType())
 		if m.Title() != "" {
 			fmt.Printf("Title() %v\n", m.Title())
@@ -104,9 +96,4 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 		}
 	}
 	return rval, nil
-}
-func (g *GlobalVars) DumpKnowIDnames() {
-	for k := range g.knownIds {
-		fmt.Printf("%s\n", k)
-	}
 }
