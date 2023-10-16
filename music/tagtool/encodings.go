@@ -11,18 +11,14 @@ import (
 	"strings"
 )
 
-// generate json from song map, output to stdout
-func PrintJson(m map[string]Song) {
+// generate json from song slice, output to stdout
+func PrintJson(m []Song) {
 	PrintJsontoWriter(os.Stdout, m)
 }
 
-// generate json from song map, output to writer
-func PrintJsontoWriter(w io.Writer, m map[string]Song) {
-	var songs []Song
-	for _, v := range m {
-		songs = append(songs, v)
-	}
-	data, err := json.Marshal(songs)
+// generate json from song slice, output to writer
+func PrintJsontoWriter(w io.Writer, m []Song) {
+	data, err := json.Marshal(m)
 	if err != nil {
 		log.Fatalf("JSON marshalling failed: %s", err)
 	}
@@ -31,12 +27,30 @@ func PrintJsontoWriter(w io.Writer, m map[string]Song) {
 	w.Write(b)
 }
 
-// generate CSV from song map, output to stdout
+// generate CSV from song slice, output to stdout
 func PrintCSV(m map[string]Song) {
 	PrintCSVtoWriter(os.Stdout, m)
 }
+// print one song as CSV, using the global csv writer
+func (g *GlobalVars) PrintSongToCSV(s *Song) {
+	if g.csvWrtr == nil {
+		panic("csv writer is nill")
+	}
+	var aSong []string
+	aSong = append(aSong, s.Artist)
+	aSong = append(aSong, s.Album)
+	aSong = append(aSong, s.Title)
+	aSong = append(aSong, s.Genre)
+	aSong = append(aSong, strconv.Itoa(s.Track))
+	aSong = append(aSong, strconv.Itoa(s.Year))
+	aSong = append(aSong, s.MBID)
 
-// generate CSV from song map, output to writer
+	if err := g.csvWrtr.Write(aSong); err != nil {
+		log.Fatalln("error writing record to csv:", err)
+	}
+}
+
+// generate CSV from song slice, output to writer
 func PrintCSVtoWriter(w io.Writer, m map[string]Song) {
 	var songs [][]string
 	for _, v := range m {
@@ -64,37 +78,3 @@ func PrintCSVtoWriter(w io.Writer, m map[string]Song) {
 	}
 }
 
-// generate CSV from song map, output to stdout
-func (g *GlobalVars) PrintSortedSongsCSV(suppressTitle bool) {
-	PrintSortedCSVtoWriter(os.Stdout, g.invTriples, suppressTitle)
-}
-
-// generate CSV from song map, output to writer
-func PrintSortedCSVtoWriter(w io.Writer, songs []InventorySong, suppressTitle bool) {
-	var oldArtist, oldAlbum string
-	cw := csv.NewWriter(w)
-	for _, song := range songs {
-		var aSong []string
-		if suppressTitle {
-			if song.artist != oldArtist || song.album != oldAlbum {
-				aSong = append(aSong, song.artist)
-				aSong = append(aSong, song.album)
-				oldArtist = song.artist
-				oldAlbum = song.album
-			}
-		} else {
-			aSong = append(aSong, song.artist)
-			aSong = append(aSong, song.album)
-			aSong = append(aSong, song.title)
-		}
-		if len(aSong) > 0 {
-			if err := cw.Write(aSong); err != nil {
-				log.Fatalln("error writing record to csv:", err)
-			}
-		}
-	}
-	cw.Flush() // Write any buffered data to the underlying writer (standard output).
-	if err := cw.Error(); err != nil {
-		log.Fatal(err)
-	}
-}
