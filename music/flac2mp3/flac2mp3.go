@@ -54,7 +54,7 @@ var ExtRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 //
 //	[soft-knee-dB:]in-dB1[,out-dB1]{,in-dB2,out-dB2}
 //	[gain [initial-volume-dB [delay]]]
-const audioOutputParams = " -b 420k -q:a 0" // for ffmpeg
+const audioOutputParams = " -b:a 350k -q:a 0 " // for ffmpeg
 const verbosity = " -V2"
 const norm = " --norm " // = "-v 0.98  --norm -G"
 const attackDelay = "0.3,1"
