@@ -20,7 +20,7 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 	}
 	rval := new(Song)
 	rval.BasicPathSetup(g, p)
-	if foundExt := ExtRegex.FindString(p); len(foundExt) > 0 { // redundant check to prevent Bozo programmers
+	if foundExt := ExtRegex.FindString(p); len(foundExt) > 0 { // redundant check to prevent Bozos
 		if g.Flags().Debug {
 			fmt.Printf("gmd:foundExt %s\n", foundExt)
 		}
@@ -46,10 +46,8 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 	if strings.Contains(rval.Title, "/") {
 		rval.Title = strings.ReplaceAll(rval.Title, "/", " ")
 	}
-	rval.titleH, _ = EncodeTitle(rval.Title)
 	rval.Artist = StandardizeArtist(m.Artist())
 	rval.Album = m.Album()
-	rval.albumH, _ = EncodeAlbum(m.Album())
 	rval.Genre = m.Genre()
 	rval.Year = m.Year()
 	rval.Track, _ = m.Track()
