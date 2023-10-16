@@ -8,6 +8,7 @@
 package tagtool
 
 import (
+	"encoding/csv"
 	"fmt"
 	"io/fs"
 	"os"
@@ -28,8 +29,18 @@ func (g *GlobalVars) ProcessFiles(pathArg string) {
 	if len(g.pathArg) == 0 {
 		g.pathArg = pathArg
 	}
+	if g.Flags().CSV {
+		g.csvWrtr = csv.NewWriter(os.Stdout)
+	}
 	g.WalkFiles(pathArg)
-	g.ProcessMap()
+	g.doShutdown()
+}
+func (g *GlobalVars) doShutdown() {
+	if g.Flags().CSV {
+		g.csvWrtr.Flush()
+		g.csvWrtr = nil
+	}
+	g.doSummary()
 }
 
 var ExtRegex = regexp.MustCompile(`[Mm][Pp][34]|[Ff][Ll][Aa][Cc]$`)
@@ -49,12 +60,26 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 	if extR == nil {
 		return nil // not interesting extension
 	}
+	if g.Flags().Debug {
+		fmt.Printf("procssFile for %s\n", p)
+	}
 	rSong, _ := g.processSong(p)
 	if rSong == nil {
 		fmt.Printf("#processfile srong %s resulted in nil Song", p)
 		return nil
 	}
-	g.getSong(rSong)
+	g.songCount++
+	rSong.FixupOutputPath(g)
+	switch {
+	case g.Flags().CopyAlbumInTrackOrder:
+		g.AddSongForTrackSort(*rSong)
+	case g.Flags().DoInventory:
+		if g.Flags().CSV {
+			g.PrintSongToCSV(rSong)
+		} else {
+			fmt.Printf("%s,%s,%s\n", rSong.Artist, rSong.Album, rSong.Title)
+		}
+	}
 	return nil
 }
 
@@ -63,6 +88,9 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 func (g *GlobalVars) processSong(p string) (*Song, error) {
 	var err error
 	var aSong *Song
+	if g.Flags().Debug {
+		fmt.Printf("procssSong for %s\n", p)
+	}
 	aSong, err = g.GetMetaData(p)
 	if err != nil {
 		return nil, err
@@ -71,53 +99,6 @@ func (g *GlobalVars) processSong(p string) (*Song, error) {
 		panic(fmt.Sprintf("song %s resulted in nil Song", p))
 	}
 	return aSong, nil
-}
-func (g *GlobalVars) getSong(aSong *Song) {
-	if aSong == nil {
-		panic(fmt.Sprintf("getsong has nil Song"))
-	}
-	g.songsProcessed++
-	key, _ := EncodeTitle(aSong.Title)
-	combKey := key
-	if aSong.Artist == "" {
-		combKey += "#"
-	} else {
-		if aSong.artistH == "" {
-			tmp, _ := EncodeArtist(aSong.Artist)
-			aSong.artistH = tmp
-			combKey += aSong.artistH
-		} else {
-			combKey += aSong.artistH
-		}
-	}
-	if aSong.Album != "" {
-		combKey += aSong.albumH
-	} else {
-		combKey += "+"
-	}
-	aSong.smapKey = combKey
-	aSong.FixupOutputPath(g)
-	switch {
-	case g.Flags().NoTags:
-		if aSong.AcoustID == "" {
-			g.numNoAcoustId++
-		}
-		if aSong.Title == "" {
-			g.numNoTitle++
-		}
-		if aSong.MBID == "" {
-			g.numNoMBID++
-		}
-		if aSong.AcoustID == "" && aSong.Title == "" && aSong.MBID == "" {
-			fmt.Printf("#No tags found for %s\n", aSong.inPath)
-		}
-	case g.Flags().DoSummary:
-		fmt.Println("no imp for DoSummery")
-	case g.Flags().CopyAlbumInTrackOrder:
-		g.AddSongForTrackSort(*aSong)
-	case g.Flags().DoInventory:
-		g.AddSongForTripleSort(*aSong)
-	}
 }
 
 // walk all files, looking for nice music files.
@@ -131,7 +112,6 @@ func (g *GlobalVars) WalkFiles(pathArg string) {
 			return err
 		}
 		if d.IsDir() {
-			fmt.Println(p)
 			return nil
 		}
 		var notOld = filepath.Dir(p)
@@ -139,7 +119,7 @@ func (g *GlobalVars) WalkFiles(pathArg string) {
 			oldDir = notOld
 			g.numDirs++
 		}
-		// g.processFile(fsys, p, d, err)
+		g.processFile(fsys, p, d, err)
 		return nil
 	})
 }
@@ -193,43 +173,6 @@ func (s *Song) FixupOutputPath(g *GlobalVars) {
 		}
 	}
 }
-
-
-// this is the output routine. it goes thru the map and produces output
-// appropriate for the specified flag, unless -r was specified, there
-// is a separate routine to output the rename command
-
-func (g *GlobalVars) ProcessMap() {
-	switch {
-	case g.Flags().JsonOutput:
-	fmt.Println("no impl for JsonOutput")
-		return
-	case g.Flags().CopyAlbumInTrackOrder:
-		g.PrintTrackSortedSongs()
-		return
-	case g.Flags().DoInventory:
-		g.doInventory()
-		return
-	case g.Flags().DupTitleAlbumArtist:
-		for i, d := range g.dupSongs {
-			fmt.Printf("%2d d.a %s\n   d.b %s\n", i, d.a.inPath, d.b.inPath)
-		}
-		return
-	}
-
-	if g.Flags().NoTags {
-		fmt.Printf("#scanned  %d no AcoustId, %d no title, %d no MBID\n",
-			g.numNoAcoustId, g.numNoTitle, g.numNoMBID)
-	}
-	if g.Flags().DoSummary {
-		g.doSummary()
-	}
-}
-func (g *GlobalVars) doSearchForUnicodePunct(aSong Song) {
-	dir, fn := path.Split(aSong.inPath)
-	fname := strings.TrimSuffix(fn, filepath.Ext(fn))
-	fmt.Println("not yet implemented %s %s and %s\n", dir, fn, fname)
-}
 func (g *GlobalVars) doCompareTagsToTitle(aSong Song) {
 	dir, fn := path.Split(aSong.inPath)
 	fname := strings.TrimSuffix(fn, filepath.Ext(fn))
@@ -253,34 +196,9 @@ func (g *GlobalVars) doCompareTagsToTitle(aSong Song) {
 		fmt.Printf(" dT: %d, dA: %d, d: %s  fn:%s\n", disTTL, disART, dir, fn)
 	}
 }
-func (g *GlobalVars) doInventory() {
-	g.PrintTripleSortedSongs()
-}
 func (g *GlobalVars) doSummary() {
-	if g.Flags().Debug {
-		fmt.Println("artists. Count is number of songs across all albums for this artist")
-		g.artistCountTree.Each(func(k string, v int) {
-			fmt.Printf("%d %s\n", v, k)
-		})
-
-		fmt.Printf(">#2 found %d artists, %d albums (%d directories) and %d songs\n",
-			g.artistCountTree.Size(), g.albumCountTree.Size(), g.numDirs, g.songCountTree.Size())
-		fmt.Println("albums. Count is number of songs in the given artist/album")
-		g.albumCountTree.Each(func(k string, v int) {
-			fmt.Printf("%d %s\n", v, k)
-		})
-		fmt.Printf(">#3 found %d artists, %d albums and %d songs\n",
-			g.artistCountTree.Size(), g.albumCountTree.Size(), g.songCountTree.Size())
-
-		if g.Flags().Debug {
-			fmt.Println("songs")
-			g.songCountTree.Each(func(k string, v int) {
-				fmt.Printf("%d %s\n", v, k)
-			})
-		}
-	}
-	fmt.Printf("found %d artists, %d albums (%d directories) and %d songs or sP %d\n",
-		g.artistCountTree.Size(), g.albumCountTree.Size(), g.numDirs, g.songCountTree.Size(), g.songsProcessed)
+	fmt.Printf("#Songs: %d, Artists: %d, albums: %d, numDir: %d\n",
+		g.songCount, g.artistCount, g.albumCount, g.numDirs)
 }
 
 // prints out a suitable rename/mv/ren command to put the file name
