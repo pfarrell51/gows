@@ -41,20 +41,18 @@ func main() {
 	flag.BoolVar(&flags.DoInventory, "i", false, "inventory - basic inventory")
 	flag.BoolVar(&flags.DoRename, "r", false, "rename - output rename from internal metadata")
 	flag.BoolVar(&flags.DoSummary, "s", false, "summary - print summary statistics")
-	flag.BoolVar(&flags.DupTitleAlbumArtist, "dup", false, "duplicate song based on title, album & Artist on")
 	flag.BoolVar(&helpflag, "h", false, "help")
-	flag.BoolVar(&flags.JsonOutput, "j", false, "output metadata as json")
-	flag.BoolVar(&flags.JustList, "l", false, "list - list files")
+	flag.BoolVar(&flags.JsonOutput, "json", false, "output metadata as json")
+	flag.BoolVar(&flags.JustAlbumArtist, "jaa", false, "output Artist & Album (no song title)")
 	flag.BoolVar(&flags.NoGroup, "ng", false, "nogroup - list files that do not have an artist/group in the title")
 	flag.BoolVar(&flags.NoTags, "nt", false, "notags - list files that do not have any meta tags")
-	flag.BoolVar(&flags.ShowNoSongs, "sn", false, "show no song titles (in inventory and other listings)")
 	flag.BoolVar(&flags.UnicodePunct, "u", false, "show songs with Unicode punct")
 	flag.Parse()
 	if helpflag {
 		flag.Usage()
 		return
 	}
-
+fmt.Printf("jaa %t\n", flags.JustAlbumArtist)
 	globals.SetFlagArgs(*flags)
 
 	pathArg := path.Clean(flag.Arg(0))
