@@ -70,30 +70,6 @@ func (a ByThree) Less(i, j int) bool {
 	// album and artist same
 	return a[i].title < a[j].title
 }
-func (g *GlobalVars) AddSongForTripleSort(a Song) {
-	tmp := InventorySong{a.Artist, a.Album, a.Title}
-	g.invTriples = append(g.invTriples, tmp)
-}
-
-func (g GlobalVars) PrintTripleSortedSongs() {
-	sort.Sort(ByThree(g.invTriples))
-	var oldArtist, oldAlbum string
-	if !g.Flags().CSV {
-		for _, s := range g.invTriples {
-			if g.Flags().ShowNoSongs {
-				if s.artist != oldArtist || s.album != oldAlbum {
-					fmt.Printf("\"%s\", \"%s\"\n", s.artist, s.album)
-					oldArtist = s.artist
-					oldAlbum = s.album
-				}
-			} else {
-				fmt.Printf("%s, %s, %s\n", s.artist, s.album, s.title)
-			}
-		}
-		return
-	}
-	g.PrintSortedSongsCSV(g.Flags().ShowNoSongs)
-}
 
 type TrackSong struct {
 	Track int
