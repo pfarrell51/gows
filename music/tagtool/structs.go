@@ -5,24 +5,18 @@ package tagtool
 import (
 	"bytes"
 	_ "embed"
+	"encoding/csv"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode"
-
-	"github.com/dlclark/metaphone3"
-	"github.com/zyedidia/generic"
-	"github.com/zyedidia/generic/avl"
 )
 
 type Song struct {
 	Artist            string
-	artistH           string
 	Album             string
-	albumH            string
 	Title             string
-	titleH            string
 	smapKey           string
 	Genre             string
 	Disc, DiscCount   int
@@ -40,10 +34,6 @@ type Song struct {
 	outPathBase       string // copied from pathArg entered by the user
 	ext               string
 }
-type PairSongs struct {
-	a *Song
-	b *Song
-}
 type FlagST struct {
 	CompareTagsToTitle    bool
 	CopyAlbumInTrackOrder bool
@@ -53,11 +43,10 @@ type FlagST struct {
 	DoRename              bool
 	DoSummary             bool
 	DupTitleAlbumArtist   bool
+	JustAlbumArtist       bool
 	JsonOutput            bool
-	JustList              bool
 	NoGroup               bool
 	NoTags                bool
-	ShowNoSongs           bool
 	UnicodePunct          bool
 }
 
@@ -66,14 +55,15 @@ type GlobalVars struct {
 	localFlags                           *FlagST
 	songsProcessed                       int
 	numNoAcoustId, numNoTitle, numNoMBID int
-	artistCountTree                      *avl.Tree[string, int]
-	albumCountTree                       *avl.Tree[string, int]
-	songCountTree                        *avl.Tree[string, int]
+	artistCount                          int
+	oldArtist                            string
+	albumCount                           int
+	numDirs                              int
+	oldAlbum                             string
+	songCount                            int
 	tracksongs                           []TrackSong // for sorting by track number within an album
 	invTriples                           []InventorySong
-	dupSongs                             []PairSongs
-	knownIds                             map[string]bool
-	numDirs                              int
+	csvWrtr                              *csv.Writer
 }
 
 // copy user set flags to a local store
@@ -89,19 +79,14 @@ func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags.DoSummary = f.DoSummary
 	g.localFlags.NoTags = f.NoTags
 	g.localFlags.JsonOutput = f.JsonOutput
-	g.localFlags.JustList = f.JustList
+	g.localFlags.JustAlbumArtist = f.JustAlbumArtist
 	g.localFlags.NoGroup = f.NoGroup
 	g.localFlags.NoTags = f.NoTags
-	g.localFlags.ShowNoSongs = f.ShowNoSongs
 	g.localFlags.UnicodePunct = f.UnicodePunct
 }
 func (g *GlobalVars) Flags() *FlagST {
 	return g.localFlags
 }
-
-var enc metaphone3.Encoder
-
-const maxEncode = 20
 
 // takes a string and returns just the letters.
 func justLetter(a string) string {
@@ -163,37 +148,14 @@ func StandardizeTitle(title string) string {
 	}
 	return rval
 }
-func EncodeTitle(s string) (string, string) {
-	//fmt.Printf("Encoding title of %s\n", s)
-	prim, sec := enc.Encode(justLetter(StandardizeTitle(s)))
-	return prim, sec
-}
-func EncodeArtist(s string) (string, string) {
-	prim, sec := enc.Encode(justLetter(StandardizeArtist(s)))
-	return prim, sec
-}
-func EncodeAlbum(s string) (string, string) {
-	prim, sec := enc.Encode(justLetter(StandardizeTitle(s)))
-	return prim, sec
-}
 
 const NAllocateSongs = 10 * 1000
 
 func AllocateData() *GlobalVars {
-	enc.Encode("ignore this")
-	enc.MaxLength = maxEncode
 	rval := new(GlobalVars)
 	rval.localFlags = new(FlagST)
-	rval.artistCountTree = avl.New[string, int](generic.Less[string])
-	rval.albumCountTree = avl.New[string, int](generic.Less[string])
-	rval.songCountTree = avl.New[string, int](generic.Less[string])
-	rval.tracksongs = make([]TrackSong, 0, NAllocateSongs)
-	rval.dupSongs = make([]PairSongs, 0, NAllocateSongs/10)
-	rval.invTriples = make([]InventorySong, 0, NAllocateSongs)
-	rval.knownIds = make(map[string]bool, NAllocateSongs)
 	if rval.localFlags == nil {
 		fmt.Println("PIB in allocate Data, localflags is nil")
 	}
 	return rval
 }
-
