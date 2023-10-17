@@ -4,6 +4,7 @@ package tagtool
 import (
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -28,12 +29,15 @@ func PrintJsontoWriter(w io.Writer, m []Song) {
 }
 
 // generate CSV from song slice, output to stdout
-func PrintCSV(m map[string]Song) {
-	PrintCSVtoWriter(os.Stdout, m)
+func  (g *GlobalVars) PrintCSV(m map[string]Song) {
+	g.PrintCSVtoWriter(os.Stdout, m)
 }
-func  (g *GlobalVars) printCSVArtistAlbum(dir, file string) {
+func (g *GlobalVars) printCSVArtistAlbum(dir, file string) {
 	if g.csvWrtr == nil {
 		panic("csv writer is nill")
+	}
+	if g.Flags().Debug {
+		fmt.Printf("in PCV %s and %s\n", dir, file)
 	}
 	var aSong []string
 	aSong = append(aSong, dir)
@@ -42,6 +46,7 @@ func  (g *GlobalVars) printCSVArtistAlbum(dir, file string) {
 		log.Fatalln("error writing record to csv:", err)
 	}
 }
+
 // print one song as CSV, using the global csv writer
 func (g *GlobalVars) PrintSongToCSV(s *Song) {
 	if g.csvWrtr == nil {
@@ -50,7 +55,7 @@ func (g *GlobalVars) PrintSongToCSV(s *Song) {
 	var aSong []string
 	aSong = append(aSong, s.Artist)
 	aSong = append(aSong, s.Album)
-	if !g.Flags().JustAlbumArtist {
+	if !g.Flags().JustArtistAlbum {
 		aSong = append(aSong, s.Title)
 		aSong = append(aSong, s.Genre)
 		aSong = append(aSong, strconv.Itoa(s.Track))
@@ -64,18 +69,19 @@ func (g *GlobalVars) PrintSongToCSV(s *Song) {
 }
 
 // generate CSV from song slice, output to writer
-func PrintCSVtoWriter(w io.Writer, m map[string]Song) {
+func  (g *GlobalVars) PrintCSVtoWriter(w io.Writer, m map[string]Song) {
 	var songs [][]string
 	for _, v := range m {
 		var aSong []string
 		aSong = append(aSong, v.Artist)
 		aSong = append(aSong, v.Album)
-		aSong = append(aSong, v.Title)
-		aSong = append(aSong, v.Genre)
-		aSong = append(aSong, strconv.Itoa(v.Track))
-		aSong = append(aSong, strconv.Itoa(v.Year))
-		aSong = append(aSong, v.MBID)
-
+		if !g.Flags().JustArtistAlbum {
+			aSong = append(aSong, v.Title)
+			aSong = append(aSong, v.Genre)
+			aSong = append(aSong, strconv.Itoa(v.Track))
+			aSong = append(aSong, strconv.Itoa(v.Year))
+			aSong = append(aSong, v.MBID)
+		}
 		songs = append(songs, aSong)
 	}
 	cw := csv.NewWriter(w)
