@@ -81,7 +81,6 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 		g.AddSongForTrackSort(*rSong)
 	case g.Flags().DoInventory:
 		if g.Flags().CSV {
-			fmt.Printf("calling print to csv\n")
 			g.PrintSongToCSV(rSong)
 		} else {
 			fmt.Printf("%s,%s,%s\n", rSong.Artist, rSong.Album, rSong.Title)
