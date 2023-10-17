@@ -36,8 +36,10 @@ func (g *GlobalVars) ProcessFiles(pathArg string) {
 	g.WalkFiles(pathArg)
 	g.doShutdown()
 }
+
+// final close, flush, etc.
 func (g *GlobalVars) doShutdown() {
-	if g.Flags().CSV {
+	if g.Flags().CSV && g.csvWrtr != nil {
 		g.csvWrtr.Flush()
 		g.csvWrtr = nil
 	}
@@ -54,8 +56,11 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 		fmt.Println("error is ", err)
 		return nil
 	}
-	if d == nil || d.IsDir() || strings.HasPrefix(p, ".") {
+	if d == nil || strings.HasPrefix(p, ".") {
 		return nil
+	}
+	if d.IsDir() {
+		panic(fmt.Sprintf("impossible, pf sees directory %s\n", p))
 	}
 	extR := ExtRegex.FindStringIndex(p)
 	if extR == nil {
@@ -76,6 +81,7 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 		g.AddSongForTrackSort(*rSong)
 	case g.Flags().DoInventory:
 		if g.Flags().CSV {
+			fmt.Printf("calling print to csv\n")
 			g.PrintSongToCSV(rSong)
 		} else {
 			fmt.Printf("%s,%s,%s\n", rSong.Artist, rSong.Album, rSong.Title)
@@ -113,12 +119,28 @@ func (g *GlobalVars) WalkFiles(pathArg string) {
 			return err
 		}
 		if d.IsDir() {
+			if p == "." {
+				return nil
+			}
+			dir, file := filepath.Split(p)
+			switch {
+			case dir == "":
+				g.artistCount++
+			case len(dir) > 0:
+				dir = filepath.Clean(dir)
+				g.albumCount++
+				g.printCSVArtistAlbum(dir, file)
+			}
 			return nil
 		}
 		var notOld = filepath.Dir(p)
 		if oldDir != notOld && notOld != "." {
 			oldDir = notOld
 			g.numDirs++
+		}
+		if g.Flags().DoInventory && g.Flags().JustArtistAlbum && g.Flags().CSV {
+			//fmt.Println("skipping further processing")
+			return nil // already printed.
 		}
 		g.processFile(fsys, p, d, err)
 		return nil
