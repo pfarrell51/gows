@@ -42,8 +42,7 @@ type FlagST struct {
 	DoInventory           bool
 	DoRename              bool
 	DoSummary             bool
-	DupTitleAlbumArtist   bool
-	JustAlbumArtist       bool
+	JustArtistAlbum       bool
 	JsonOutput            bool
 	NoGroup               bool
 	NoTags                bool
@@ -73,13 +72,12 @@ func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
 	g.localFlags.CSV = f.CSV
 	g.localFlags.Debug = f.Debug
-	g.localFlags.DupTitleAlbumArtist = f.DupTitleAlbumArtist
 	g.localFlags.DoRename = f.DoRename
 	g.localFlags.DoInventory = f.DoInventory
 	g.localFlags.DoSummary = f.DoSummary
 	g.localFlags.NoTags = f.NoTags
 	g.localFlags.JsonOutput = f.JsonOutput
-	g.localFlags.JustAlbumArtist = f.JustAlbumArtist
+	g.localFlags.JustArtistAlbum = f.JustArtistAlbum
 	g.localFlags.NoGroup = f.NoGroup
 	g.localFlags.NoTags = f.NoTags
 	g.localFlags.UnicodePunct = f.UnicodePunct
