@@ -52,7 +52,6 @@ func main() {
 		flag.Usage()
 		return
 	}
-fmt.Printf("jaa %t\n", flags.JustAlbumArtist)
 	globals.SetFlagArgs(*flags)
 
 	pathArg := path.Clean(flag.Arg(0))
