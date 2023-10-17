@@ -31,7 +31,17 @@ func PrintJsontoWriter(w io.Writer, m []Song) {
 func PrintCSV(m map[string]Song) {
 	PrintCSVtoWriter(os.Stdout, m)
 }
-
+func  (g *GlobalVars) printCSVArtistAlbum(dir, file string) {
+	if g.csvWrtr == nil {
+		panic("csv writer is nill")
+	}
+	var aSong []string
+	aSong = append(aSong, dir)
+	aSong = append(aSong, file)
+	if err := g.csvWrtr.Write(aSong); err != nil {
+		log.Fatalln("error writing record to csv:", err)
+	}
+}
 // print one song as CSV, using the global csv writer
 func (g *GlobalVars) PrintSongToCSV(s *Song) {
 	if g.csvWrtr == nil {
@@ -40,7 +50,7 @@ func (g *GlobalVars) PrintSongToCSV(s *Song) {
 	var aSong []string
 	aSong = append(aSong, s.Artist)
 	aSong = append(aSong, s.Album)
-	if ! g.Flags().JustAlbumArtist {
+	if !g.Flags().JustAlbumArtist {
 		aSong = append(aSong, s.Title)
 		aSong = append(aSong, s.Genre)
 		aSong = append(aSong, strconv.Itoa(s.Track))
