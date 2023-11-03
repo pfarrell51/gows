@@ -57,6 +57,7 @@ var ExtRegex = regexp.MustCompile("((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 const audioOutputParams = " -b:a 350k -q:a 0 " // for ffmpeg
 const verbosity = " -V2"
 const norm = " --norm " // = "-v 0.98  --norm -G"
+const betweenSwitch = "-C 320 "
 const attackDelay = "0.3,1"
 const softKnee = "6" // from https://sox.sourceforge.net/sox.html
 const transferFun = "-70,-60,-20"
@@ -65,12 +66,13 @@ const initialVolume = "-90"
 const delay = "0.2"
 const soxParams = verbosity + norm + attackDelay + softKnee + ":" + transferFun + " " + makeupGain + initialVolume + delay
 
+//  sox -V2 --norm infile.flac -C 320 outfile.mp3 compand 0.3,1 6:-70,-60,-20 -8 -90 0.2
+
 var currentTime = time.Now().String()
 var bytestamp = []byte(soxParams + " " + currentTime + "\n")
 
 const pathSep = string(os.PathSeparator)
 
-const interPathPart = "mp3u"
 const BreadcrumbFN = "soxdata.txt"
 
 func arePathsParallel(in, out string) bool {
@@ -133,30 +135,16 @@ func (g GlobalVars) makeDirAndBreadcrumbFile(dir string) {
 // and arguments to execute the verb with the processed files going
 // to the parallel 'outpath' directory
 func (g *GlobalVars) Files(verb, inpath, outpath string) (count int) {
-	if !(verb == "ffmpeg" || verb == "sox" || verb == "both") {
+	// if !(verb == "ffmpeg" || verb == "sox" || verb == "both") {
+	if verb != "sox" {
 		fmt.Printf("unsupported verb: %s\n", verb)
 		return 0
 	}
 	g.verb = verb
 	var songCount int
-	var tmpPath = inpath
-	switch verb {
-	case "ffmpeg":
-		if outpath == "mp3" {
-			outpath = strings.Replace(inpath, "flac", "mp3", -1)
-		}
 
-	case "both":
-		tmpPath = strings.Replace(inpath, "flac", interPathPart, -1)
-		if outpath == "mp3" {
-			outpath = strings.Replace(inpath, "flac", "mp3", -1)
-		}
-	case "sox":
-		//fmt.Println("sox asz.wav asz-car.wav compand 0.3,1 6:-70,-60,-20 -5 -90 0.2")
-
-	default:
-		fmt.Printf("unsupported verb: %s\n", verb)
-		return 0
+	if outpath == "mp3" {
+		outpath = strings.Replace(inpath, "flac", "mp3", -1)
 	}
 	if !arePathsParallel(inpath, outpath) {
 		fmt.Printf("input and output paths not parallel,\n%s != \n%s\n", inpath, outpath)
@@ -166,6 +154,7 @@ func (g *GlobalVars) Files(verb, inpath, outpath string) (count int) {
 	fsys := os.DirFS(inpath)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
+			fmt.Println("error walking dir")
 			fmt.Println(err)
 			return nil
 		}
@@ -190,26 +179,9 @@ func (g *GlobalVars) Files(verb, inpath, outpath string) (count int) {
 		g.makeDirAndBreadcrumbFile(dir)
 
 		useIn := filepath.Join(inpath, p)
-		middleFN := filepath.Join(tmpPath, newP)
 		useOut := filepath.Join(dir, fn)
-
-		switch verb {
-		case "ffmpeg":
-			fmt.Printf("%s -loglevel error -y -i \"%s\" %s \"%s\"\n",
-				verb, useIn, audioOutputParams, useOut)
-		case "sox":
-			fmt.Printf("%s %s %s \"%s\" \"%s\" compand %s %s:%s %s %s %s\n",
-				verb, verbosity, norm, useIn, useOut, attackDelay, softKnee, transferFun, makeupGain, initialVolume, delay)
-		case "both":
-			middleDir, _ := filepath.Split(filepath.Clean(middleFN))
-			g.makeDirAndBreadcrumbFile(middleDir)
-			fmt.Printf("%s -loglevel error -y -i \"%s\" %s \"%s\"\n",
-				"ffmpeg", useIn, audioOutputParams, middleFN)
-			fmt.Printf("%s %s %s \"%s\" \"%s\" compand %s %s:%s %s %s %s\n",
-				"sox", verbosity, norm, middleFN, useOut, attackDelay, softKnee, transferFun, makeupGain, initialVolume, delay)
-		default:
-			fmt.Printf("unsupported verb: %s\n", verb)
-		}
+		fmt.Printf("sox %s %s \"%s\" %s \"%s\" compand %s %s:%s %s %s %s\n",
+			verbosity, norm, useIn, betweenSwitch, useOut, attackDelay, softKnee, transferFun, makeupGain, initialVolume, delay)
 		return nil
 	})
 	return songCount
