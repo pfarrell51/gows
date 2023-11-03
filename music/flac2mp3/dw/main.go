@@ -12,15 +12,13 @@ import (
 )
 
 func usagePrint() {
-	fmt.Printf("Usage: %s [flags] verb in-directory-spec out-direcctory-spec\n", os.Args[0])
-	fmt.Printf("For now, only 'ffmpeg' 'sox' and 'both' are allowed as a verb\n")
+	fmt.Printf("Usage: %s [flags] in-directory-spec out-direcctory-spec\n", os.Args[0])
 	fmt.Printf("if the out-directory-spec is simply 'mp3' then the output spec will be built from the in-directory-spec,\n")
 	fmt.Printf("replacing the word 'flac'with 'mp3' in the path\n")
 	fmt.Printf("i.e. mumble/flac/fratz will create an output path of mumble/mp3/fratz\n")
 	fmt.Printf("\nSpecial shortcut command:\n")
-	fmt.Printf("dw/dw both indirectory-spec mp3\n")
-	fmt.Printf("will cause ffmpeg to be run on the flac directory, outputing to a 'mp3u' directory\n")
-	fmt.Printf("and then run sox on the mp3u files putting the resulting compressed files in the mp3 directory\n")
+	fmt.Printf("dw/dw indirectory-spec mp3\n")
+	fmt.Printf("will cause sox to be run on the flac directory, outputing to a 'mp3' directory\n")
 
 }
 
@@ -52,25 +50,17 @@ func main() {
 	numArgs := len(flag.Args())
 	globals.SetFlagArgs(*flags)
 
-	verb := flag.Arg(0)
-	if !(verb == "ffmpeg" || verb == "sox" || verb == "both") {
-		fmt.Printf("Verb must be either ffmpeg sox or both, not %s\n", verb)
-		flag.Usage()
-		return
+	if globals.Flags().Debug {
+		fmt.Printf("%d flag args %v \n", numArgs, flag.Args())
 	}
+	verb := "sox"
 	var inpathArg, outpathArg string
-	inpathArg = path.Clean(flag.Arg(1))
-	outpathArg = path.Clean(flag.Arg(2))
-	switch {
-	case numArgs == 1 || numArgs == 2:
+	inpathArg = path.Clean(flag.Arg(0))
+	outpathArg = path.Clean(flag.Arg(1))
+	if strings.HasPrefix(inpathArg, "-") || strings.HasPrefix(outpathArg, "-") {
+		fmt.Printf("WARNING, switches must be before the verb, %s i%s ignored\n", inpathArg, outpathArg)
 		flag.Usage()
 		return
-	case numArgs > 2:
-		if strings.HasPrefix(inpathArg, "-") || strings.HasPrefix(outpathArg, "-") {
-			fmt.Printf("WARNING, switches must be before the verb, %s i%s ignored\n", inpathArg, outpathArg)
-			flag.Usage()
-			return
-		}
 	}
 	if globals.Flags().Debug {
 		fmt.Printf("#v: %s i: %s  o: %s\n", verb, inpathArg, outpathArg)
