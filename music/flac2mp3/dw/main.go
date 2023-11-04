@@ -41,7 +41,6 @@ func main() {
 	var flags = new(flac2mp3.FlagST)
 	flag.BoolVar(&flags.Debug, "de", false, "debug on")
 	flag.BoolVar(&helpflag, "h", false, "help")
-	flag.BoolVar(&flags.SkipIfBreadcrumbExists, "skip", false, "skip if breadcrumb file exists")
 	flag.Parse()
 	if helpflag {
 		flag.Usage()
