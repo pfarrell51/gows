@@ -1,8 +1,6 @@
 // flac2mp3
 // utility to walk a directory tree and output cool commands
 //
-// todo:
-// detect the "soxdata.txt" file and don't re-compress using 'sox' command unless you really want to
 
 package flac2mp3
 
@@ -13,14 +11,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 )
 
 type FlagST struct {
-	CopyAlbumInTrackOrder  bool
-	CSV                    bool
-	Debug                  bool
-	SkipIfBreadcrumbExists bool
+	CopyAlbumInTrackOrder bool
+	CSV                   bool
+	Debug                 bool
 }
 type GlobalVars struct {
 	pathArg    string
@@ -39,7 +35,6 @@ func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags.CopyAlbumInTrackOrder = f.CopyAlbumInTrackOrder
 	g.localFlags.CSV = f.CSV
 	g.localFlags.Debug = f.Debug
-	g.localFlags.SkipIfBreadcrumbExists = f.SkipIfBreadcrumbExists
 }
 func AllocateData() *GlobalVars {
 	rval := new(GlobalVars)
@@ -68,12 +63,7 @@ const soxParams = verbosity + norm + attackDelay + softKnee + ":" + transferFun 
 
 //  sox -V2 --norm infile.flac -C 320 outfile.mp3 compand 0.3,1 6:-70,-60,-20 -8 -90 0.2
 
-var currentTime = time.Now().String()
-var bytestamp = []byte(soxParams + " " + currentTime + "\n")
-
 const pathSep = string(os.PathSeparator)
-
-const BreadcrumbFN = "soxdata.txt"
 
 func arePathsParallel(in, out string) bool {
 	if in == out {
@@ -97,38 +87,6 @@ func arePathsParallel(in, out string) bool {
 		return true
 	}
 	return false
-}
-
-func (g GlobalVars) ifExistsBreadcrumbfile(dir string) bool {
-	fpath := filepath.Join(dir, BreadcrumbFN)
-	var err error
-	if _, err = os.Stat(fpath); err == nil {
-		if g.Flags().Debug {
-			fmt.Printf("found breadcrumb for %s\n", dir)
-		}
-		return true // breadcrumb exists
-	}
-	return false
-}
-func (g GlobalVars) makeDirAndBreadcrumbFile(dir string) {
-	err := os.MkdirAll(dir, 0777)
-	if err != nil {
-		panic(fmt.Sprintf("%v falled to make directory %s", err, dir))
-	}
-	if g.verb == "ffmpeg" {
-		return
-	}
-	fpath := filepath.Join(dir, BreadcrumbFN)
-	if g.ifExistsBreadcrumbfile(dir) {
-		// breadcrumb exists
-	} else {
-		file, err := os.Create(fpath) // breadcrumb file does *not* exist
-		if err != nil {
-			fmt.Printf("create error: %s", err)
-		}
-		file.Write(bytestamp)
-		file.Close()
-	}
 }
 
 // process files, walking all of 'inpath' and creating the proper command
@@ -167,21 +125,11 @@ func (g *GlobalVars) Files(verb, inpath, outpath string) (count int) {
 
 		newP := ExtRegex.ReplaceAllString(p, "mp3")
 		dir, fn := filepath.Split(filepath.Clean(filepath.Join(outpath, newP)))
-		if g.ifExistsBreadcrumbfile(dir) {
-			if g.localFlags.SkipIfBreadcrumbExists {
-				if g.Flags().Debug {
-					fmt.Printf("#breadcrumb found, skipping directory %s\n", dir)
-				}
-				return nil
-			}
-		}
-
-		g.makeDirAndBreadcrumbFile(dir)
 
 		useIn := filepath.Join(inpath, p)
 		useOut := filepath.Join(dir, fn)
-		fmt.Printf("sox %s %s \"%s\" %s \"%s\" compand %s %s:%s %s %s %s\n",
-			verbosity, norm, useIn, betweenSwitch, useOut, attackDelay, softKnee, transferFun, makeupGain, initialVolume, delay)
+		fmt.Printf("sox %s %s \"%s\" %s \"%s\" compand %s %s:%s %s %s %s\n", verbosity, norm,
+			useIn, betweenSwitch, useOut, attackDelay, softKnee, transferFun, makeupGain, initialVolume, delay)
 		return nil
 	})
 	return songCount
