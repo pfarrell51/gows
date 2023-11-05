@@ -43,7 +43,7 @@ func main() {
 	flag.BoolVar(&flags.DoSummary, "s", false, "summary - print summary statistics")
 	flag.BoolVar(&helpflag, "h", false, "help")
 	flag.BoolVar(&flags.JsonOutput, "json", false, "output metadata as json")
-	flag.BoolVar(&flags.JustArtistAlbum, "jaa", false, "output Artist & Album (no song title)")
+	flag.BoolVar(&flags.SuppressTitles, "st", false, "suppress song titles")
 	flag.BoolVar(&flags.NoGroup, "ng", false, "nogroup - list files that do not have an artist/group in the title")
 	flag.BoolVar(&flags.NoTags, "nt", false, "notags - list files that do not have any meta tags")
 	flag.BoolVar(&flags.UnicodePunct, "u", false, "show songs with Unicode punct")
