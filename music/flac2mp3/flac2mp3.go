@@ -126,6 +126,10 @@ func (g *GlobalVars) Files(verb, inpath, outpath string) (count int) {
 		newP := ExtRegex.ReplaceAllString(p, "mp3")
 		dir, fn := filepath.Split(filepath.Clean(filepath.Join(outpath, newP)))
 
+		err = os.MkdirAll(dir, 0777)
+		if err != nil {
+			panic(fmt.Sprintf("%v falled to make destination directory %s", err, dir))
+		}
 		useIn := filepath.Join(inpath, p)
 		useOut := filepath.Join(dir, fn)
 		fmt.Printf("sox %s %s \"%s\" %s \"%s\" compand %s %s:%s %s %s %s\n", verbosity, norm,
