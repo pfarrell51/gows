@@ -81,6 +81,10 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 		g.AddSongForTrackSort(*rSong)
 	case g.Flags().DoInventory:
 		if g.Flags().CSV {
+			if g.Flags().Debug {
+				fmt.Printf("xxx PF will print song as CSV %s ! %s : %s\n",
+					rSong.Artist, rSong.Album, rSong.Title)
+			}
 			g.PrintSongToCSV(rSong)
 		} else {
 			fmt.Printf("%s,%s,%s\n", rSong.Artist, rSong.Album, rSong.Title)
@@ -126,21 +130,34 @@ func (g *GlobalVars) WalkFiles(pathArg string) {
 			case dir == "":
 				g.artistCount++
 			case len(dir) > 0:
-				dir = filepath.Clean(dir)
 				g.albumCount++
-				g.printCSVArtistAlbum(dir, file)
+				if !g.Flags().SuppressTitles {
+					dir = filepath.Clean(dir)
+					g.printCSVArtistAlbum(dir, file)
+				}
 			}
+			fmt.Printf("is directory %s, p: %s should return up\n", dir, p)
 			return nil
 		}
+
+		extR := ExtRegex.FindStringIndex(p)
+		if extR == nil {
+			return nil // not interesting extension
+		}
+		if !g.Flags().SuppressTitles {
+			fmt.Printf("SuppressTitl: %t \n", g.Flags().SuppressTitles)
+		}
+
 		var notOld = filepath.Dir(p)
 		if oldDir != notOld && notOld != "." {
 			oldDir = notOld
 			g.numDirs++
 		}
-		if g.Flags().DoInventory && g.Flags().JustArtistAlbum && g.Flags().CSV {
-			//fmt.Println("skipping further processing")
-			return nil // already printed.
+		if g.Flags().DoInventory && g.Flags().SuppressTitles && g.Flags().CSV {
+			fmt.Println("skipping further processing")
+			return nil // skip music files
 		}
+
 		g.processFile(fsys, p, d, err)
 		return nil
 	})
@@ -161,15 +178,15 @@ func (s *Song) BasicPathSetup(g *GlobalVars, p string) {
 			fmt.Printf("inpath.descent %s\n", s.inPathDescent)
 		}
 		fmt.Printf("outpath %s\n", s.outPath)
-		fmt.Printf("outpath.base %s\n", s.outPathBase)
-		fmt.Printf("ext: %s\n", s.ext)
+		//	fmt.Printf("outpath.base %s\n", s.outPathBase)
+		//	fmt.Printf("ext: %s\n", s.ext)
 	}
 }
 
 // build up output path in case we want to rename the file
 func (s *Song) FixupOutputPath(g *GlobalVars) {
 	if g.Flags().Debug {
-		fmt.Printf("FOP %s\n", s.outPath)
+		//fmt.Printf("FOP %s\n", s.outPath)
 	}
 	if s.ext == "" {
 		panic(fmt.Sprintf("PIB, extension is empty %s\n", s.outPath))
