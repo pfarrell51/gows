@@ -42,7 +42,7 @@ type FlagST struct {
 	DoInventory           bool
 	DoRename              bool
 	DoSummary             bool
-	JustArtistAlbum       bool
+	SuppressTitles        bool
 	JsonOutput            bool
 	NoGroup               bool
 	NoTags                bool
@@ -77,7 +77,7 @@ func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags.DoSummary = f.DoSummary
 	g.localFlags.NoTags = f.NoTags
 	g.localFlags.JsonOutput = f.JsonOutput
-	g.localFlags.JustArtistAlbum = f.JustArtistAlbum
+	g.localFlags.SuppressTitles = f.SuppressTitles
 	g.localFlags.NoGroup = f.NoGroup
 	g.localFlags.NoTags = f.NoTags
 	g.localFlags.UnicodePunct = f.UnicodePunct
