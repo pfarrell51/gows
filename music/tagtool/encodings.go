@@ -28,23 +28,21 @@ func PrintJsontoWriter(w io.Writer, m []Song) {
 	w.Write(b)
 }
 
-// generate CSV from song slice, output to stdout
-func  (g *GlobalVars) PrintCSV(m map[string]Song) {
-	g.PrintCSVtoWriter(os.Stdout, m)
-}
+// print simple dir/file or artist/album as CSV
 func (g *GlobalVars) printCSVArtistAlbum(dir, file string) {
 	if g.csvWrtr == nil {
 		panic("csv writer is nill")
 	}
 	if g.Flags().Debug {
-		fmt.Printf("in PCV %s and %s\n", dir, file)
+		fmt.Printf("in PCVaa  %s and %s\n", dir, file)
 	}
-	var aSong []string
-	aSong = append(aSong, dir)
-	aSong = append(aSong, file)
-	if err := g.csvWrtr.Write(aSong); err != nil {
+	var tmp []string
+	tmp = append(tmp, dir)
+	tmp = append(tmp, file)
+	if err := g.csvWrtr.Write(tmp); err != nil {
 		log.Fatalln("error writing record to csv:", err)
 	}
+	g.csvWrtr.Flush()
 }
 
 // print one song as CSV, using the global csv writer
@@ -52,10 +50,16 @@ func (g *GlobalVars) PrintSongToCSV(s *Song) {
 	if g.csvWrtr == nil {
 		panic("csv writer is nill")
 	}
+	if g.Flags().Debug {
+		fmt.Printf("PS2C for %s :: %s t: %s\n", s.Artist, s.Album, s.Title)
+		if g.numDirs > 10 {
+			panic("look at stack dump")
+		}
+	}
 	var aSong []string
 	aSong = append(aSong, s.Artist)
 	aSong = append(aSong, s.Album)
-	if !g.Flags().JustArtistAlbum {
+	if !g.Flags().SuppressTitles {
 		aSong = append(aSong, s.Title)
 		aSong = append(aSong, s.Genre)
 		aSong = append(aSong, strconv.Itoa(s.Track))
@@ -68,14 +72,19 @@ func (g *GlobalVars) PrintSongToCSV(s *Song) {
 	}
 }
 
+// generate CSV from song slice, output to stdout
+func (g *GlobalVars) PrintCSV(m map[string]Song) {
+	g.PrintCSVtoWriter(os.Stdout, m)
+}
+
 // generate CSV from song slice, output to writer
-func  (g *GlobalVars) PrintCSVtoWriter(w io.Writer, m map[string]Song) {
+func (g *GlobalVars) PrintCSVtoWriter(w io.Writer, m map[string]Song) {
 	var songs [][]string
 	for _, v := range m {
 		var aSong []string
 		aSong = append(aSong, v.Artist)
 		aSong = append(aSong, v.Album)
-		if !g.Flags().JustArtistAlbum {
+		if !g.Flags().SuppressTitles {
 			aSong = append(aSong, v.Title)
 			aSong = append(aSong, v.Genre)
 			aSong = append(aSong, strconv.Itoa(v.Track))
