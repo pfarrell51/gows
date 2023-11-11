@@ -24,6 +24,7 @@ func PrintJsontoWriter(w io.Writer, m []Song) {
 		log.Fatalf("JSON marshalling failed: %s", err)
 	}
 	result := strings.ReplaceAll(string(data), "}", string("}\n"))
+	result += "\n"
 	b := []byte(result)
 	w.Write(b)
 }
@@ -65,6 +66,7 @@ func (g *GlobalVars) PrintSongToCSV(s *Song) {
 		aSong = append(aSong, strconv.Itoa(s.Track))
 		aSong = append(aSong, strconv.Itoa(s.Year))
 		aSong = append(aSong, s.MBID)
+		aSong = append(aSong, s.InPath)
 	}
 
 	if err := g.csvWrtr.Write(aSong); err != nil {
