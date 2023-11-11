@@ -4,7 +4,6 @@ package tagtool
 
 import (
 	"bytes"
-	_ "embed"
 	"encoding/csv"
 	"fmt"
 	"regexp"
@@ -28,7 +27,7 @@ type Song struct {
 	alreadyNew        bool
 	artistInDirectory bool
 	artistKnown       bool
-	inPath            string
+	InPath            string
 	inPathDescent     string // any descent below the pathArg aka outPathBase
 	outPath           string
 	outPathBase       string // copied from pathArg entered by the user
@@ -61,7 +60,7 @@ type GlobalVars struct {
 	oldAlbum                             string
 	songCount                            int
 	tracksongs                           []TrackSong // for sorting by track number within an album
-	invTriples                           []InventorySong
+	invSongs                             []Song
 	csvWrtr                              *csv.Writer
 }
 
