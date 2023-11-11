@@ -81,7 +81,7 @@ func (p TrackSong) String() string {
 }
 
 func (g *GlobalVars) AddSongForTrackSort(a Song) {
-	g.tracksongs = append(g.tracksongs, TrackSong{a.Track, a.inPath})
+	g.tracksongs = append(g.tracksongs, TrackSong{a.Track, a.InPath})
 }
 
 // print out shell commands to copy the sorted and renamed fies
