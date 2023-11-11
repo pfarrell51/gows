@@ -25,12 +25,12 @@ func (g *GlobalVars) GetMetaData(p string) (*Song, error) {
 			fmt.Printf("gmd:foundExt %s\n", foundExt)
 		}
 	}
-	if rval.inPath == "" {
+	if rval.InPath == "" {
 		panic("PIB, input path empty")
 	}
-	file, err := os.Open(rval.inPath)
+	file, err := os.Open(rval.InPath)
 	if err != nil {
-		fmt.Printf("err : %v %s\n", err, rval.inPath)
+		fmt.Printf("err : %v %s\n", err, rval.InPath)
 		return nil, err
 	}
 	defer file.Close()
