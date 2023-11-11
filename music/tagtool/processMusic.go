@@ -30,10 +30,18 @@ func (g *GlobalVars) ProcessFiles(pathArg string) {
 	if len(g.pathArg) == 0 {
 		g.pathArg = pathArg
 	}
-	if g.Flags().CSV {
+	switch {
+	case g.Flags().CSV:
+		g.csvWrtr = csv.NewWriter(os.Stdout)
+	case g.Flags().JsonOutput:
 		g.csvWrtr = csv.NewWriter(os.Stdout)
 	}
 	g.WalkFiles(pathArg)
+
+	if g.Flags().JsonOutput {
+		PrintJson(g.invSongs)
+	}
+
 	g.doShutdown()
 }
 
@@ -80,14 +88,17 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 	case g.Flags().CopyAlbumInTrackOrder:
 		g.AddSongForTrackSort(*rSong)
 	case g.Flags().DoInventory:
-		if g.Flags().CSV {
+		switch {
+		case g.Flags().CSV:
 			if g.Flags().Debug {
 				fmt.Printf("xxx PF will print song as CSV %s ! %s : %s\n",
 					rSong.Artist, rSong.Album, rSong.Title)
 			}
 			g.PrintSongToCSV(rSong)
-		} else {
-			fmt.Printf("%s,%s,%s\n", rSong.Artist, rSong.Album, rSong.Title)
+		case g.Flags().JsonOutput:
+			// handles elsewhere
+		default:
+			fmt.Printf("Inv with no spec, %s,%s,%s\n", rSong.Artist, rSong.Album, rSong.Title)
 		}
 	}
 	return nil
@@ -107,6 +118,12 @@ func (g *GlobalVars) processSong(p string) (*Song, error) {
 	}
 	if aSong == nil {
 		panic(fmt.Sprintf("song %s resulted in nil Song", p))
+	}
+	if g.Flags().JsonOutput {
+		if g.invSongs == nil {
+			g.invSongs = make([]Song, 0)
+		}
+		g.invSongs = append(g.invSongs, *aSong)
 	}
 	return aSong, nil
 }
@@ -136,16 +153,12 @@ func (g *GlobalVars) WalkFiles(pathArg string) {
 					g.printCSVArtistAlbum(dir, file)
 				}
 			}
-			fmt.Printf("is directory %s, p: %s should return up\n", dir, p)
 			return nil
 		}
 
 		extR := ExtRegex.FindStringIndex(p)
 		if extR == nil {
 			return nil // not interesting extension
-		}
-		if !g.Flags().SuppressTitles {
-			fmt.Printf("SuppressTitl: %t \n", g.Flags().SuppressTitles)
 		}
 
 		var notOld = filepath.Dir(p)
@@ -167,13 +180,13 @@ func (g *GlobalVars) WalkFiles(pathArg string) {
 // and the p lower path/filename.ext that we are walking through
 func (s *Song) BasicPathSetup(g *GlobalVars, p string) {
 	joined := filepath.FromSlash(path.Join(g.pathArg, p))
-	s.inPath = joined
+	s.InPath = joined
 	s.inPathDescent, _ = path.Split(p) // ignore file name for now
 	s.outPathBase = g.pathArg
 	s.outPath = filepath.FromSlash(path.Join(g.pathArg, s.inPathDescent)) // start to build from here
 	s.ext = path.Ext(p)
 	if g.Flags().Debug {
-		fmt.Printf("inpath %s\n", s.inPath)
+		fmt.Printf("inpath %s\n", s.InPath)
 		if s.inPathDescent != "" {
 			fmt.Printf("inpath.descent %s\n", s.inPathDescent)
 		}
@@ -206,14 +219,14 @@ func (s *Song) FixupOutputPath(g *GlobalVars) {
 	if g.Flags().Debug {
 		fmt.Printf("leaving FOP %s\n", s.outPath)
 	}
-	if s.outPath == s.inPath {
+	if s.outPath == s.InPath {
 		if g.Flags().Debug {
-			fmt.Printf("#structs/fxop: no change for %s\n", s.inPath)
+			fmt.Printf("#structs/fxop: no change for %s\n", s.InPath)
 		}
 	}
 }
 func (g *GlobalVars) doCompareTagsToTitle(aSong Song) {
-	dir, fn := path.Split(aSong.inPath)
+	dir, fn := path.Split(aSong.InPath)
 	fname := strings.TrimSuffix(fn, filepath.Ext(fn))
 	var ttl, art string
 	if strings.Contains(fname, ";") {
@@ -247,24 +260,24 @@ func (g *GlobalVars) outputRenameCommand(aSong *Song) {
 	if runtime.GOOS == "windows" {
 		cmd = "ren "
 	}
-	if aSong.outPath == aSong.inPath {
+	if aSong.outPath == aSong.InPath {
 		if g.Flags().Debug {
-			fmt.Printf("#parseP no change for %s\n", aSong.inPath)
+			fmt.Printf("#parseP no change for %s\n", aSong.InPath)
 		}
 		return
 	}
 	switch {
 	case aSong.alreadyNew:
-		fmt.Printf("#oRC  aNew %s \"%s\" \"%s - /%s; %s\"\n", cmd, aSong.inPath,
+		fmt.Printf("#oRC  aNew %s \"%s\" \"%s - /%s; %s\"\n", cmd, aSong.InPath,
 			aSong.Title, aSong.Artist, aSong.ext)
 		return
 	case aSong.Artist == "":
-		fmt.Printf("#rename artist is blank %s\n", aSong.inPath)
+		fmt.Printf("#rename artist is blank %s\n", aSong.InPath)
 		return
 	case aSong.artistInDirectory:
 		cmd = "#" + cmd
-		fmt.Printf("%s \"%s\" \"%s\"\n", cmd, aSong.inPath, aSong.outPath)
+		fmt.Printf("%s \"%s\" \"%s\"\n", cmd, aSong.InPath, aSong.outPath)
 		return
 	}
-	fmt.Printf("%s \"%s\" \"%s\"\n", cmd, aSong.inPath, aSong.outPath)
+	fmt.Printf("%s \"%s\" \"%s\"\n", cmd, aSong.InPath, aSong.outPath)
 }
