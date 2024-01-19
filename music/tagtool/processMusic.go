@@ -30,10 +30,8 @@ func (g *GlobalVars) ProcessFiles(pathArg string) {
 	if len(g.pathArg) == 0 {
 		g.pathArg = pathArg
 	}
-	switch {
-	case g.Flags().CSV:
-		g.csvWrtr = csv.NewWriter(os.Stdout)
-	case g.Flags().JsonOutput:
+
+	if g.Flags().CSV {
 		g.csvWrtr = csv.NewWriter(os.Stdout)
 	}
 	g.WalkFiles(pathArg)
@@ -91,7 +89,7 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 		switch {
 		case g.Flags().CSV:
 			if g.Flags().Debug {
-				fmt.Printf("xxx PF will print song as CSV %s ! %s : %s\n",
+				fmt.Printf("PF will print song as CSV %s ! %s : %s\n",
 					rSong.Artist, rSong.Album, rSong.Title)
 			}
 			g.PrintSongToCSV(rSong)
@@ -142,16 +140,12 @@ func (g *GlobalVars) WalkFiles(pathArg string) {
 			if p == "." {
 				return nil
 			}
-			dir, file := filepath.Split(p)
+			dir, _ := filepath.Split(p)
 			switch {
 			case dir == "":
 				g.artistCount++
 			case len(dir) > 0:
 				g.albumCount++
-				if !g.Flags().SuppressTitles {
-					dir = filepath.Clean(dir)
-					g.printCSVArtistAlbum(dir, file)
-				}
 			}
 			return nil
 		}
@@ -191,16 +185,11 @@ func (s *Song) BasicPathSetup(g *GlobalVars, p string) {
 			fmt.Printf("inpath.descent %s\n", s.inPathDescent)
 		}
 		fmt.Printf("outpath %s\n", s.outPath)
-		//	fmt.Printf("outpath.base %s\n", s.outPathBase)
-		//	fmt.Printf("ext: %s\n", s.ext)
 	}
 }
 
 // build up output path in case we want to rename the file
 func (s *Song) FixupOutputPath(g *GlobalVars) {
-	if g.Flags().Debug {
-		//fmt.Printf("FOP %s\n", s.outPath)
-	}
 	if s.ext == "" {
 		panic(fmt.Sprintf("PIB, extension is empty %s\n", s.outPath))
 	}
