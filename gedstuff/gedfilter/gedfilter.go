@@ -21,32 +21,34 @@ type GlobalVars struct {
 	songsProcessed int
 }
 type et struct {
-	t string
-	v int
+	t string // tag of event
+	v int    // trust of the date of this value
 }
 
 var knownEvents map[string]int
 
 func init() {
 	var knownEventVals = []et{
-		et{"ADOP", 0},
-		et{"BAPM", 0},
-		et{"BARM", 0},
-		et{"BASM", 0},
-		et{"BIRT", 10},
-		et{"BURI", 0},
+		et{"ADOP", 1},
+		et{"BAPL", 8},  // baptism (LDS)
+		et{"BAPM", 8},  // baptism
+		et{"BARM", 7},  // bar Mitzvah
+		et{"BASM", 7},  // bar/bat Mitzvah
+		et{"BIRT", 10}, // birth, trust it
+		et{"BURI", 18}, // burial
 		et{"CENS", 0},
-		et{"CHR", 0},
-		et{"CHRA", 0},
-		et{"CREM", 0},
-		et{"DEAT", 20},
-		et{"EMIG", 0}, // emigrate?
+		et{"CHR", 7},  // christening date
+		et{"CHRA", 2}, // adult christening
+		et{"CREM", 17},
+		et{"DEAT", 20}, // death, trust it
+		et{"EMIG", 1},  // emigrate?
 		et{"EVEN", 0},
-		et{"GRAD", 0},
-		et{"IMMI", 0},
-		et{"ORDN", 0},
+		et{"GRAD", 6},
+		et{"IMMI", 1}, // immigration
+		et{"ORDL", 5}, // ordination
+		et{"ORDN", 5}, // ordination
 		et{"PROB", 0},
-		et{"RETI", 0},
+		et{"RETI", 0}, // retirement
 		et{"WILL", 0},
 	}
 	knownEvents = make(map[string]int)
@@ -58,7 +60,6 @@ func AllocateData() *GlobalVars {
 	rval := new(GlobalVars)
 	rval.localFlags = new(FlagST)
 	rval.localFlags = new(FlagST)
-	rval.localFlags.Basic = true
 	if rval.localFlags == nil {
 		fmt.Println("PIB in allocate Data, localflags is nil")
 	}
@@ -79,9 +80,9 @@ func (g *GlobalVars) ProcessFile(f string) {
 		return
 	}
 	var rname, bdate, ddate string
+	var bdT, ddT int
 	for _, rec := range gd.Individual {
 		if !g.Flags().Type {
-			//fmt.Println(reflect.TypeOf(rec))
 			if len(rec.Name) > 0 {
 				rname = rec.Name[0].Name
 			} else {
@@ -95,11 +96,29 @@ func (g *GlobalVars) ProcessFile(f string) {
 				if !found {
 					panic(fmt.Sprintf("value not found for %s", re.Tag))
 				}
-				switch t {
-				case 10:
+				switch {
+				case t < 10:
+					if t > bdT {
+						bdT = t
+						bdate = re.Date
+						if g.Flags().Debug {
+							fmt.Printf(" $$ for %s using %s, %s wt: %d\n", rname, re.Tag, bdate, t)
+						}
+					}
+				case t == 10:
 					bdate = re.Date
-				case 20:
+					bdT = t
+				case t > 10 && t < 20:
+					if t > ddT {
+						ddT = t
+						ddate = re.Date
+						if g.Flags().Debug {
+							fmt.Printf(" && for %s using %s, %s with t: %d\n", rname, re.Tag, ddate, t)
+						}
+					}
+				case t == 20:
 					ddate = re.Date
+					ddT = t
 				}
 				if g.Flags().Type {
 					fmt.Printf("%s %s\n", re.Tag, re.Date)
@@ -108,9 +127,11 @@ func (g *GlobalVars) ProcessFile(f string) {
 			if g.Flags().Basic {
 				fmt.Printf("%s, %s, %s\n", rname, bdate, ddate)
 			}
-			rname = ""
+			rname = "" // clear out fields for this person
 			bdate = ""
 			ddate = ""
+			bdT = 0
+			ddT = 0
 		}
 	}
 
