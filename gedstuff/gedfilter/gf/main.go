@@ -27,10 +27,11 @@ func main() {
 	flag.Usage = func() {
 		w := flag.CommandLine.Output() // may be os.Stderr - but not necessarily
 		fmt.Fprintf(w, "Usage of %s: [flags] gedcom-spec \n", os.Args[0])
+		fmt.Fprintln(w, " At least one flag must be specified, there is no default")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
-	if helpflag {
+	if helpflag || flag.NFlag() == 0 {
 		flag.Usage()
 		return
 	}
