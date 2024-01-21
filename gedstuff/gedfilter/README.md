@@ -13,14 +13,20 @@ to STDOUT
  as usual, there is a package "gedfilter" of software that performs the operations and a subdirectory that contains the main.go file that is the executable. The subdirectory for tagtools is named "gf" so the executable that is built by "go build" will be called "gf" or "gf.exe"
 
  Usage of gf/gf: [flags] file-spec
+
  At least one flag must be specified, there is no default
+
   -basic
         name, birth, death
+
   -csv
         output CSV format
+
   -debug
         debug on
+
   -h    help
+
   -type
         display Type fields
 
