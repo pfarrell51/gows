@@ -125,7 +125,6 @@ func StandardizeTitle(title string) string {
 	return rval
 }
 
-
 func AllocateData() *GlobalVars {
 	rval := new(GlobalVars)
 	rval.localFlags = new(FlagST)

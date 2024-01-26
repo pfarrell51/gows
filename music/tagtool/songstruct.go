@@ -1,7 +1,6 @@
-// struct for Song 
+// struct for Song
 
 package tagtool
-
 
 type Song struct {
 	Artist            string
@@ -26,4 +25,3 @@ type Song struct {
 }
 
 const NAllocateSongs = 10 * 1000
-
