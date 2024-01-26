@@ -40,7 +40,12 @@ func (g *GlobalVars) ProcessFiles(pathArg string) {
 		PrintJson(g.invSongs)
 	}
 
+	g.writeStoredData()
 	g.doShutdown()
+}
+
+func (g *GlobalVars) writeStoredData() {
+	g.PrintTrackSortedSongs()
 }
 
 // final close, flush, etc.

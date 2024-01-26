@@ -86,7 +86,7 @@ func (g *GlobalVars) AddSongForTrackSort(a Song) {
 
 // print out shell commands to copy the sorted and renamed fies
 func (g GlobalVars) PrintTrackSortedSongs() {
-	cmd := "cp"
+	cmd := "mv"
 	if runtime.GOOS == "windows" {
 		cmd = "copy "
 	}
