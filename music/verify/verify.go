@@ -23,8 +23,8 @@ type FlagST struct {
 func WalkFiles(flags *FlagST, path string) {
 	fsys := os.DirFS(path)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-
 		if !strings.EqualFold(filepath.Ext(p), ".mp3") {
+			fmt.Printf("%s not mp3\n", p)
 			return nil
 		}
 
@@ -51,6 +51,7 @@ func WalkFiles(flags *FlagST, path string) {
 		}
 
 		distance := levenshtein.DistanceForStrings([]rune(m.Title()), []rune(target), levenshtein.DefaultOptions)
+		fmt.Printf("%s :: %s %d\n", m.Title(), target, distance)
 		if distance > 4 {
 			fmt.Printf("%s and %s distance %d\n", target, m.Title(), distance)
 		}
