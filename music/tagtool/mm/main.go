@@ -19,13 +19,13 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Printf("Usage: %s [flags] directory-spec\n", os.Args[0])
+		fmt.Printf("Usage: %s [flags] directory-spec [dest]\n", os.Args[0])
 		os.Exit(1)
 	}
 	start := time.Now()
 	flag.Usage = func() {
 		w := flag.CommandLine.Output() // may be os.Stderr - but not necessarily
-		fmt.Fprintf(w, "Usage of %s: [flags] directory-spec \n", os.Args[0])
+		fmt.Fprintf(w, "Usage of %s: [flags] directory-spec [dest]\n", os.Args[0])
 		flag.PrintDefaults()
 		fmt.Fprintf(w, "default is to list files that need love.\n")
 	}
@@ -55,6 +55,7 @@ func main() {
 	globals.SetFlagArgs(*flags)
 
 	pathArg := path.Clean(flag.Arg(0))
+	globals.SecondArg = path.Clean(flag.Arg(1))
 	globals.ProcessFiles(pathArg)
 
 	duration := time.Since(start)

@@ -29,6 +29,7 @@ type FlagST struct {
 
 type GlobalVars struct {
 	pathArg                              string
+	SecondArg                            string
 	localFlags                           *FlagST
 	songsProcessed                       int
 	numNoAcoustId, numNoTitle, numNoMBID int

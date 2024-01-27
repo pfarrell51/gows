@@ -8,6 +8,7 @@ package tagtool
 import (
 	"fmt"
 	"path"
+	"path/filepath"
 	"runtime"
 	"sort"
 )
@@ -86,7 +87,18 @@ func (g *GlobalVars) AddSongForTrackSort(a Song) {
 
 // print out shell commands to copy the sorted and renamed fies
 func (g GlobalVars) PrintTrackSortedSongs() {
-	cmd := "mv"
+	if !g.Flags().CopyAlbumInTrackOrder {
+		panic("PIB, called PTSS with wrong flag")
+	}
+	switch len(g.SecondArg) {
+	case 0:
+		panic("no second arg ")
+	case 1:
+		if g.SecondArg == "." {
+			fmt.Printf("looked like dot %s\n", g.SecondArg)
+		}
+	}
+	cmd := "cp"
 	if runtime.GOOS == "windows" {
 		cmd = "copy "
 	}
@@ -95,6 +107,8 @@ func (g GlobalVars) PrintTrackSortedSongs() {
 	sort.Sort(ByTrack(g.tracksongs))
 	for _, s := range g.tracksongs {
 		sp, sf := path.Split(s.Path)
-		fmt.Printf("%s \"%s\"  \"%s%03d-%s\"\n", cmd, s.Path, sp, s.Track, sf)
+		destP := s.Path + string(filepath.Separator) + sp
+		destP = g.SecondArg + string(filepath.Separator)
+		fmt.Printf("%s \"%s\" \"%s%03d%s\"\n", cmd, s.Path, destP, s.Track, sf)
 	}
 }
