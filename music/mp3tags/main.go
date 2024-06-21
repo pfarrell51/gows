@@ -8,11 +8,13 @@ package main
 
 import (
 	"bytes"
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"github.com/dhowden/tag"
 	"github.com/dlclark/metaphone3"
 	"io/fs"
+	"log"
 	"os"
 	"path"
 	"regexp"
@@ -34,7 +36,7 @@ type song struct {
 var enc metaphone3.Encoder
 var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 
-const divP = " -+"	     // want space for names like Led Zeppelin - Bron-Yr-Aur
+const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
 
 var dashRegex = regexp.MustCompile(divP)
 var doRename bool
@@ -133,10 +135,23 @@ func walkFiles(pathArg string) {
 // go thru the map, sort by key
 // then create new ordering that makes sense to human
 func processMap() {
+	w := csv.NewWriter(os.Stdout)
+	defer w.Flush()
+	var record []string
+	record = make([]string, 4)
 	for _, aSong := range songMap {
-		//if aSong.artist == "" {
-		fmt.Printf("%s %s %s\n", aSong.title, aSong.artist, aSong.path)
-		//}
+		record[0] = aSong.title
+		record[1] = aSong.artist
+		record[2] = aSong.album
+		record[3] = aSong.path
+
+		w.Write(record)
+		//			fmt.Printf("%s %s %s\n", aSong.title, aSong.artist, aSong.path)
+
+	}
+
+	if err := w.Error(); err != nil {
+		log.Fatalln("error writing csv:", err)
 	}
 	return
 }
