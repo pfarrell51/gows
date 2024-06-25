@@ -35,6 +35,7 @@ type song struct {
 
 var enc metaphone3.Encoder
 var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
+var noTheRegex = regexp.MustCompile("^((T|t)(H|h)(E|e)) ")
 
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
 
@@ -117,6 +118,11 @@ func whichSong(sn *song) *song {
 	}
 	sn.titleH, _ = enc.Encode(justLetter(sn.title))
 	sn.artist = m.Artist()
+
+	if noTheRegex.MatchString(sn.artist) {
+		sn.artist = sn.artist[4:]
+		//fmt.Printf("%s %s %s\n", sn.title, sn.artist, sn.path)
+	}
 	sn.album = m.Album()
 	return sn
 }
