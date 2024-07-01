@@ -1,5 +1,5 @@
 // this program reads MP3 or flac files and pulls out the meta data
-// for title, artist and album
+// for title, artist, album and path
 //
 //
 // this is not multi-processing safe
@@ -36,28 +36,27 @@ type song struct {
 var enc metaphone3.Encoder
 var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 var noTheRegex = regexp.MustCompile("^((T|t)(H|h)(E|e)) ")
+var csvW *csv.Writer
 
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
 
 var dashRegex = regexp.MustCompile(divP)
-var doRename bool
-var songMap map[string]song
 
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Printf("Usage: %s DIRNAME\n", os.Args[0])
 		os.Exit(1)
 	}
-	flag.BoolVar(&doRename, "rename", false, "perform rename function on needed files")
 	flag.Parse()
-	songMap = make(map[string]song)
 	pathArg := path.Clean(flag.Arg(0))
-	ProcessFiles(pathArg)
-}
-
-func ProcessFiles(pathArg string) {
-	walkFiles(pathArg)
-	processMap()
+	csvW = csv.NewWriter(os.Stdout)
+	defer csvW.Flush()
+	fsys := os.DirFS(pathArg)
+	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
+		processFile(pathArg, fsys, p, d, err)
+		return err
+	})
+	return
 }
 func justLetter(a string) string {
 	buff := bytes.Buffer{}
@@ -76,26 +75,25 @@ func justLetter(a string) string {
 // this is the local  WalkDirFunc called by WalkDir for each file
 // pathArg is the path to the base of our walk
 // p is the current path/name
-func processFile(pathArg string, fsys fs.FS, p string, d fs.DirEntry, err error) error {
+func processFile(pathArg string, fsys fs.FS, p string, d fs.DirEntry, err error) {
 	if err != nil {
 		fmt.Println("Error processing", p, " in ", d)
 		fmt.Println("error is ", err)
-		return nil
+		return
 	}
 	if d == nil || d.IsDir() || strings.HasPrefix(p, ".") {
-		return nil
+		return
 	}
 	ext := extRegex.FindString(p)
 	if len(ext) == 0 {
-		return nil // not interesting extension
+		return // not interesting extension
 	}
 	aSong := new(song)
 	aSong.path = path.Join(pathArg, p)
-	whichSong(aSong)
-	songMap[aSong.titleH] = *aSong
-	return nil
+	getMetadata(aSong)
+	printCSV(aSong)
 }
-func whichSong(sn *song) *song {
+func getMetadata(sn *song) *song {
 	file, err := os.Open(sn.path)
 	defer file.Close()
 	if err != nil {
@@ -127,36 +125,21 @@ func whichSong(sn *song) *song {
 	return sn
 }
 
-// walk all files,
-// fill in a map keyed by the desired new name order
-func walkFiles(pathArg string) {
-	fsys := os.DirFS(pathArg)
-	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
-		err = processFile(pathArg, fsys, p, d, err)
-		return nil
-	})
-	return
-}
-
 // go thru the map, sort by key
 // then create new ordering that makes sense to human
-func processMap() {
-	w := csv.NewWriter(os.Stdout)
-	defer w.Flush()
+func printCSV(aSong *song) {
 	var record []string
 	record = make([]string, 4)
-	for _, aSong := range songMap {
-		record[0] = aSong.title
-		record[1] = aSong.artist
-		record[2] = aSong.album
-		record[3] = aSong.path
 
-		w.Write(record)
-		//			fmt.Printf("%s %s %s\n", aSong.title, aSong.artist, aSong.path)
+	record[0] = aSong.title
+	record[1] = aSong.artist
+	record[2] = aSong.album
+	record[3] = aSong.path
 
-	}
+	csvW.Write(record)
+	//			fmt.Printf("%s %s %s\n", aSong.title, aSong.artist, aSong.path)
 
-	if err := w.Error(); err != nil {
+	if err := csvW.Error(); err != nil {
 		log.Fatalln("error writing csv:", err)
 	}
 	return
