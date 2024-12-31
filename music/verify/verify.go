@@ -23,6 +23,9 @@ type FlagST struct {
 func WalkFiles(flags *FlagST, path string) {
 	fsys := os.DirFS(path)
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
+		if p == "." {
+			return nil
+		}
 		if !strings.EqualFold(filepath.Ext(p), ".mp3") {
 			fmt.Printf("%s not mp3\n", p)
 			return nil
