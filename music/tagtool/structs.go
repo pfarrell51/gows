@@ -44,6 +44,24 @@ type GlobalVars struct {
 	csvWrtr                              *csv.Writer
 }
 
+func (f FlagST) String() string {
+	var r strings.Builder
+
+	r.WriteString(fmt.Sprintf("CompareTagsToTitle: %t\n", f.CompareTagsToTitle))
+	r.WriteString(fmt.Sprintf("CopyAlbumInTrackOrder: %t\n", f.CopyAlbumInTrackOrder))
+	r.WriteString(fmt.Sprintf("CSV: %t\n", f.CSV))
+	r.WriteString(fmt.Sprintf("Debug: %t\n", f.Debug))
+	r.WriteString(fmt.Sprintf("DoInventory: %t\n", f.DoInventory))
+	r.WriteString(fmt.Sprintf("DoRename: %t\n", f.DoRename))
+	r.WriteString(fmt.Sprintf("DoSummary: %t\n", f.DoSummary))
+	r.WriteString(fmt.Sprintf("SuppressTitles: %t\n", f.SuppressTitles))
+	r.WriteString(fmt.Sprintf("JsonOutput: %t\n", f.JsonOutput))
+	r.WriteString(fmt.Sprintf("NoGroup: %t\n", f.NoGroup))
+	r.WriteString(fmt.Sprintf("NoTags: %t\n", f.NoTags))
+	r.WriteString(fmt.Sprintf("UnicodePunct: %t\n", f.UnicodePunct))
+	return r.String()
+}
+
 // copy user set flags to a local store
 func (g *GlobalVars) SetFlagArgs(f FlagST) {
 	g.localFlags = new(FlagST)
