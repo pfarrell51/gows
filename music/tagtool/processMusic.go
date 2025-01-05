@@ -18,6 +18,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"unicode"
 
 	"github.com/texttheater/golang-levenshtein/levenshtein"
 )
@@ -103,8 +104,26 @@ func (g *GlobalVars) processFile(fsys fs.FS, p string, d fs.DirEntry, err error)
 		default:
 			fmt.Printf("Inv with no spec, %s,%s,%s\n", rSong.Artist, rSong.Album, rSong.Title)
 		}
+
+	case g.Flags().UnicodePunct:
+		found := false
+		if hasHighChar(rSong.Artist) || hasHighChar(rSong.Album) ||  hasHighChar(rSong.Title) {
+			found = true
+		}
+		if found {
+			fmt.Printf("unicode %s,%s,%s\n", rSong.Artist, rSong.Album, rSong.Title)
+		}
 	}
 	return nil
+}
+func hasHighChar(s string) bool {
+	for _, runeValue := range s {
+		if runeValue > unicode.MaxASCII { // Check if the rune is not an ASCII character
+			fmt.Printf("%c (U+%04X) ", runeValue, runeValue)
+			return true
+		}
+	}
+	return false
 }
 
 // isolate the actual work here, so we can cleanly
