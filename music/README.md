@@ -20,3 +20,5 @@ List those that are sufficiently different.
 
 6. flac2mp3 utility that writes out commands to convert FLAC files to MP3
 
+7. wherehitsare  look at mp3 file and find the source directory and file name
+
