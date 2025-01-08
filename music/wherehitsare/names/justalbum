@@ -1,4 +1,7 @@
 #! /bin/awk -f
+# process the output of a command such as find . -type d
+# assume you have used vim or other easy tool to remove path to file
+
 	/\// { 
 		ol = gensub(/^.+\//, "", "g")
 		print ol
