@@ -31,6 +31,7 @@
 //			rename commands for the files so that the file name reflects the song title and artist
 //			from the metadata tags
 //  -s    summary - print summary statistics
+//  -u    list files where meta data contains multi-byte Unicode characters (higher than 0x7F)
 //  -z    list artist names one per line
 //
 
