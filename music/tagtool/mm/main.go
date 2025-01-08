@@ -53,7 +53,6 @@ func main() {
 		return
 	}
 	globals.SetFlagArgs(*flags)
-
 	pathArg := path.Clean(flag.Arg(0))
 	globals.SecondArg = path.Clean(flag.Arg(1))
 	globals.ProcessFiles(pathArg)
