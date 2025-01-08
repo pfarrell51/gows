@@ -1,0 +1,13 @@
+#! /bin/awk -f
+# reads result of a find . -type d and
+# pulls the artist and album to the start of the line, and then add a | for easy parsing and the full path
+
+BEGIN {
+		FS = "/" 
+		OFS = "/"
+}
+  { if ( NF > 7 ) {
+		  print $7, $8, " | ",  substr($0, 2)
+      } 
+  }
+
