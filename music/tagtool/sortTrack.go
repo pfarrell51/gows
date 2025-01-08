@@ -92,7 +92,7 @@ func (g GlobalVars) PrintTrackSortedSongs() {
 		panic("no second arg ")
 	case 1:
 		if g.SecondArg == "." {
-			fmt.Printf("looked like dot %s\n", g.SecondArg)
+			//fmt.Printf("looked like dot %s\n", g.SecondArg)
 		}
 	}
 	cmd := "cp"
