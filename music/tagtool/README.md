@@ -51,6 +51,8 @@ as Musicbrainz's Picard (https://picard.musicbrainz.org/)
 
   -sn     show no song titles (in inventory and other listings)
 
+  -u     show song titles with Unicode (over 0x7F) characters in the meta data tags
+
   -z    list artist names one per line
 
 default is to list files that need love.
