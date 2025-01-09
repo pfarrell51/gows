@@ -145,12 +145,13 @@ func getMetadata(sn *song) *song {
 }
 
 func locateUnicode(sn *song) {
-	//	fmt.Printf("working on %s\n", sn.title)
-	sn.title = replaceUnicode(sn.title)
-	sn.artist = replaceUnicode(sn.artist)
-	sn.album = replaceUnicode(sn.album)
+	fmt.Printf("working on %s\n", sn.title)
+	var changed bool
+	sn.title = replaceUnicode(sn.title, &changed)
+	sn.artist = replaceUnicode(sn.artist, &changed)
+	sn.album = replaceUnicode(sn.album, &changed)
 }
-func replaceUnicode(s string) string {
+func replaceUnicode(s string, c *bool) (r string) {
 	var sb, ub strings.Builder
 	for _, runeValue := range s {
 		if runeValue > unicode.MaxASCII { // Check if the rune is not an ASCII character
@@ -161,10 +162,12 @@ func replaceUnicode(s string) string {
 				sb.WriteRune(runeValue)
 			} else {
 				replace(&sb, &ub)
+				*c = true
 			}
 		}
 		if ub.Len() > 0 {
 			replace(&sb, &ub)
+			*c = true
 		}
 	}
 
@@ -184,5 +187,11 @@ func replace(sb, ub *strings.Builder) string {
 	return v
 }
 func printFixCommand(aSong *song) {
-	fmt.Printf("t:%s al:%s sr: %s p: %s\n", aSong.title, aSong.album, aSong.artist, aSong.path)
+	//  sndfile-metadata-set [options] <file>
+	// --str-title              Set the metadata title.
+	//    --str-artist             Set the metadata artist.
+	//    --str-album              Set the metadata album.
+
+	fmt.Printf("sndfile-metadata-set --str-title \"%s\" --str-album \"%s\" --str-artist \"%s\" \"%s\" \n",
+		aSong.title, aSong.album, aSong.artist, aSong.path)
 }
