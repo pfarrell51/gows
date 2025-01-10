@@ -23,6 +23,8 @@ import (
 	"unicode"
 )
 
+const fixer = "mp3tag"
+
 type song struct {
 	artist string
 	album  string
@@ -187,11 +189,11 @@ func replace(sb, ub *strings.Builder) string {
 	return v
 }
 func printFixCommand(aSong *song) {
-	//  sndfile-metadata-set [options] <file>
+	//  fixer [options] <file>
 	// --str-title              Set the metadata title.
 	//    --str-artist             Set the metadata artist.
 	//    --str-album              Set the metadata album.
 
-	fmt.Printf("sndfile-metadata-set --str-title \"%s\" --str-album \"%s\" --str-artist \"%s\" \"%s\" \n",
-		aSong.title, aSong.album, aSong.artist, aSong.path)
+	fmt.Printf("%s --str-title \"%s\" --str-album \"%s\" --str-artist \"%s\" \"%s\" \n",
+		fixer, aSong.title, aSong.album, aSong.artist, aSong.path)
 }
