@@ -63,7 +63,7 @@ var dashRegex = regexp.MustCompile(divP)
 
 var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 
-func ReplaceUnicode(s string, c *bool) (r string) {
+func doReplacement(s string, c *bool) (r string) {
 	var sb, ub strings.Builder
 	for _, runeValue := range s {
 		if runeValue > unicode.MaxASCII { // Check if the rune is not an ASCII character
