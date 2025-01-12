@@ -12,6 +12,7 @@
 package replaceUnicode
 
 import (
+	"fmt"
 	"log/slog"
 	"regexp"
 	"strings"
@@ -63,6 +64,9 @@ var dashRegex = regexp.MustCompile(divP)
 
 var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 
+func Fratz() {
+	fmt.Println("Hello World")
+}
 func DoReplacement(s string, c *bool) (r string) {
 	var sb, ub strings.Builder
 	for _, runeValue := range s {
