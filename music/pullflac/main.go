@@ -13,7 +13,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	//	"github.com/pfarrell51/gows/music/replaceUnicode"
+
+	"github.com/pfarrell51/gows/music/replaceUnicode"
 )
 
 const getURLNAME = "PULLFLAC_URL"
@@ -43,6 +44,8 @@ type filenames struct {
 var fnames = new(filenames)
 
 func main() {
+	replaceUnicode.Fratz()
+
 	// Check if an environment variable exists
 	if val, ok := os.LookupEnv(getURLNAME); ok {
 		if debugFlag {
@@ -124,8 +127,9 @@ func cleanupWriteDirectory(s string) string {
 		slog.Info("Decoded string:", decodedString)
 	}
 	//var changed bool
-	rval := decodedString //replaceUnicode.doReplacement(decodedString, &changed)
-	return rval
+	//rval, err := replaceUnicode.DoReplacement(decodedString, &changed)
+	//return rval
+	return decodedString
 }
 func doGetURL(u string) ([]byte, error) {
 	fmt.Printf("doing HTTP get %s\n", u)
