@@ -38,6 +38,7 @@ var repuni = map[string]string{
 	"ô":  "o",
 	"ö":  "o",
 	"ř":  "r",
+	"řá": "ra",
 	"ś":  "s",
 	"ù":  "u",
 	"ú":  "u",
@@ -48,6 +49,7 @@ var repuni = map[string]string{
 	"Ã­":  "i",
 	"Ã³":  "o", // really ó
 	"ã©":  "e", // really é
+	"Ã©":  "e", // really é
 	"â€™": "'", // really ’
 	"Ã™":  "U", // really Ù
 	"Å¡":  "s", // really š
@@ -82,7 +84,8 @@ func CleanUni(s string, c *bool) (r string) {
 	var sb, ub strings.Builder
 	for _, runeValue := range s {
 		if runeValue > unicode.MaxASCII { // Check if the rune is not an ASCII character
-			slog.Warn("found high rune", "runeval", runeValue, "as hex", fmt.Sprintf("(U+%04X)", runeValue))
+			slog.Warn("found high rune", "runeValue",
+				fmt.Sprintf("runeval: %c as hex (U+%04X)", runeValue, runeValue))
 			ub.WriteRune(runeValue)
 		} else {
 			if ub.Len() == 0 {
@@ -92,10 +95,10 @@ func CleanUni(s string, c *bool) (r string) {
 				*c = true
 			}
 		}
-		if ub.Len() > 0 {
-			replace(&sb, &ub)
-			*c = true
-		}
+	}
+	if ub.Len() > 0 {
+		replace(&sb, &ub)
+		*c = true
 	}
 
 	return sb.String()
@@ -111,4 +114,29 @@ func replace(sb, ub *strings.Builder) string {
 	sb.WriteString(v)
 	ub.Reset()
 	return v
+}
+
+var puncts = regexp.MustCompile(`[\.,'"’]`)
+
+func RemovePunct(s string) (r string, changed bool) {
+	fmt.Println(s)
+	var sb strings.Builder
+	var cf = false
+	locA := puncts.FindAllStringIndex(s, -1)
+	if len(locA) > 0 {
+		fmt.Printf("loc: %v len(loc) %d\n", locA, len(locA))
+		var pos int = 0
+		for i, loc := range locA {
+			part := s[loc[0]:loc[1]]
+			fmt.Printf("in for %d,%v [%d:%d], %s\n", i, loc, loc[0], loc[1], part)
+			sb.WriteString(s[pos:loc[0]])
+			fmt.Printf("first part %s\n", sb.String())
+			sb.WriteString(s[loc[1]:])
+			fmt.Printf("second part %s\n", sb.String())
+			pos += loc[1] - loc[0]
+			cf = true
+		}
+	}
+	fmt.Printf("will return >%s< and %t\n", sb.String(), cf)
+	return sb.String(), cf
 }
