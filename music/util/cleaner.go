@@ -80,20 +80,39 @@ var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 func Fratz() {
 	fmt.Println("Hello World")
 }
+
+// slog.Warn("found high rune", "runeValue",
+//
+//	fmt.Sprintf("runeval: %c as hex (U+%04X)", runeValue, runeValue))
 func CleanUni(s string, c *bool) (r string) {
+	fmt.Printf("CU %s\n", s)
 	var sb, ub strings.Builder
-	for _, runeValue := range s {
+	var inUni bool
+	for i, runeValue := range s {
+		fmt.Printf("0i: %d rune: %c (U+%04X) sb: %s ub: %s\n",
+			i, runeValue, runeValue, sb.String(), ub.String())
 		if runeValue > unicode.MaxASCII { // Check if the rune is not an ASCII character
-			slog.Warn("found high rune", "runeValue",
-				fmt.Sprintf("runeval: %c as hex (U+%04X)", runeValue, runeValue))
+			inUni = true
+			fmt.Printf("high rune %c\n", runeValue)
 			ub.WriteRune(runeValue)
+			fmt.Printf("1i: %d rune: %c sb: %s ub: %s\n", i, runeValue, sb.String(), ub.String())
 		} else {
+			// boring ASCII
 			if ub.Len() == 0 {
-				sb.WriteRune(runeValue)
+				if inUni {
+					fmt.Printf("non-Uni %c (U+%04X) while inUni  %s to %s\n",
+						runeValue, runeValue, sb.String(), ub.String())
+				}
 			} else {
+				if !inUni {
+					panic("PIB not inUni")
+				}
+				//fmt.Printf("2i do replace: %d rune: %c sb: %s ub: %s\n", i, runeValue, sb.String(), ub.String())
 				replace(&sb, &ub)
+				inUni = false
 				*c = true
 			}
+			sb.WriteRune(runeValue)
 		}
 	}
 	if ub.Len() > 0 {
@@ -104,6 +123,7 @@ func CleanUni(s string, c *bool) (r string) {
 	return sb.String()
 }
 func replace(sb, ub *strings.Builder) string {
+	//fmt.Printf("4x sb: %s ub: %s\n", sb.String(), ub.String())
 	// lookup
 	k := ub.String()
 	v, ok := repuni[k]
@@ -113,6 +133,7 @@ func replace(sb, ub *strings.Builder) string {
 	//fmt.Printf("k: %s f?:%t v: %s (U+%04X)\n", k, ok, v, v)
 	sb.WriteString(v)
 	ub.Reset()
+	//fmt.Printf("3 sb: %s ub: %s\n", sb.String(), ub.String())
 	return v
 }
 
