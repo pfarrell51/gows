@@ -14,7 +14,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/pfarrell51/gows/music/replaceUnicode"
+	"github.com/pfarrell51/gows/music/util"
 )
 
 const getURLNAME = "PULLFLAC_URL"
@@ -44,7 +44,7 @@ type filenames struct {
 var fnames = new(filenames)
 
 func main() {
-	replaceUnicode.Fratz()
+	util.Fratz()
 
 	// Check if an environment variable exists
 	if val, ok := os.LookupEnv(getURLNAME); ok {
