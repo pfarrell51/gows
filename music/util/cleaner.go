@@ -91,7 +91,6 @@ func CleanUni(s string, c *bool) (r string) {
 		slog.Error("input stream not well formed UTF-8", "S", s)
 		return
 	}
-	fmt.Printf("CU %s\n", s)
 	var sb, ub strings.Builder
 	var inUni bool
 	runes := []rune(s)
@@ -104,11 +103,9 @@ func CleanUni(s string, c *bool) (r string) {
 	}
 	for i := 0; i < len(runes); i++ {
 		runeValue := runes[i]
-		fmt.Printf("0i: %d rune: %c (U+%04X) sb: %s ub: %s\n",
-			i, runeValue, runeValue, sb.String(), ub.String())
 		if runeValue > unicode.MaxASCII { // Check if the rune is not an ASCII character
 			inUni = true
-			fmt.Printf("high rune %c\n", runeValue)
+			//fmt.Printf("high rune %c\n", runeValue)
 			ub.WriteRune(runeValue)
 			k := ub.String()
 			_, ok := repuni[k]
@@ -119,7 +116,6 @@ func CleanUni(s string, c *bool) (r string) {
 			} else {
 				slog.Error("**** error: lookup failed ", "key", k)
 			}
-			fmt.Printf("1i: %d rune: %c sb: %s ub: %s\n", i, runeValue, sb.String(), ub.String())
 		} else {
 			// boring ASCII
 			if ub.Len() == 0 {
@@ -131,7 +127,6 @@ func CleanUni(s string, c *bool) (r string) {
 				if !inUni {
 					panic("PIB not inUni")
 				}
-				//fmt.Printf("2i do replace: %d rune: %c sb: %s ub: %s\n", i, runeValue, sb.String(), ub.String())
 				replace(&sb, &ub)
 				inUni = false
 				*c = true
@@ -143,45 +138,33 @@ func CleanUni(s string, c *bool) (r string) {
 		replace(&sb, &ub)
 		*c = true
 	}
-
 	return sb.String()
 }
 func replace(sb, ub *strings.Builder) string {
-	//fmt.Printf("4x sb: %s ub: %s\n", sb.String(), ub.String())
-	// lookup
 	k := ub.String()
-	v, ok := repuni[k]
+	v, ok := repuni[k] // lookup
 	if !ok {
 		slog.Error("**** error: lookup failed ", "key", k)
 	}
-	//fmt.Printf("k: %s f?:%t v: %s (U+%04X)\n", k, ok, v, v)
 	sb.WriteString(v)
 	ub.Reset()
-	//fmt.Printf("3 sb: %s ub: %s\n", sb.String(), ub.String())
 	return v
 }
 
 var puncts = regexp.MustCompile(`[\.,'"’]`)
 
 func RemovePunct(s string) (r string, changed bool) {
-	fmt.Println(s)
 	var sb strings.Builder
 	var cf = false
 	locA := puncts.FindAllStringIndex(s, -1)
 	if len(locA) > 0 {
-		fmt.Printf("loc: %v len(loc) %d\n", locA, len(locA))
 		var pos int = 0
-		for i, loc := range locA {
-			part := s[loc[0]:loc[1]]
-			fmt.Printf("in for %d,%v [%d:%d], %s\n", i, loc, loc[0], loc[1], part)
+		for _, loc := range locA {
 			sb.WriteString(s[pos:loc[0]])
-			fmt.Printf("first part %s\n", sb.String())
 			sb.WriteString(s[loc[1]:])
-			fmt.Printf("second part %s\n", sb.String())
 			pos += loc[1] - loc[0]
 			cf = true
 		}
 	}
-	fmt.Printf("will return >%s< and %t\n", sb.String(), cf)
 	return sb.String(), cf
 }
