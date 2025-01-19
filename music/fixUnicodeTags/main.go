@@ -14,13 +14,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/dhowden/tag"
 	"io/fs"
 	"os"
 	"path"
 	"regexp"
 	"strings"
-	//	"github.com/pfarrell51/gows/music/replaceUnicode"
+
+	"github.com/dhowden/tag"
+	"github.com/pfarrell51/gows/music/util"
 )
 
 const fixer = "mp3tag"
@@ -32,45 +33,6 @@ type song struct {
 	path   string
 }
 
-/*
-	var repuni = map[string]string{
-		"à":      "a",
-		"á":      "a",
-		"ã":      "a",
-		"ç":      "c",
-		"é":      "e",
-		"è":      "e",
-		"ë":      "e",
-		"ì":      "i",
-		"í":      "i",
-		"ñ":      "n",
-		"ò":      "o",
-		"ó":      "o",
-		"ô":      "o",
-		"ö":      "o",
-		"ś":      "s",
-		"ù":      "u",
-		"ú":      "u",
-		"È":      "E",
-		"É":      "E",
-		"Ù":      "U",
-		"Ú":      "U",
-		"’":      "'",
-		"´":      "'",
-		"`":      "'",
-		"“":      "\"",
-		"”":      "\"",
-		"«":      "\"",
-		"»":      "\"",
-		"…":      "",
-		"⁄":      " ",
-		"\u00A0": " ", // non-breaking space
-		"\u2010": "-", // hyphen
-		"\u2013": "-", //En dash
-		"\u2014": "-", //Em dash
-		"\u2015": "―", // Horizontal bar
-	}
-*/
 var noTheRegex = regexp.MustCompile("^((T|t)(H|h)(E|e)) ")
 
 const divP = " -+" // want space for names like Led Zeppelin - Bron-Yr-Aur
@@ -139,7 +101,6 @@ func getMetadata(sn *song) *song {
 
 	if noTheRegex.MatchString(sn.artist) {
 		sn.artist = sn.artist[4:]
-		//fmt.Printf("%s %s %s\n", sn.title, sn.artist, sn.path)
 	}
 	sn.album = m.Album()
 	if noTheRegex.MatchString(sn.album) {
@@ -151,9 +112,9 @@ func getMetadata(sn *song) *song {
 func locateUnicode(sn *song) {
 	fmt.Printf("working on %s\n", sn.title)
 	var changed bool
-	// sn.title = replaceUnicode.doReplacement(sn.title, &changed)
-	// sn.artist = replaceUnicode.doReplacement(sn.artist, &changed)
-	// sn.album = replaceUnicode.doReplacement(sn.album, &changed)
+	sn.title = util.CleanUni(sn.title, &changed)
+	sn.artist = util.CleanUni(sn.artist, &changed)
+	sn.album = util.CleanUni(sn.album, &changed)
 	if changed {
 		fmt.Println("it changed\b\n")
 	}
