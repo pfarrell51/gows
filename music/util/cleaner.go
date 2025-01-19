@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 var repuni = map[string]string{
@@ -43,17 +44,17 @@ var repuni = map[string]string{
 	"ù":  "u",
 	"ú":  "u",
 	// AntonÃ­n DvoÅ™Ã¡k   // maybe with final;
-	"Ã":   "A",
-	"Å":   "A",
-	"Å™":  "r",
-	"Ã­":  "i",
-	"Ã³":  "o", // really ó
-	"ã©":  "e", // really é
-	"Ã©":  "e", // really é
-	"â€™": "'", // really ’
-	"Ã™":  "U", // really Ù
-	"Å¡":  "s", // really š
-	// řá  Antonín Dvořák
+	"Ã":      "A",
+	"Å":      "A",
+	"Å™":     "r",
+	"Ã­":     "i", // í
+	"Ã³":     "o", // really ó
+	"ã©":     "e", // really é
+	"Ã©":     "e", // really é
+	"â€™":    "'", // ’ closing single
+	"â€˜":    "'", // ‘ opening single
+	"Ã™":     "U", // really Ù
+	"Å¡":     "s", // really š
 	"È":      "E",
 	"É":      "E",
 	"Ù":      "U",
@@ -85,16 +86,39 @@ func Fratz() {
 //
 //	fmt.Sprintf("runeval: %c as hex (U+%04X)", runeValue, runeValue))
 func CleanUni(s string, c *bool) (r string) {
+	wellformed := utf8.FullRuneInString(s)
+	if !wellformed {
+		slog.Error("input stream not well formed UTF-8", "S", s)
+		return
+	}
 	fmt.Printf("CU %s\n", s)
 	var sb, ub strings.Builder
 	var inUni bool
-	for i, runeValue := range s {
+	runes := []rune(s)
+	highRunes := NewBitVector(len(runes))
+	for i := 0; i < len(runes); i++ {
+		runeValue := runes[i]
+		if runeValue > unicode.MaxASCII { // Check if the rune is not an ASCII character
+			highRunes.Set(i)
+		}
+	}
+	for i := 0; i < len(runes); i++ {
+		runeValue := runes[i]
 		fmt.Printf("0i: %d rune: %c (U+%04X) sb: %s ub: %s\n",
 			i, runeValue, runeValue, sb.String(), ub.String())
 		if runeValue > unicode.MaxASCII { // Check if the rune is not an ASCII character
 			inUni = true
 			fmt.Printf("high rune %c\n", runeValue)
 			ub.WriteRune(runeValue)
+			k := ub.String()
+			_, ok := repuni[k]
+			if ok {
+				replace(&sb, &ub)
+				inUni = false
+				*c = true
+			} else {
+				slog.Error("**** error: lookup failed ", "key", k)
+			}
 			fmt.Printf("1i: %d rune: %c sb: %s ub: %s\n", i, runeValue, sb.String(), ub.String())
 		} else {
 			// boring ASCII
