@@ -2,7 +2,7 @@
 package util
 
 import (
-	"fmt"
+	//"fmt"
 	"testing"
 )
 
@@ -13,25 +13,20 @@ type testVal struct {
 }
 
 func TestCleanUni(t *testing.T) {
-	return
 	testVals := []testVal{
-		/*
-			{"bànãnà", "banana", true},
-			{"bànãnà dànãnà", "banana danana", true},
-			{"Déjà Vu", "Deja Vu", true},
-			{"Deja Vu", "Deja Vu", false},
-			{"Déjà Vú", "Deja Vu", true},
-			{"Eeye BÃ©", "Eeye Be", true},
-			{"El SalÃ³n MÃ©xico", "El Salon Mexico", true},
-			{"Antonín Dvořák", "Antonin Dvorak", true},
-		*/
+		{"bànãnà", "banana", true},
+		{"bànãnà dànãnà", "banana danana", true},
+		{"Déjà Vu", "Deja Vu", true},
+		{"Deja Vu", "Deja Vu", false},
+		{"Déjà Vú", "Deja Vu", true},
+		{"Eeye BÃ©", "Eeye Be", true},
+		{"El SalÃ³n MÃ©xico", "El Salon Mexico", true},
+		{"Antonín Dvořák", "Antonin Dvorak", true},
 		//	{"AntonÃ­n DvoÅ™Ã¡k", "Antonin Dvorak", true},
-		{"AntonÃ­n DvoÅ™Ã¡k", "Antonin Dvorak", true},
 	}
 	for _, v := range testVals {
 		var done bool
 		rval := CleanUni(v.in, &done)
-		fmt.Printf("rvl: %s d:%t v0: %s  V1: %s %t\n", rval, done, v.in, v.out, v.expectChange)
 		if rval != v.out {
 			t.Errorf("not equal r: %s != %s for %s", rval, v.out, v.in)
 		}
@@ -41,7 +36,6 @@ func TestCleanUni(t *testing.T) {
 	}
 }
 func TestRemovePunct(t *testing.T) {
-	return
 	testVals := []testVal{
 		{"lovin'", "lovin", true},
 		{"don't", "dont", true},
@@ -51,7 +45,7 @@ func TestRemovePunct(t *testing.T) {
 	for _, v := range testVals {
 		rval, done := RemovePunct(v.in)
 		if rval != v.out {
-			t.Errorf("not equal %s", v.in)
+			t.Errorf("not equal in %s rval %s", v.in, rval)
 		}
 		if done != v.expectChange {
 			t.Errorf("change flag on %s not as expected  %t != %t", v.in, v.expectChange, done)
