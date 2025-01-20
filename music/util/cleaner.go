@@ -95,9 +95,10 @@ func CleanUni(s string, c *bool) (r string) {
 	var inUni bool
 	runes := []rune(s)
 	highRunes := NewBitVector(len(runes))
+	// loop thru string, checking each  rune is not an ASCII character
 	for i := 0; i < len(runes); i++ {
 		runeValue := runes[i]
-		if runeValue > unicode.MaxASCII { // Check if the rune is not an ASCII character
+		if runeValue > unicode.MaxASCII {
 			highRunes.Set(i)
 		}
 	}
@@ -153,18 +154,7 @@ func replace(sb, ub *strings.Builder) string {
 
 var puncts = regexp.MustCompile(`[\.,'"’]`)
 
-func RemovePunct(s string) (r string, changed bool) {
-	var sb strings.Builder
-	var cf = false
-	locA := puncts.FindAllStringIndex(s, -1)
-	if len(locA) > 0 {
-		var pos int = 0
-		for _, loc := range locA {
-			sb.WriteString(s[pos:loc[0]])
-			sb.WriteString(s[loc[1]:])
-			pos += loc[1] - loc[0]
-			cf = true
-		}
-	}
-	return sb.String(), cf
+func RemovePunct(s string) (string, bool) {
+	rval := puncts.ReplaceAllString(s, "")
+	return rval, rval != s
 }
