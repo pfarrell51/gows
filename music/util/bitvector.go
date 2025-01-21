@@ -35,6 +35,44 @@ func (bv BitVector) Get(i int) bool {
 func (bv BitVector) Size() int {
 	return bv.max
 }
+func (bv BitVector) AllTrue() [][]int {
+	rval := [][]int{}
+	var start, stop int = -1, -1
+	var inRun bool
+	for i := 0; i < bv.max; i++ {
+		//fmt.Printf("i: %d %t\n", i, bv.Get(i))
+		if bv.Get(i) {
+			switch {
+			case !inRun:
+				inRun = true
+				start = i
+				stop = i
+			case inRun:
+				stop = i
+			default:
+				fmt.Println("default triggered")
+			}
+		} else {
+			//fmt.Printf("Off i: %d, pR %t ir %t, start: %d, stop %d\n", i, possRun, inRun, start, stop)
+			if inRun {
+				if start >= 0 && stop >= 0 {
+					row := []int{start, stop}
+					//fmt.Println(row)
+					rval = append(rval, row)
+				}
+			}
+			inRun = false
+		}
+		//printRval(i, rval)
+	}
+	return rval
+}
+func printRval(idx int, rval [][]int) {
+	fmt.Printf("number rows %d\n", len(rval))
+	for i, row := range rval {
+		fmt.Printf("i: %d len=%d cap=%d %v\n", i, len(row), cap(row), row)
+	}
+}
 func (bv BitVector) FirstRun(idx int) []int {
 	if idx >= bv.max {
 		errRtn := []int{}
