@@ -25,6 +25,12 @@ func (bv BitVector) Set(i int) {
 	}
 	bv.store[i/64] |= 1 << (i % 64)
 }
+func (bv BitVector) Clear(i int) {
+	if i >= bv.max {
+		panic(fmt.Sprintf("bitvector  max index error %d >= %d", i, bv.max))
+	}
+	bv.store[i/64] =  bv.store[i/64] &^ (uint64)( 1 << (i % 64))
+}
 
 func (bv BitVector) Get(i int) bool {
 	if i >= bv.max {
@@ -35,35 +41,46 @@ func (bv BitVector) Get(i int) bool {
 func (bv BitVector) Size() int {
 	return bv.max
 }
+func (bv BitVector) LogicalInvert() BitVector {
+	var rval = NewBitVector(bv.max)
+	for i := 0; i < len(bv.store); i++ {
+		rval.store[i] = ^uint64(bv.store[i])
+		fmt.Printf("(%064X)", rval.store[i])
+	}
+	return rval
+}
+
+// return a array of arrays of the positions that are TRUE
 func (bv BitVector) AllTrue() [][]int {
 	rval := [][]int{}
 	var start, stop int = -1, -1
 	var inRun bool
 	for i := 0; i < bv.max; i++ {
-		//fmt.Printf("i: %d %t\n", i, bv.Get(i))
 		if bv.Get(i) {
 			switch {
 			case !inRun:
 				inRun = true
 				start = i
-				stop = i
+				stop = i + 1
 			case inRun:
-				stop = i
+				stop = i + 1
 			default:
 				fmt.Println("default triggered")
 			}
+			if inRun && i+1 == bv.max {
+				row := []int{start, stop} // last character is OK.
+				rval = append(rval, row)
+			}
 		} else {
-			//fmt.Printf("Off i: %d, pR %t ir %t, start: %d, stop %d\n", i, possRun, inRun, start, stop)
+			//	fmt.Printf("Off i: %d, ir %t, start: %d, stop %d\n", i, inRun, start, stop)
 			if inRun {
 				if start >= 0 && stop >= 0 {
 					row := []int{start, stop}
-					//fmt.Println(row)
 					rval = append(rval, row)
 				}
 			}
 			inRun = false
 		}
-		//printRval(i, rval)
 	}
 	return rval
 }
