@@ -29,7 +29,7 @@ func (bv BitVector) Clear(i int) {
 	if i >= bv.max {
 		panic(fmt.Sprintf("bitvector  max index error %d >= %d", i, bv.max))
 	}
-	bv.store[i/64] =  bv.store[i/64] &^ (uint64)( 1 << (i % 64))
+	bv.store[i/64] = bv.store[i/64] &^ (uint64)(1<<(i%64))
 }
 
 func (bv BitVector) Get(i int) bool {
@@ -40,6 +40,15 @@ func (bv BitVector) Get(i int) bool {
 }
 func (bv BitVector) Size() int {
 	return bv.max
+}
+func (bv BitVector) AnyOn() bool {
+	const flag = ^uint64(0)
+	for i := 0; i < (bv.max+63)/64; i++ {
+		if (bv.store[i] & flag) != 0 {
+			return true
+		}
+	}
+	return false
 }
 func (bv BitVector) LogicalInvert() BitVector {
 	var rval = NewBitVector(bv.max)
