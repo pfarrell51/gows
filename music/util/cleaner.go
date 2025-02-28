@@ -10,6 +10,12 @@
 // for example Joshua Bell's music often uses Cyrillic or Polish, which this does not handle.
 //
 // handy reference https://www.i18nqa.com/debug/utf8-debug.html
+//
+// bugs:
+//   does not handle multiple bad unicode characters properly.
+//   for example, if there are two pairs of unicode points that are bad
+//    such as  {"AntonÃ­n DvoÅ™Ã¡k", "Antonin Dvorak", true},
+//   it should do the Å™ and then the Ã¡
 
 package util
 
@@ -74,10 +80,19 @@ var repuni = map[string]string{
 	"\u2014": "-", //Em dash
 	"\u2015": "―", // Horizontal bar
 }
+var longestUnicodeString int
 var noTheRegex = regexp.MustCompile("^((T|t)(H|h)(E|e)) ")
 
 var extRegex = regexp.MustCompile(".((M|m)(p|P)(3|4))|((F|f)(L|l)(A|a)(C|c))$")
 
+func init() {
+	for key := range repuni {
+		runeCount := utf8.RuneCountInString(key)
+		if runeCount > longestUnicodeString {
+			longestUnicodeString = runeCount
+		}
+	}
+}
 func Fratz() {
 	fmt.Println("Hello World")
 }
@@ -91,65 +106,41 @@ func CleanUni(s string, c *bool) (r string) {
 		slog.Error("input stream not well formed UTF-8", "S", s)
 		return
 	}
-	var sb, ub strings.Builder
-	var inUni bool
+	var sb strings.Builder
 	runes := []rune(s)
 	highRunes := NewBitVector(len(runes))
-	// loop thru string, checking each  rune is not an ASCII character
+	// loop thru input, checking each  rune is not an ASCII character
 	for i := 0; i < len(runes); i++ {
 		runeValue := runes[i]
 		if runeValue > unicode.MaxASCII {
 			highRunes.Set(i)
 		}
 	}
-	for i := 0; i < len(runes); i++ {
-		runeValue := runes[i]
-		if runeValue > unicode.MaxASCII { // Check if the rune is not an ASCII character
-			inUni = true
-			//fmt.Printf("high rune %c\n", runeValue)
-			ub.WriteRune(runeValue)
-			k := ub.String()
-			_, ok := repuni[k]
-			if ok {
-				replace(&sb, &ub)
-				inUni = false
-				*c = true
-			} else {
-				slog.Error("**** error: lookup failed ", "key", k)
-			}
+	bitsOn := highRunes.AllTrue()
+
+	for _, onRange := range bitsOn {
+		//fmt.Printf("%d, %v\n", i, onRange)
+		for i := 0; i < onRange[0]; i++ {
+			//	fmt.Printf("copying %c   %s\n", runes[i], string(runes[i]))
+			sb.WriteRune(runes[i])
+		}
+		//lr := (onRange[1] - onRange[0])
+		aRune := runes[onRange[0]:onRange[1]]
+		k := string(aRune)
+		//fmt.Printf("%d, lr: %d >%s< %v %c (U+%04X)\n",
+	    //		i, lr, k, onRange, aRune, aRune)
+		v, ok := repuni[k]
+		if ok {
+			//fmt.Printf("will replace %s with %s\n", k, v)
+			sb.WriteString(v)
+			*c = true
 		} else {
-			// boring ASCII
-			if ub.Len() == 0 {
-				if inUni {
-					fmt.Printf("non-Uni %c (U+%04X) while inUni  %s to %s\n",
-						runeValue, runeValue, sb.String(), ub.String())
-				}
-			} else {
-				if !inUni {
-					panic("PIB not inUni")
-				}
-				replace(&sb, &ub)
-				inUni = false
-				*c = true
-			}
-			sb.WriteRune(runeValue)
+			fmt.Printf("**** failed %s (U+%04X)\n", k, aRune)
+			//			slog.Error("**** error: lookup failed ", "key", k)
 		}
 	}
-	if ub.Len() > 0 {
-		replace(&sb, &ub)
-		*c = true
-	}
+
 	return sb.String()
-}
-func replace(sb, ub *strings.Builder) string {
-	k := ub.String()
-	v, ok := repuni[k] // lookup
-	if !ok {
-		slog.Error("**** error: lookup failed ", "key", k)
-	}
-	sb.WriteString(v)
-	ub.Reset()
-	return v
 }
 
 var puncts = regexp.MustCompile(`[\.,'"’]`)
