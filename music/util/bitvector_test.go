@@ -1,14 +1,22 @@
 package util
 
 import (
-	"fmt"
+	//	"fmt"
 	"testing"
 )
 
-const bvSize = 26
+const bvSize = 69
 
-var turnOn = []int{3, 8, 9, 13, 14, 15, 16, 20}
+var turnOn = []int{3, 8, 9, 13, 14, 15, 16, 20, 63, 64, 67}
 
+func makeTestBV() BitVector {
+	var bv = NewBitVector(bvSize)
+	for i := 0; i < len(turnOn); i++ {
+		bv.Set(turnOn[i])
+	}
+	//fmt.Printf("make: %b %x\n", bv.store, bv.store)
+	return bv
+}
 func TestSize(t *testing.T) {
 	var fiveHundredBits = NewBitVector(bvSize)
 	l := len(fiveHundredBits.store)
@@ -20,38 +28,24 @@ func TestSize(t *testing.T) {
 		t.Errorf("not equal %d, got %d", bvSize, m)
 	}
 }
-func makeTestBV() BitVector {
-	//const	turnOn := []int{3, 8, 9, 13, 14, 15, 16, 20}
-	var bv = NewBitVector(bvSize)
-	for i := 0; i < len(turnOn); i++ {
-		bv.Set(turnOn[i])
-	}
-	return bv
-}
 func TestSetClear(t *testing.T) {
 	var bv = NewBitVector(bvSize)
 	bv.Set(3)
 	bv.Set(8)
 	bv.Set(9)
-	fmt.Printf("c: %b %x\n", bv.store, bv.store)
-	bv.Clear(8)
-	fmt.Printf("c: %b %x\n", bv.store, bv.store)
+	if !bv.Get(9) {
+		t.Errorf("set not got")
+	}
+	const cb = 8
+	bv.Clear(cb)
+	if bv.Get(cb) {
+		t.Errorf("setclear not got")
+	}
 }
-func TestAllTrue(t *testing.T) {
-	var banana = NewBitVector(6)
-	banana.Set(1)
-	banana.Set(3)
-	banana.Set(5)
-	ib := banana.LogicalInvert()
-	fmt.Printf("b: %x  ib: %x\n", banana.store, ib.store)
-
-	br := banana.AllTrue()
-	fmt.Printf("br: %v\n", br)
-
+func TestTruePositions(t *testing.T) {
 	var fHB = makeTestBV()
-	fr := fHB.AllTrue()
-	fmt.Printf("fr: %v\n", fr)
-	if len(fr) != 4 {
+	fr := fHB.TruePositions()
+	if len(fr) != 6 {
 		t.Errorf("wrong length returned: %d", len(fr))
 	}
 	if fr[1][0] != 8 || fr[1][1] != 10 {
@@ -92,12 +86,21 @@ func TestOn(t *testing.T) {
 	}
 }
 func TestInvert(t *testing.T) {
+	var banana = NewBitVector(6)
+	banana.Set(1)
+	banana.Set(3)
+	banana.Set(5)
+	ib := banana.LogicalInvert()
+	if ib.Get(1) {
+		t.Errorf("inv banana inv wrong for 1")
+	}
+
 	var fHB = makeTestBV()
 	var inv = fHB.LogicalInvert()
 	if fHB.Get(0) {
 		t.Errorf("inv wrong for 0")
 	}
-	if inv.Get(0) {
+	if !inv.Get(0) {
 		t.Errorf("wrong inv0")
 	}
 }
