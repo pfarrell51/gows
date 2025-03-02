@@ -54,13 +54,13 @@ func (bv BitVector) LogicalInvert() BitVector {
 	var rval = NewBitVector(bv.max)
 	for i := 0; i < len(bv.store); i++ {
 		rval.store[i] = ^uint64(bv.store[i])
-		fmt.Printf("(%064X)", rval.store[i])
+		//	fmt.Printf("%d (%016X)\n", i, rval.store[i])
 	}
 	return rval
 }
 
 // return a array of arrays of the positions that are TRUE
-func (bv BitVector) AllTrue() [][]int {
+func (bv BitVector) TruePositions() [][]int {
 	rval := [][]int{}
 	var start, stop int = -1, -1
 	var inRun bool
