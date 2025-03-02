@@ -116,7 +116,7 @@ func CleanUni(s string, c *bool) (r string) {
 			highRunes.Set(i)
 		}
 	}
-	bitsOn := highRunes.AllTrue()
+	bitsOn := highRunes.TruePositions()
 
 	for _, onRange := range bitsOn {
 		//fmt.Printf("%d, %v\n", i, onRange)
@@ -128,7 +128,7 @@ func CleanUni(s string, c *bool) (r string) {
 		aRune := runes[onRange[0]:onRange[1]]
 		k := string(aRune)
 		//fmt.Printf("%d, lr: %d >%s< %v %c (U+%04X)\n",
-	    //		i, lr, k, onRange, aRune, aRune)
+		//		i, lr, k, onRange, aRune, aRune)
 		v, ok := repuni[k]
 		if ok {
 			//fmt.Printf("will replace %s with %s\n", k, v)
