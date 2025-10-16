@@ -1,4 +1,6 @@
 tag/*
 thumbnail/*
+csvtsd/csvtsd
+readfile/readfile
 go.sum
 
