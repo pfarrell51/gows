@@ -1,8 +1,6 @@
 module github.com/pfarrell51/gows
 
-go 1.21.4
-
-toolchain go1.21.6
+go 1.26.0
 
 require (
 	github.com/dhowden/tag v0.0.0-20220618230019-adf36e896086
@@ -15,4 +13,5 @@ require (
 require (
 	github.com/felixge/fgprof v0.9.3 // indirect
 	github.com/google/pprof v0.0.0-20211214055906-6f57359322fd // indirect
+	golang.org/x/net v0.61.0 // indirect
 )
