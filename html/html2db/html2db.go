@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"golang.org/x/net/html"
-	// "golang.org/x/net/html/atom"
+	"golang.org/x/net/html/atom"
 )
 
 func main() {
@@ -35,15 +35,24 @@ func main() {
 		log.Fatalf("failed to parse html: %v", err)
 	}
 	for n := range doc.Descendants() {
-		fmt.Printf("nType: %s atm: %s AD: %s\n", n.Type, n.DataAtom, n.Data)
+		checkParent := false
+		fmt.Printf("n %p nType: %s atom: %s AD: %s\n", &n, n.Type, n.DataAtom, n.Data)
 		switch n.Type {
 		case html.ElementNode:
 			for i, a := range n.Attr {
 				fmt.Printf("%d %v k: %v V: %v\n", i, a.Namespace, a.Key, a.Val)
 			}
+			if n.DataAtom == atom.A {
+				fmt.Printf("got an A, children??\n")
+				for c := range n.Descendants() {
+					checkParent = true
+					fmt.Printf("c %p cType: %s atom: %s AD: %s\n", &c, c.Type, c.DataAtom, c.Data)
+				}
+				fmt.Println()
+			}
 		case html.TextNode:
 			text := n.Data
-			fmt.Printf("TextNode: :%s; len %d\n", text, len(text))
+			fmt.Printf("TextNode: :%s; len %d no& %p CP: %t parent %p\n", text, len(text), n.Parent, checkParent, &n.Parent)
 			// Print text contents if not empty/whitespace
 			switch len(text) {
 			case 0:
@@ -54,6 +63,7 @@ func main() {
 			default:
 				fmt.Printf("Text: :%s; len %d\n", text, len(text))
 			}
+			checkParent = false
 		default:
 			fmt.Printf("defaulted t: %s: %s\n", n.DataAtom.String(), n.Data)
 		}
