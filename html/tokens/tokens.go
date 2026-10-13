@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"golang.org/x/net/html"
 	"io"
+	"log"
 	"os"
 	"strings"
 )
@@ -15,7 +16,10 @@ func main() {
 		htmlIn = sampleHtml
 	} else {
 		// Reads the entire file content into memory
-		content, _ := os.ReadFile(os.Args[1])
+		content, err := os.ReadFile(os.Args[1])
+		if err != nil {
+			log.Fatalf("failed to read  html: %v", err)
+		}
 		htmlIn = string(content)
 	}
 	tokenizer := html.NewTokenizer(strings.NewReader(htmlIn))
